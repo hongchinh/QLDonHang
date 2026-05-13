@@ -41,13 +41,27 @@ Restyle bảng "Chi tiết hàng hóa" trên trang [quotation-form-page.tsx](../
 - **Mockup `min-width: 1180px` trên `.accounting-grid`**: nếu áp đúng số này, bảng có thể tràn ngang ở viewport hẹp. Plan dùng width tổng từ tổng các column width (~1188px), bọc `.accounting-grid-wrap` với `overflow-x: auto` để không vỡ layout responsive.
 
 ## Phases
-- [ ] Phase 01 — CSS scoped file (S) — [phase-01-css-scaffold.md](phase-01-css-scaffold.md)
-- [ ] Phase 02 — ProductTypeaheadCell variant prop (S) — [phase-02-typeahead-variant.md](phase-02-typeahead-variant.md)
-- [ ] Phase 03 — LineItemsGrid refactor + keyboard + delete-all (L) — [phase-03-line-items-grid-refactor.md](phase-03-line-items-grid-refactor.md)
-- [ ] Phase 04 — TotalsPanel stretch (S) — [phase-04-totals-panel-stretch.md](phase-04-totals-panel-stretch.md)
-- [ ] Phase 05 — Layout restructure trong quotation-form-page (S) — [phase-05-form-page-layout.md](phase-05-form-page-layout.md)
-- [ ] Phase 06 — Final verification (S) — [phase-06-final-verification.md](phase-06-final-verification.md)
-- [ ] Phase 07 — ProductTypeaheadCell upgrade Misa-pattern (M) — [phase-07-product-typeahead-misa-upgrade.md](phase-07-product-typeahead-misa-upgrade.md)
+- [x] Phase 01 — CSS scoped file (S) — [phase-01-css-scaffold.md](phase-01-css-scaffold.md)
+- [x] Phase 02 — ProductTypeaheadCell variant prop (S) — [phase-02-typeahead-variant.md](phase-02-typeahead-variant.md)
+- [x] Phase 03 — LineItemsGrid refactor + keyboard + delete-all (L) — [phase-03-line-items-grid-refactor.md](phase-03-line-items-grid-refactor.md)
+- [x] Phase 04 — TotalsPanel stretch (S) — [phase-04-totals-panel-stretch.md](phase-04-totals-panel-stretch.md)
+- [x] Phase 05 — Layout restructure trong quotation-form-page (S) — [phase-05-form-page-layout.md](phase-05-form-page-layout.md)
+- [x] Phase 06 — Final verification (S) — [phase-06-final-verification.md](phase-06-final-verification.md)
+- [x] Phase 07 — ProductTypeaheadCell upgrade Misa-pattern (M) — [phase-07-product-typeahead-misa-upgrade.md](phase-07-product-typeahead-misa-upgrade.md)
+
+## Post-review fixes (2026-05-13)
+Sau khi review SUMMARY, các điều chỉnh sau đã được apply trực tiếp lên Phase 01/03 artifacts (không tạo phase mới):
+- **P0** Empty placeholder thay span "phím Insert" giả → button "Bấm để thêm dòng đầu tiên" thật. `addLine` auto-focus input đầu của row mới để Insert/Ctrl+Delete kế tiếp bubble đúng vào wrap listener.
+- **P0** Footer kbd hints bỏ Tab/Enter (out of scope của plan này — Tab/Enter navigation thật chưa wire).
+- **P0** Cell "Thành tiền" chuyển sang `.cell-total-stack` (height: 34px fixed, flex column) → chiều cao mỗi row đều nhau dù có hay không có dòng "LN".
+- **P1** Bridge hex hardcode sang shadcn HSL tokens (`--border`, `--muted`, `--accent`, `--foreground`, `--muted-foreground`, `--ring`, `--destructive`, `--primary`, `--card`). Bảng giờ follow theme/dark-mode. Giữ `#fff8dc` cho cell focus (spreadsheet affordance có chủ ý).
+- **P1** Thêm `aria-label` cho D/R/Dày/Tấm, SL, Đơn giá, Giá vốn, Tên hàng, ĐVT.
+- **P2** `font-family: inherit` + `font-weight: 600` (bỏ Segoe UI hardcode + 650 non-standard weight).
+- **P2** Subtotal footer dùng VND currency format thay raw number.
+- **P3** `ProductTypeaheadCell.onSelect` chuyển từ `useFieldArray.update()` sang chuỗi `setLineField` → không remount row, không bị focus loss.
+- **P3** `:focus-visible` outline cho trash button, `.lib-btn`, empty-placeholder link.
+
+Test/lint/tsc clean sau fixes; test subtotal cập nhật regex cho VND output (`Tổng: 250 ₫`).
 
 ## Final Verification
 Chạy ở thư mục `frontend/`:

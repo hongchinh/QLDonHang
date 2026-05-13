@@ -144,6 +144,7 @@ export function LineItemsGrid({ form }: Props) {
                   <td>
                     <ProductTypeaheadCell
                       variant="cell"
+                      nextFocusId={`line-name-${idx}`}
                       value={(line.productCode ?? '') as string}
                       onChange={(v) => setLineField(idx, 'productCode', v)}
                       onSelect={(s) => {
@@ -160,6 +161,7 @@ export function LineItemsGrid({ form }: Props) {
                   </td>
                   <td>
                     <input
+                      id={`line-name-${idx}`}
                       className="cell-input"
                       aria-label="Tên hàng"
                       value={(line.productName ?? '') as string}

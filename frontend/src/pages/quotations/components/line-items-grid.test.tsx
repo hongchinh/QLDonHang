@@ -69,7 +69,7 @@ describe('LineItemsGrid', () => {
 
     expect(screen.getByDisplayValue('Alpha')).toBeInTheDocument();
     expect(screen.getByDisplayValue('Beta')).toBeInTheDocument();
-    expect(screen.getByText('Tổng: 250')).toBeInTheDocument();
+    expect(screen.getByText(/Tổng:\s*250\s*₫/)).toBeInTheDocument();
   });
 
   it('adds a row when clicking add line', async () => {
