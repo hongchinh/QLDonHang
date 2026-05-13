@@ -1,0 +1,51 @@
+import { defineConfig } from 'vitest/config';
+import react from '@vitejs/plugin-react';
+import path from 'node:path';
+
+const vendorChunks: Record<string, string> = {
+  'react/': 'react',
+  'react-dom/': 'react',
+  'react-router': 'react',
+  '@tanstack/': 'query',
+  '@radix-ui/': 'radix',
+  'react-hook-form': 'forms',
+  '@hookform/': 'forms',
+  zod: 'forms',
+};
+
+export default defineConfig({
+  plugins: [react()],
+  resolve: {
+    alias: {
+      '@': path.resolve(__dirname, './src'),
+    },
+  },
+  server: {
+    port: 5173,
+    proxy: {
+      '/api': {
+        target: 'http://localhost:5050',
+        changeOrigin: true,
+      },
+    },
+  },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: (id) => {
+          if (!id.includes('node_modules')) return undefined;
+          for (const [needle, chunk] of Object.entries(vendorChunks)) {
+            if (id.includes(needle)) return chunk;
+          }
+          return undefined;
+        },
+      },
+    },
+  },
+  test: {
+    environment: 'jsdom',
+    globals: true,
+    setupFiles: ['./src/test/setup.ts'],
+    css: false,
+  },
+});

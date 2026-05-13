@@ -1,0 +1,135 @@
+screen_name: ""
+screen_id: ""
+mode: web                  # web | mobile — affects generated TC style
+# Optional: ordered list of BD source files to merge during convert.
+# Files are merged in list order into a single BD.md.
+# Each path is relative to the module directory.
+#
+# Example:
+#   bd_files:
+#     - input/BD_Common.xlsx
+#     - input/BD_A2_Create.xlsx
+#     - input/BD_R2_Edit.xlsx
+bd_files: []
+
+# Optional: describe the relationship between multiple BD source files.
+# This is a free-text note for the agent's context during generation.
+# The convert step merges files in bd_files order — this note helps the agent
+# understand WHY they are ordered that way and how content relates.
+#
+# Example:
+#   bd_file_notes: |
+#     BD_Common.xlsx: shared field definitions and validation rules for all modes.
+#     BD_A2_Create.xlsx: fields and logic specific to Create (A2) mode.
+#     BD_R2_Edit.xlsx: fields and logic specific to Edit (R2) mode — overrides
+#     some validations from Common (e.g. 患者ID is read-only in R2).
+bd_file_notes: ""
+input_format: auto         # auto | xlsx | docx | pdf | md — auto-detect from file extension
+# Optional: custom test environments for xlsx export.
+# Each entry becomes a status column (Untested/OK/NG/N/A) in Test Round blocks.
+# Execution Date, Assignee, and Bug ID are shared (not per-environment).
+#
+# Resolution: config.environments > settings.environments[mode] > settings.environments.all
+#
+# Example:
+#   environments:
+#     - Chrome
+#     - Safari
+#     - Edge
+environments: []
+project_name: ""
+version: "1.0"             # X.Y format. Auto-incremented by export when existing output detected.
+author: ""
+reviewer: ""
+approver: ""
+created_date: ""
+reviewed_date: ""
+approved_date: ""
+# Optional: enrichment sources for richer TC generation context.
+# These are supplementary — BD file remains the primary source.
+enrichment:
+  figma: ""                 # Figma URL (requires Figma MCP, future)
+  jira:
+    project: ""             # Jira project key (requires Jira MCP, future)
+    tickets: []             # Specific ticket IDs to pull
+  screenshots: []           # Paths to screenshot images relative to module dir
+
+# Optional: semantic label of the grouping dimension used in this module.
+#
+#   none    — no grouping (default). Flat layout. No ## Group: headings in TC markdown.
+#             No group header row in xlsx. Use this for most screens.
+#
+#   mode    — screen has multiple CRUD modes on the same UI
+#             (e.g. A2 = Create Patient, R2 = Edit Patient in the same screen spec).
+#
+#   role    — screen behaves differently per user role
+#             (e.g. Admin sees all fields, Staff sees a restricted subset).
+#
+#   service — screen covers multiple backend services or sub-features
+#             (e.g. SCR-167 with A2 = 保険証入力 and R2 = 施術内容 as separate service blocks).
+#
+#   phase   — screen changes across implementation phases or releases
+#             (e.g. Phase 1 basic, Phase 2 extended).
+#
+# This field is informational only — it labels what the groups represent.
+# The actual grouping in TC markdown is controlled by ## Group: headings + the `groups` list below.
+group_type: none
+
+# Optional: ordered list of groups. Each TC block in the generated markdown must open with
+#   ## Group: {code} — {label}    ← label is optional; can write just ## Group: {code}
+# placed before its first subsection heading. TC IDs (e.g. A.1_1) may repeat across groups.
+# When group_type is none or this list is empty, no group header row appears in the xlsx.
+#
+# In the groups list below, `label` is also optional — omit it or leave it empty:
+#   - code: A2              ← code only, no label
+#   - code: R2
+#     label: 修正 Edit     ← code + label
+groups: []
+
+# Optional: patterns for auto-detecting groups in BD content.
+# Used by `generate` Step 2 when `group_type` is `none` and `groups` is empty.
+# The agent scans BD.md for these patterns to suggest grouping.
+#
+# When empty (default), the agent uses generic heuristic scanning
+# (looks for repeated structural blocks, heading prefixes, etc.)
+# without assuming any specific naming convention.
+#
+# Set explicit patterns when your BD uses project-specific markers:
+#
+# Example (Japanese project with A2/R2 CRUD modes):
+#   group_detection_patterns:
+#     - "_A2"
+#     - "_R2"
+#     - "新規"
+#     - "修正"
+#     - "(A2)"
+#     - "(R2)"
+#
+# Example (English project with role prefixes):
+#   group_detection_patterns:
+#     - "Admin:"
+#     - "Staff:"
+#     - "[ADMIN]"
+#     - "[STAFF]"
+group_detection_patterns: []
+
+# Optional: per-sheet column map overrides for xlsx export.
+# Keys map field names to 1-based column numbers in the xlsx template.
+# Only override if your template differs from the default layout.
+#
+# Default GUI columns: tc_id=1, precondition=2, title=3, steps=4, expected=5
+# Default FUNC columns: tc_id=1, precondition=2, title=3, steps=4, expected=5
+#
+# export_column_map:
+#   gui:
+#     tc_id: 1
+#     precondition: 2
+#     title: 3
+#     steps: 4
+#     expected: 5
+#   function:
+#     tc_id: 1
+#     precondition: 2
+#     title: 3
+#     steps: 4
+#     expected: 5

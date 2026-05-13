@@ -1,0 +1,30 @@
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.ChangeTracking;
+using OrderMgmt.Domain.Entities.Catalog;
+using OrderMgmt.Domain.Entities.Identity;
+using OrderMgmt.Domain.Entities.Sales;
+
+namespace OrderMgmt.Application.Common.Interfaces;
+
+public interface IAppDbContext
+{
+    DbSet<User> Users { get; }
+    DbSet<Role> Roles { get; }
+    DbSet<Permission> Permissions { get; }
+    DbSet<UserRole> UserRoles { get; }
+    DbSet<RolePermission> RolePermissions { get; }
+    DbSet<RefreshToken> RefreshTokens { get; }
+
+    DbSet<Customer> Customers { get; }
+    DbSet<CustomerAddress> CustomerAddresses { get; }
+    DbSet<Product> Products { get; }
+    DbSet<ProductGroup> ProductGroups { get; }
+    DbSet<Unit> Units { get; }
+
+    DbSet<Quotation> Quotations { get; }
+    DbSet<QuotationLine> QuotationLines { get; }
+
+    EntityEntry<TEntity> Entry<TEntity>(TEntity entity) where TEntity : class;
+
+    Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
+}

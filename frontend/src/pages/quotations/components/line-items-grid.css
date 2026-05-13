@@ -1,0 +1,288 @@
+/* line-items-grid.css
+ * Scoped styles cho bang "Chi tiet hang hoa" - mirror phan "Hach toan"
+ * cua docs/bd/ui_form_them_moi_phieu_thu_html.html.
+ *
+ * Colors bridge to shadcn HSL tokens (--border, --muted, --accent, ...)
+ * so the grid follows theme (incl. dark mode). The two yellow/blue cell
+ * focus highlights stay hardcoded - they are intentional spreadsheet
+ * affordances kept identical across themes.
+ */
+
+.accounting-grid-wrap {
+  overflow-x: auto;
+  border-top: 1px solid hsl(var(--border));
+}
+
+.accounting-grid {
+  width: 100%;
+  min-width: 1180px;
+  border-collapse: collapse;
+  table-layout: fixed;
+  font-family: inherit;
+  font-size: 13px;
+  color: hsl(var(--foreground));
+}
+
+.accounting-grid th,
+.accounting-grid td {
+  border-right: 1px solid hsl(var(--border));
+  border-bottom: 1px solid hsl(var(--border));
+  padding: 0;
+  height: 34px;
+  background: hsl(var(--card));
+}
+
+.accounting-grid th {
+  background: hsl(var(--muted));
+  color: hsl(var(--foreground));
+  font-weight: 600;
+  text-align: center;
+  padding: 8px 6px;
+}
+
+.accounting-grid thead th {
+  scroll-margin-top: 0;
+}
+
+.accounting-grid tr:hover td {
+  background: hsl(var(--accent) / 0.4);
+}
+
+.accounting-grid td.row-no,
+.accounting-grid th.row-no {
+  width: 46px;
+  text-align: center;
+  color: hsl(var(--muted-foreground));
+  background: hsl(var(--muted) / 0.5);
+  font-weight: 600;
+}
+
+.accounting-grid .cell-input {
+  width: 100%;
+  height: 33px;
+  border: 0;
+  padding: 0 8px;
+  font-family: inherit;
+  font-size: 13px;
+  color: inherit;
+  background: transparent;
+  outline: none;
+  box-sizing: border-box;
+}
+
+.accounting-grid .cell-input:focus {
+  background: #fff8dc;
+  box-shadow: inset 0 0 0 2px hsl(var(--ring));
+}
+
+.accounting-grid .cell-number,
+.accounting-grid .cell-number .cell-input {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.accounting-grid .cell-readonly {
+  padding: 0 8px;
+  display: flex;
+  align-items: center;
+  height: 33px;
+  color: hsl(var(--muted-foreground));
+  font-size: 12.5px;
+}
+
+.accounting-grid .cell-readonly.cell-number {
+  justify-content: flex-end;
+  color: hsl(var(--foreground));
+  font-size: 13px;
+}
+
+/* Stacked "Thành tiền" cell — keeps row height stable whether or not
+ * the profit (LN) sub-row is present. */
+.accounting-grid .cell-total-stack {
+  height: 34px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 0 8px;
+  gap: 1px;
+}
+
+.accounting-grid .cell-total-main {
+  text-align: right;
+  font-size: 13px;
+  color: hsl(var(--foreground));
+  line-height: 1.15;
+}
+
+.accounting-grid .cell-total-meta {
+  text-align: right;
+  font-size: 11px;
+  color: hsl(var(--muted-foreground));
+  line-height: 1.15;
+}
+
+.accounting-grid .dxr-cell {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  height: 33px;
+}
+
+.accounting-grid .dxr-cell .cell-input {
+  border-right: 1px solid hsl(var(--border));
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.accounting-grid .dxr-cell .cell-input:last-child {
+  border-right: 0;
+}
+
+.accounting-grid .cell-action {
+  width: 46px;
+  text-align: center;
+}
+
+.accounting-grid .cell-action button {
+  width: 28px;
+  height: 28px;
+  border: 0;
+  background: transparent;
+  color: hsl(var(--muted-foreground));
+  cursor: pointer;
+  border-radius: 4px;
+}
+
+.accounting-grid .cell-action button:hover {
+  background: hsl(var(--accent));
+  color: hsl(var(--destructive));
+}
+
+.accounting-grid .cell-action button:focus-visible {
+  outline: 2px solid hsl(var(--ring));
+  outline-offset: 1px;
+  color: hsl(var(--destructive));
+}
+
+.accounting-grid .empty-placeholder {
+  text-align: center;
+  color: hsl(var(--muted-foreground));
+  padding: 14px 12px;
+  background: hsl(var(--accent) / 0.3);
+}
+
+.accounting-grid .empty-placeholder-link {
+  background: none;
+  border: 0;
+  padding: 0;
+  color: hsl(var(--primary));
+  cursor: pointer;
+  font-family: inherit;
+  font-size: inherit;
+  text-decoration: underline;
+}
+
+.accounting-grid .empty-placeholder-link:hover,
+.accounting-grid .empty-placeholder-link:focus-visible {
+  outline: none;
+  color: hsl(var(--primary));
+  text-decoration: underline;
+  filter: brightness(0.9);
+}
+
+.line-items-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 12px;
+  background: hsl(var(--accent) / 0.3);
+  border: 1px solid hsl(var(--border));
+  border-top: 0;
+  color: hsl(var(--muted-foreground));
+  font-size: 12px;
+}
+
+.line-items-footer strong {
+  color: hsl(var(--foreground));
+  font-size: 13px;
+}
+
+.line-items-footer .keyboard-guide {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+}
+
+.line-items-footer .keyboard-guide .kbd,
+.accounting-grid .kbd {
+  min-width: 18px;
+  padding: 1px 5px;
+  border: 1px solid hsl(var(--border));
+  border-bottom-width: 2px;
+  border-radius: 3px;
+  background: hsl(var(--card));
+  color: hsl(var(--foreground));
+  font-size: 11px;
+  font-family: Consolas, monospace;
+  margin: 0 2px;
+}
+
+.line-items-toolbar {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.line-items-toolbar .lib-btn {
+  height: 30px;
+  border: 1px solid hsl(var(--border));
+  border-radius: 4px;
+  background: hsl(var(--card));
+  padding: 0 10px;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 13px;
+  color: hsl(var(--foreground));
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: border-color .15s, color .15s, background .15s;
+}
+
+.line-items-toolbar .lib-btn:hover,
+.line-items-toolbar .lib-btn:focus-visible {
+  border-color: hsl(var(--ring));
+  color: hsl(var(--primary));
+  background: hsl(var(--accent) / 0.5);
+  outline: none;
+}
+
+.line-items-toolbar .lib-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.line-items-toolbar .lib-btn:disabled:hover,
+.line-items-toolbar .lib-btn:disabled:focus-visible {
+  border-color: hsl(var(--border));
+  color: hsl(var(--foreground));
+  background: hsl(var(--card));
+}
+
+.line-items-toolbar .lib-btn-danger {
+  color: hsl(var(--destructive));
+}
+
+.line-items-toolbar .lib-btn-danger:hover,
+.line-items-toolbar .lib-btn-danger:focus-visible {
+  border-color: hsl(var(--destructive));
+  color: hsl(var(--destructive));
+  background: hsl(var(--destructive) / 0.08);
+}
+
+.accounting-grid .cell-pricing-mode {
+  padding: 0 8px;
+  text-align: center;
+  color: hsl(var(--muted-foreground));
+  font-size: 12.5px;
+}

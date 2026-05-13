@@ -1,0 +1,6 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <RootNamespace>OrderMgmt.Domain</RootNamespace>
+    <AssemblyName>OrderMgmt.Domain</AssemblyName>
+  </PropertyGroup>
+</Project>

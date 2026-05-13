@@ -1,0 +1,1000 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Thêm mới Phiếu thu</title>
+  <style>
+    :root {
+      --primary: #2f80ed;
+      --primary-dark: #1f6fd1;
+      --primary-soft: #eaf3ff;
+      --danger: #d93025;
+      --success: #12805c;
+      --warning: #f2994a;
+      --text: #1f2933;
+      --muted: #6b7280;
+      --border: #d7dde5;
+      --border-dark: #b8c2cc;
+      --bg: #f4f6f8;
+      --panel: #ffffff;
+      --header: #f9fafb;
+      --cell-focus: #fff8dc;
+      --row-hover: #f2f7ff;
+      --shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
+      --radius: 6px;
+      --font: "Segoe UI", Arial, sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: var(--font);
+      background: var(--bg);
+      color: var(--text);
+      font-size: 13px;
+    }
+
+    .page {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .topbar {
+      height: 48px;
+      background: #fff;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 16px;
+      position: sticky;
+      top: 0;
+      z-index: 30;
+    }
+
+    .topbar-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .back-btn {
+      width: 32px;
+      height: 32px;
+      border: 1px solid var(--border);
+      background: #fff;
+      border-radius: var(--radius);
+      cursor: pointer;
+      font-size: 18px;
+    }
+
+    .title-block {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .title {
+      margin: 0;
+      font-size: 18px;
+      font-weight: 650;
+      line-height: 1.2;
+    }
+
+    .subtitle {
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .top-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .status-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      height: 30px;
+      padding: 0 10px;
+      border-radius: 999px;
+      background: #e8f7f0;
+      color: var(--success);
+      border: 1px solid #bce8d2;
+      font-weight: 600;
+    }
+
+    .status-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 999px;
+      background: var(--success);
+    }
+
+    .container {
+      padding: 14px 16px 76px;
+      max-width: 1440px;
+      width: 100%;
+      margin: 0 auto;
+    }
+
+    .summary-row {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 280px;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+
+    .card {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+    }
+
+    .card-header {
+      height: 38px;
+      padding: 0 12px;
+      border-bottom: 1px solid var(--border);
+      background: var(--header);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-weight: 650;
+    }
+
+    .card-body {
+      padding: 12px;
+    }
+
+    .form-grid {
+      display: grid;
+      grid-template-columns: 120px minmax(180px, 1fr) 110px minmax(180px, 1fr) 110px minmax(180px, 1fr);
+      gap: 10px 10px;
+      align-items: center;
+    }
+
+    .label {
+      color: #374151;
+      white-space: nowrap;
+      text-align: right;
+    }
+
+    .required::after {
+      content: " *";
+      color: var(--danger);
+      font-weight: 700;
+    }
+
+    .field,
+    .select,
+    .textarea {
+      width: 100%;
+      border: 1px solid var(--border-dark);
+      border-radius: 4px;
+      height: 30px;
+      padding: 0 8px;
+      font-family: var(--font);
+      font-size: 13px;
+      outline: none;
+      background: #fff;
+      transition: border 0.15s, box-shadow 0.15s, background 0.15s;
+    }
+
+    .field:focus,
+    .select:focus,
+    .textarea:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 2px rgba(47, 128, 237, 0.14);
+      background: #fff;
+    }
+
+    .textarea {
+      height: 56px;
+      padding-top: 6px;
+      resize: vertical;
+      line-height: 1.4;
+    }
+
+    .span-3 {
+      grid-column: span 3;
+    }
+
+    .span-5 {
+      grid-column: span 5;
+    }
+
+    .input-with-action {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 30px;
+      gap: 4px;
+      position: relative;
+    }
+
+    .icon-btn {
+      width: 30px;
+      height: 30px;
+      border: 1px solid var(--border-dark);
+      background: #fff;
+      border-radius: 4px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--primary);
+      font-size: 17px;
+      font-weight: 700;
+    }
+
+    .icon-btn:hover,
+    .icon-btn:focus {
+      background: var(--primary-soft);
+      border-color: var(--primary);
+      outline: none;
+    }
+
+    .autocomplete-popover {
+      position: absolute;
+      left: 0;
+      top: 34px;
+      width: 760px;
+      max-width: calc(100vw - 80px);
+      background: #fff;
+      border: 1px solid var(--primary);
+      border-radius: 4px;
+      box-shadow: var(--shadow);
+      z-index: 50;
+      overflow: hidden;
+    }
+
+    .autocomplete-meta {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 7px 8px;
+      color: var(--muted);
+      border-bottom: 1px solid var(--border);
+      background: #fbfdff;
+      font-size: 12px;
+    }
+
+    .autocomplete-table {
+      width: 100%;
+      border-collapse: collapse;
+      table-layout: fixed;
+      font-size: 12.5px;
+    }
+
+    .autocomplete-table th,
+    .autocomplete-table td {
+      border-bottom: 1px solid #eef1f4;
+      padding: 7px 8px;
+      text-align: left;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .autocomplete-table th {
+      background: #f5f7fa;
+      color: #4b5563;
+      font-weight: 650;
+    }
+
+    .autocomplete-table tr:hover {
+      background: var(--row-hover);
+      cursor: pointer;
+    }
+
+    .autocomplete-table tr.is-active {
+      background: #dcecff;
+      outline: 1px solid var(--primary);
+      outline-offset: -1px;
+    }
+
+    .kbd-hint {
+      display: inline-flex;
+      gap: 5px;
+      align-items: center;
+    }
+
+    .kbd {
+      min-width: 18px;
+      padding: 1px 5px;
+      border: 1px solid var(--border-dark);
+      border-bottom-width: 2px;
+      border-radius: 3px;
+      background: #fff;
+      color: #374151;
+      font-size: 11px;
+      font-family: Consolas, monospace;
+    }
+
+    .amount-panel {
+      min-height: 100%;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .amount-card-body {
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      flex: 1;
+    }
+
+    .amount-label {
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .amount-value {
+      font-size: 32px;
+      font-weight: 750;
+      color: var(--primary-dark);
+      text-align: right;
+      letter-spacing: 0.2px;
+    }
+
+    .posting-box {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 9px 10px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: #fbfdff;
+    }
+
+    .switch {
+      position: relative;
+      width: 42px;
+      height: 22px;
+      display: inline-block;
+    }
+
+    .switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+
+    .slider {
+      position: absolute;
+      cursor: pointer;
+      inset: 0;
+      background: #cbd5e1;
+      transition: 0.2s;
+      border-radius: 999px;
+    }
+
+    .slider::before {
+      position: absolute;
+      content: "";
+      height: 18px;
+      width: 18px;
+      left: 2px;
+      top: 2px;
+      background: white;
+      transition: 0.2s;
+      border-radius: 999px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.22);
+    }
+
+    .switch input:checked + .slider {
+      background: var(--success);
+    }
+
+    .switch input:checked + .slider::before {
+      transform: translateX(20px);
+    }
+
+    .grid-card {
+      margin-top: 12px;
+    }
+
+    .grid-toolbar {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .btn {
+      height: 30px;
+      border: 1px solid var(--border-dark);
+      border-radius: 4px;
+      background: #fff;
+      padding: 0 10px;
+      cursor: pointer;
+      font-family: var(--font);
+      font-size: 13px;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .btn:hover,
+    .btn:focus {
+      border-color: var(--primary);
+      color: var(--primary-dark);
+      background: #f7fbff;
+      outline: none;
+    }
+
+    .btn-primary {
+      background: var(--primary);
+      border-color: var(--primary);
+      color: #fff;
+      font-weight: 650;
+    }
+
+    .btn-primary:hover,
+    .btn-primary:focus {
+      background: var(--primary-dark);
+      border-color: var(--primary-dark);
+      color: #fff;
+    }
+
+    .btn-danger {
+      color: var(--danger);
+    }
+
+    .accounting-grid-wrap {
+      overflow: auto;
+      max-height: 360px;
+      border-top: 1px solid var(--border);
+    }
+
+    .accounting-grid {
+      width: 100%;
+      min-width: 1180px;
+      border-collapse: collapse;
+      table-layout: fixed;
+    }
+
+    .accounting-grid th,
+    .accounting-grid td {
+      border-right: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+      padding: 0;
+      height: 34px;
+    }
+
+    .accounting-grid th {
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      background: #eef2f6;
+      color: #374151;
+      font-weight: 650;
+      text-align: center;
+      padding: 8px 6px;
+    }
+
+    .accounting-grid tr:hover td {
+      background: #fbfdff;
+    }
+
+    .row-no {
+      width: 46px;
+      text-align: center;
+      color: var(--muted);
+      background: #f8fafc;
+      font-weight: 600;
+    }
+
+    .cell-input,
+    .cell-select {
+      width: 100%;
+      height: 33px;
+      border: 0;
+      padding: 0 8px;
+      font-family: var(--font);
+      font-size: 13px;
+      background: transparent;
+      outline: none;
+    }
+
+    .cell-input:focus,
+    .cell-select:focus {
+      background: var(--cell-focus);
+      box-shadow: inset 0 0 0 2px var(--primary);
+    }
+
+    .cell-number {
+      text-align: right;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .cell-error {
+      box-shadow: inset 0 0 0 2px var(--danger);
+      background: #fff5f5 !important;
+    }
+
+    .grid-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 12px;
+      background: #fbfdff;
+      border-top: 1px solid var(--border);
+      color: var(--muted);
+    }
+
+    .keyboard-guide {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+      font-size: 12px;
+    }
+
+    .bottom-bar {
+      position: fixed;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      height: 58px;
+      background: #fff;
+      border-top: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 16px;
+      z-index: 40;
+      box-shadow: 0 -6px 16px rgba(15, 23, 42, 0.06);
+    }
+
+    .bottom-left,
+    .bottom-right {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .hint-text {
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .toast {
+      position: fixed;
+      right: 16px;
+      top: 62px;
+      background: #ecfdf5;
+      color: #065f46;
+      border: 1px solid #a7f3d0;
+      padding: 10px 12px;
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      z-index: 80;
+    }
+
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.35);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 90;
+    }
+
+    .modal {
+      width: 640px;
+      background: #fff;
+      border-radius: 8px;
+      box-shadow: 0 24px 60px rgba(15, 23, 42, 0.28);
+      overflow: hidden;
+    }
+
+    .modal-header,
+    .modal-footer {
+      padding: 12px 14px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: #fbfdff;
+    }
+
+    .modal-footer {
+      border-top: 1px solid var(--border);
+      border-bottom: 0;
+      justify-content: flex-end;
+      gap: 8px;
+    }
+
+    .modal-title {
+      font-size: 16px;
+      font-weight: 700;
+    }
+
+    .quick-form {
+      padding: 14px;
+      display: grid;
+      grid-template-columns: 120px minmax(0, 1fr);
+      gap: 10px;
+      align-items: center;
+    }
+
+    @media (max-width: 1024px) {
+      .summary-row {
+        grid-template-columns: 1fr;
+      }
+
+      .form-grid {
+        grid-template-columns: 110px minmax(0, 1fr) 110px minmax(0, 1fr);
+      }
+
+      .span-5,
+      .span-3 {
+        grid-column: span 3;
+      }
+    }
+
+    @media (max-width: 720px) {
+      .form-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .label {
+        text-align: left;
+      }
+
+      .span-5,
+      .span-3 {
+        grid-column: span 1;
+      }
+
+      .bottom-bar {
+        height: auto;
+        padding: 10px;
+        flex-direction: column;
+        align-items: stretch;
+      }
+
+      .bottom-right,
+      .bottom-left {
+        justify-content: flex-end;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <header class="topbar">
+      <div class="topbar-left">
+        <button class="back-btn" aria-label="Quay lại">‹</button>
+        <div class="title-block">
+          <h1 class="title">Thêm mới Phiếu thu</h1>
+          <div class="subtitle">Loại nghiệp vụ mặc định: 5. Thu khác</div>
+        </div>
+      </div>
+
+      <div class="top-actions">
+        <div class="status-pill" title="Mặc định ghi sổ khi lưu">
+          <span class="status-dot"></span>
+          Đã chọn ghi sổ
+        </div>
+        <button class="btn">⚙ Cấu hình in</button>
+      </div>
+    </header>
+
+    <main class="container">
+      <section class="summary-row">
+        <div class="card">
+          <div class="card-header">
+            <span>Thông tin chung</span>
+            <span class="hint-text">Các trường có dấu * là bắt buộc</span>
+          </div>
+
+          <div class="card-body">
+            <div class="form-grid">
+              <label class="label required" for="businessType">Loại nghiệp vụ</label>
+              <select id="businessType" class="select">
+                <option selected>5. Thu khác</option>
+                <option>1. Thu tiền khách hàng</option>
+                <option>2. Thu hoàn ứng</option>
+              </select>
+
+              <label class="label required" for="objectCode">Mã đối tượng</label>
+              <div class="input-with-action">
+                <input
+                  id="objectCode"
+                  class="field"
+                  value="CTYABC"
+                  placeholder="Nhập mã, tên, MST, địa chỉ, SĐT..."
+                  autocomplete="off"
+                />
+                <button class="icon-btn" aria-label="Thêm mới khách hàng" title="Thêm mới khách hàng">+</button>
+
+                <div class="autocomplete-popover" aria-label="Danh sách khách hàng">
+                  <div class="autocomplete-meta">
+                    <span>Tìm thấy 3 khách hàng đang hoạt động</span>
+                    <span class="kbd-hint"><span class="kbd">Tab</span> duyệt dòng <span class="kbd">Enter</span> chọn <span class="kbd">Esc</span> đóng</span>
+                  </div>
+                  <table class="autocomplete-table">
+                    <thead>
+                      <tr>
+                        <th style="width: 95px;">Mã ĐT</th>
+                        <th style="width: 190px;">Tên đối tượng</th>
+                        <th style="width: 120px;">Mã số thuế</th>
+                        <th>Địa chỉ</th>
+                        <th style="width: 105px;">Điện thoại</th>
+                        <th style="width: 95px;">Loại</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr class="is-active">
+                        <td>CTYABC</td>
+                        <td>Công ty ABC</td>
+                        <td>0101234567</td>
+                        <td>Ba Đình, Hà Nội</td>
+                        <td>0912345678</td>
+                        <td>Khách hàng</td>
+                      </tr>
+                      <tr>
+                        <td>ABC001</td>
+                        <td>Công ty TNHH ABC Việt Nam</td>
+                        <td>0107654321</td>
+                        <td>Cầu Giấy, Hà Nội</td>
+                        <td>0988123456</td>
+                        <td>Khách hàng</td>
+                      </tr>
+                      <tr>
+                        <td>ABC_HCM</td>
+                        <td>Chi nhánh ABC Hồ Chí Minh</td>
+                        <td>0312345678</td>
+                        <td>Quận 1, TP. Hồ Chí Minh</td>
+                        <td>0901122334</td>
+                        <td>Khách hàng</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              <label class="label required" for="objectName">Tên đối tượng</label>
+              <input id="objectName" class="field" value="Công ty ABC" />
+
+              <label class="label" for="address">Địa chỉ</label>
+              <input id="address" class="field span-5" value="Ba Đình, Hà Nội" />
+
+              <label class="label required" for="payer">Người nộp</label>
+              <input id="payer" class="field" placeholder="Nhập người nộp" />
+
+              <label class="label required" for="employee">Nhân viên</label>
+              <input id="employee" class="field" value="Trần Thị Như Ngọc" placeholder="Chọn nhân viên" />
+
+              <label class="label" for="attached">Kèm theo</label>
+              <input id="attached" class="field" placeholder="VD: 01 chứng từ" />
+
+              <label class="label required" for="reason">Lý do nộp</label>
+              <textarea id="reason" class="textarea span-5">Thu tiền của Công ty ABC</textarea>
+
+              <label class="label" for="originalDoc">Chứng từ gốc</label>
+              <input id="originalDoc" class="field span-5" placeholder="Số hóa đơn, hợp đồng, biên bản đối chiếu..." />
+            </div>
+          </div>
+        </div>
+
+        <aside class="card amount-panel">
+          <div class="card-header">Thông tin chứng từ</div>
+          <div class="amount-card-body">
+            <div class="form-grid" style="grid-template-columns: 100px minmax(0,1fr); gap: 10px;">
+              <label class="label required" for="postedDate">Ngày HT</label>
+              <input id="postedDate" class="field" value="13/05/2026" />
+
+              <label class="label required" for="voucherDate">Ngày phiếu</label>
+              <input id="voucherDate" class="field" value="13/05/2026" />
+
+              <label class="label required" for="voucherNo">Số phiếu</label>
+              <input id="voucherNo" class="field" value="PT0163_255" />
+            </div>
+
+            <div class="posting-box">
+              <div>
+                <div style="font-weight: 650;">Ghi sổ</div>
+                <div class="hint-text">Tắt để lưu Chưa ghi sổ</div>
+              </div>
+              <label class="switch" aria-label="Ghi sổ">
+                <input type="checkbox" checked />
+                <span class="slider"></span>
+              </label>
+            </div>
+
+            <div style="margin-top: auto;">
+              <div class="amount-label">Tổng tiền</div>
+              <div class="amount-value">75,0</div>
+            </div>
+          </div>
+        </aside>
+      </section>
+
+      <section class="card grid-card">
+        <div class="card-header">
+          <span>Hạch toán</span>
+          <div class="grid-toolbar">
+            <button class="btn">＋ Thêm dòng</button>
+            <button class="btn btn-danger">🗑 Xóa dòng</button>
+          </div>
+        </div>
+
+        <div class="accounting-grid-wrap">
+          <table class="accounting-grid">
+            <thead>
+              <tr>
+                <th style="width: 46px;">#</th>
+                <th style="width: 290px;">Diễn giải *</th>
+                <th style="width: 90px;">TK Nợ *</th>
+                <th style="width: 90px;">TK Có *</th>
+                <th style="width: 130px;">Số tiền</th>
+                <th style="width: 250px;">Nghiệp vụ *</th>
+                <th style="width: 120px;">Đối tượng</th>
+                <th style="width: 240px;">Tên đối tượng</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td class="row-no">1</td>
+                <td><input class="cell-input" value="Thu tiền của Công ty ABC" /></td>
+                <td><input class="cell-input" value="1111" /></td>
+                <td><input class="cell-input" value="711" /></td>
+                <td><input class="cell-input cell-number" value="10,0" /></td>
+                <td>
+                  <select class="cell-select">
+                    <option selected>Chiết khấu thương mại hàng...</option>
+                    <option>Thu khác</option>
+                    <option>Thu hoàn ứng</option>
+                  </select>
+                </td>
+                <td><input class="cell-input" value="CTYABC" /></td>
+                <td><input class="cell-input" value="Công ty ABC" /></td>
+              </tr>
+              <tr>
+                <td class="row-no">2</td>
+                <td><input class="cell-input" value="Thu tiền của Công ty ABC" /></td>
+                <td><input class="cell-input" value="1111" /></td>
+                <td><input class="cell-input" value="515" /></td>
+                <td><input class="cell-input cell-number" value="10,0" /></td>
+                <td>
+                  <select class="cell-select">
+                    <option selected>Chiết khấu thương mại hàng...</option>
+                    <option>Thu khác</option>
+                    <option>Thu hoàn ứng</option>
+                  </select>
+                </td>
+                <td><input class="cell-input" value="CTYABC" /></td>
+                <td><input class="cell-input" value="Công ty ABC" /></td>
+              </tr>
+              <tr>
+                <td class="row-no">3</td>
+                <td><input class="cell-input" value="Thu tiền của Công ty ABC" /></td>
+                <td><input class="cell-input" value="1111" /></td>
+                <td><input class="cell-input" value="711" /></td>
+                <td><input class="cell-input cell-number" value="10,0" /></td>
+                <td>
+                  <select class="cell-select">
+                    <option selected>Chiết khấu thương mại hàng...</option>
+                    <option>Thu khác</option>
+                    <option>Thu hoàn ứng</option>
+                  </select>
+                </td>
+                <td><input class="cell-input" value="CTYABC" /></td>
+                <td><input class="cell-input" value="Công ty ABC" /></td>
+              </tr>
+              <tr>
+                <td class="row-no">4</td>
+                <td><input class="cell-input" value="Thu tiền của Công ty ABC" /></td>
+                <td><input class="cell-input" value="1111" /></td>
+                <td><input class="cell-input cell-error" value="" placeholder="Bắt buộc" /></td>
+                <td><input class="cell-input cell-number" value="45,0" /></td>
+                <td>
+                  <select class="cell-select">
+                    <option selected>Chiết khấu thương mại hàng...</option>
+                    <option>Thu khác</option>
+                    <option>Thu hoàn ứng</option>
+                  </select>
+                </td>
+                <td><input class="cell-input" value="CTYABC" /></td>
+                <td><input class="cell-input" value="Công ty ABC" /></td>
+              </tr>
+              <tr>
+                <td class="row-no">5</td>
+                <td><input class="cell-input" placeholder="Tự copy từ dòng trước khi thêm dòng" /></td>
+                <td><input class="cell-input" placeholder="1111" /></td>
+                <td><input class="cell-input" placeholder="Chọn TK Có" /></td>
+                <td><input class="cell-input cell-number" placeholder="0,0" /></td>
+                <td>
+                  <select class="cell-select">
+                    <option>Chọn nghiệp vụ</option>
+                    <option>Chiết khấu thương mại hàng...</option>
+                    <option>Thu khác</option>
+                  </select>
+                </td>
+                <td><input class="cell-input" placeholder="CTYABC" /></td>
+                <td><input class="cell-input" placeholder="Công ty ABC" /></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="grid-footer">
+          <div class="keyboard-guide">
+            <span><span class="kbd">Tab</span> duyệt dòng autocomplete</span>
+            <span><span class="kbd">Enter</span> chọn</span>
+            <span><span class="kbd">Ctrl</span> + <span class="kbd">S</span> Cất</span>
+            <span><span class="kbd">Ctrl</span> + <span class="kbd">Enter</span> Cất và Thêm</span>
+            <span><span class="kbd">Insert</span> Thêm dòng</span>
+            <span><span class="kbd">Delete</span> Xóa dòng</span>
+          </div>
+          <strong>Tổng: 75,0</strong>
+        </div>
+      </section>
+    </main>
+
+    <footer class="bottom-bar">
+      <div class="bottom-left">
+        <span class="hint-text">Config user: Tự động in sau khi cất</span>
+        <label class="switch" aria-label="Tự động in sau khi cất">
+          <input type="checkbox" />
+          <span class="slider"></span>
+        </label>
+      </div>
+
+      <div class="bottom-right">
+        <button class="btn">Hủy</button>
+        <button class="btn">Cất <span class="hint-text">Ctrl+S</span></button>
+        <button class="btn btn-primary">Cất và Thêm <span style="opacity: .85;">Ctrl+Enter</span></button>
+      </div>
+    </footer>
+  </div>
+
+  <div class="toast" role="status">
+    ✅ Cất phiếu thu thành công.
+  </div>
+
+  <div class="modal-backdrop" aria-hidden="true">
+    <div class="modal">
+      <div class="modal-header">
+        <div class="modal-title">Thêm mới khách hàng</div>
+        <button class="btn">×</button>
+      </div>
+      <div class="quick-form">
+        <label class="label required">Loại đối tượng</label>
+        <input class="field" value="Khách hàng" readonly />
+
+        <label class="label required">Mã khách hàng</label>
+        <input class="field" placeholder="VD: KH001" />
+
+        <label class="label required">Tên khách hàng</label>
+        <input class="field" placeholder="Nhập tên khách hàng" />
+
+        <label class="label">Mã số thuế</label>
+        <input class="field" placeholder="Nhập mã số thuế" />
+
+        <label class="label">Địa chỉ</label>
+        <input class="field" placeholder="Nhập địa chỉ" />
+
+        <label class="label">Điện thoại</label>
+        <input class="field" placeholder="Nhập điện thoại" />
+      </div>
+      <div class="modal-footer">
+        <button class="btn">Hủy</button>
+        <button class="btn btn-primary">Lưu và chọn</button>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

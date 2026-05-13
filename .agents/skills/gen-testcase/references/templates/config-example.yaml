@@ -1,0 +1,54 @@
+screen_name: "Create Treatment Report"
+screen_id: "SCR-167"
+mode: web                  # web | mobile — affects generated TC style
+# Optional: ordered list of BD source files to merge during convert.
+# Files are merged in list order into a single BD.md.
+# Each path is relative to the module directory.
+bd_files:
+  - input/BD_Common.xlsx
+  - input/BD_SCR167_A2_Create.xlsx
+  - input/BD_SCR167_R2_Edit.xlsx
+
+input_format: auto         # auto | xlsx | docx | pdf | md — auto-detect from file extension
+# Custom test environments (overrides settings.yaml defaults for this module)
+environments:
+  - Chrome
+  - Safari
+project_name: "Medix_Hitowa"
+version: "1.0"            # X.Y format. Auto-incremented by export when existing output detected.
+author: "khanh.dao"
+reviewer: "xuan.nguyen"
+created_date: "2026-04-13"
+
+# Optional: enrichment sources for richer TC generation context.
+# These are supplementary — BD file remains the primary source.
+enrichment:
+  figma: ""
+  jira:
+    project: "HITOWA"
+    tickets:
+      - "HITOWA-421"
+      - "HITOWA-422"
+  screenshots:
+    - input/screenshots/scr167-create-form.png
+    - input/screenshots/scr167-edit-form.png
+
+# Optional: semantic label of the grouping dimension used in this module.
+# none | mode | role | service | phase
+group_type: mode
+
+# Optional: ordered list of groups.
+groups:
+  - code: A2
+    label: "新規 Create"
+  - code: R2
+    label: "修正 Edit"
+
+# Optional: patterns for auto-detecting groups in BD content.
+group_detection_patterns:
+  - "_A2"
+  - "_R2"
+  - "(A2)"
+  - "(R2)"
+  - "新規"
+  - "修正"

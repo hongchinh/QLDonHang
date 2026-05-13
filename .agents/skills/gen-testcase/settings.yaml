@@ -1,0 +1,323 @@
+# =============================================================================
+# gen-testcase — Global Settings
+# =============================================================================
+# Skill-level defaults used by scripts and workflows. Per-module config.yaml
+# can override some of these (e.g. export_column_map, export_sheets).
+#
+# To customize: edit values here. Changes take effect on the next run.
+# =============================================================================
+
+# ---------------------------------------------------------------------------
+# XLSX Export Defaults
+# ---------------------------------------------------------------------------
+export:
+  # Default column positions (1-based) per sheet type.
+  # Per-module config.yaml `export_column_map` overrides these.
+  column_defaults:
+    gui:
+      tc_id: 1
+      precondition: 2
+      title: 3
+      steps: 4
+      expected: 5
+    function:
+      tc_id: 1
+      precondition: 2
+      title: 3
+      steps: 4
+      expected: 5
+
+  # Header text → field key mapping for auto-detecting columns from template
+  header_texts:
+    "TC ID": "tc_id"
+    "Test Title/Summary of test cases": "title"
+    "Pre-conditions": "precondition"
+    "Test Steps": "steps"
+    "Expected Result": "expected"
+
+  # Default sheet names in the DJP xlsx template.
+  # Per-module config.yaml `export_sheets` overrides these.
+  sheet_names:
+    cover: "Cover"
+    changed_history: "Changed History"
+    test_report: "Test Report"
+    common: "Common"
+    gui: "GUI"
+    function: "FUNC"
+    screen_layout: "Screen Layout"
+
+  # Row number containing column headers in the xlsx template
+  header_row: 5
+
+  # Fallback max column count when worksheet reports None
+  max_column_fallback: 17
+
+  # Max columns to scan during header auto-detection
+  max_column_scan: 20
+
+  # Section detection in xlsx template
+  section_detection:
+    # Minimum column span for merged cell to be a section header
+    merge_span_min: 10
+    # Row range to scan for section headers (merged cell strategy)
+    merged_scan_start: 6
+    merged_scan_end: 15
+    # Row range to scan for section headers (pattern strategy)
+    pattern_scan_start: 5
+    pattern_scan_end: 20
+    # Window size after section header to find subsection/TC rows
+    subsection_window: 6
+
+  # Row range to scan for COUNTIF/COUNTA formulas to expand
+  formula_scan_max_row: 4
+
+  # Fallback section/subsection/TC row indices when detection fails
+  fallback_rows:
+    section: 7
+    subsection: 8
+    tc: 9
+
+# ---------------------------------------------------------------------------
+# TC ID Configuration
+# ---------------------------------------------------------------------------
+tc_id:
+  prefixes:
+    gui: "GUI_"
+    function: "FUNC_"
+    common: "Common_"
+
+  # Default group code when no explicit groups exist
+  default_group_code: "N/A"
+
+# ---------------------------------------------------------------------------
+# Test Environments
+# ---------------------------------------------------------------------------
+# Default test environments per mode. Used by export script to generate
+# dynamic status columns in xlsx output.
+#
+# Resolution chain (export-tc-to-xlsx.py):
+#   1. config.yaml `environments` list (if non-empty)
+#   2. settings.environments.{mode} (e.g., mode=web → web list)
+#   3. settings.environments.all (ultimate fallback)
+#
+# Each environment name becomes a status column header in Test Round blocks.
+# Status values: Untested, OK, NG, N/A.
+environments:
+  web:
+    - Chrome
+    - Safari
+  mobile:
+    - IOS
+    - Android
+  all:
+    - IOS/Chrome
+    - Android/Safari
+
+# ---------------------------------------------------------------------------
+# Markdown Parsing Patterns (used by export script)
+# ---------------------------------------------------------------------------
+markdown_patterns:
+  group: '^## Group:\s+(\S+)(?:\s*—\s*(.+?))?\s*$'
+  section: '^## ([A-Z]\..*)'
+  subsection: '^### \*{0,2}([A-Z](?:\.\d+)+)\s+(.+?)\*{0,2}\s*$'
+  tc_id: '^### ((?:GUI_|FUNC_)?[A-Z](?:\.\d+)+_\d+)\s*$'
+  precondition: '^> Pre-condition:\s*(.*)'
+  field: '^- \*\*(\w+):\*\*\s*(.*)'
+  template_section_id: '^[A-Z](?:\.\d+)+$'
+  sheet_tc_id: '^(?:(?:GUI|FUNC|Common)_)?(?:[A-Z](?:\.\d+)+_\d+|\d+_\d+)$'
+  # Used in xlsx template for detecting subsection/TC rows
+  subsection_detect: '^(?:FUNC |GUI |Common )?[A-Z]\.\d+'
+  tc_row_detect: '^(?:FUNC_|GUI_|Common_)[\w.]+_\d+'
+
+# ---------------------------------------------------------------------------
+# BD Analysis (extract-bd-summary.py)
+# ---------------------------------------------------------------------------
+bd_analysis:
+  field_type_keywords:
+    text:
+      - "テキスト"
+      - "text"
+      - "textbox"
+      - "入力"
+      - "フリーテキスト"
+      - "free text"
+      - "nhập liệu"
+      - "văn bản"
+      - "ô nhập"
+    dropdown:
+      - "ドロップダウン"
+      - "dropdown"
+      - "select"
+      - "選択"
+      - "コンボ"
+      - "combo"
+      - "danh sách"
+      - "lựa chọn"
+      - "chọn từ"
+    checkbox:
+      - "チェックボックス"
+      - "checkbox"
+      - "チェック"
+      - "hộp kiểm"
+      - "đánh dấu"
+    radio:
+      - "ラジオ"
+      - "radio"
+      - "radio button"
+      - "nút chọn"
+    date:
+      - "日付"
+      - "date"
+      - "カレンダー"
+      - "calendar"
+      - "年月日"
+      - "datepicker"
+      - "ngày"
+      - "ngày tháng"
+      - "lịch"
+      - "chọn ngày"
+    number:
+      - "数値"
+      - "number"
+      - "数字"
+      - "numeric"
+      - "整数"
+      - "int"
+      - "số"
+      - "số nguyên"
+      - "số thực"
+
+  validation_keywords:
+    required:
+      - "必須"
+      - "required"
+      - "必要"
+      - "必須入力"
+      - "必須項目"
+      - "bắt buộc"
+      - "không được trống"
+      - "phải nhập"
+    format:
+      - "形式"
+      - "format"
+      - "フォーマット"
+      - "正規表現"
+      - "regex"
+      - "pattern"
+      - "định dạng"
+      - "đúng dạng"
+    maxlength:
+      - "最大"
+      - "maxlength"
+      - "max length"
+      - "文字以内"
+      - "文字数"
+      - "tối đa"
+      - "ký tự"
+      - "độ dài"
+    none:
+      - "任意"
+      - "optional"
+      - "不要"
+      - "không bắt buộc"
+      - "tuỳ chọn"
+      - "có thể bỏ trống"
+
+  navigation_keywords:
+    - "遷移"
+    - "画面"
+    - "モーダル"
+    - "ダイアログ"
+    - "open"
+    - "navigate"
+    - "transition"
+    - "移動"
+    - "表示する"
+    - "ボタン"
+    - "button"
+    - "link"
+    - "リンク"
+    - "điều hướng"
+    - "mở màn hình"
+    - "chuyển đến"
+    - "trở về"
+    - "quay lại"
+    - "click"
+    - "nút"
+    - "liên kết"
+
+  # Thresholds for BD content analysis
+  field_label_max_length: 40        # Max chars for key-value field label detection
+  key_value_section_threshold: 0.6  # Min ratio of qualifying rows for key-value classification
+  section_summary_max_chars: 120    # Max chars for section summary text
+  field_name_truncate_length: 60    # Max chars when extracting field names from table cells
+
+# ---------------------------------------------------------------------------
+# BD Conversion (convert-bd-to-md.py)
+# ---------------------------------------------------------------------------
+bd_conversion:
+  key_value_max_cols: 3             # Max used columns for key_value classification
+  data_table_min_cols: 4            # Min used columns for data_table classification
+  min_rows_for_classification: 2    # Min rows to attempt section type classification
+  key_value_qualifying_threshold: 0.6  # Min ratio of qualifying rows
+  field_label_max_chars: 40         # Max chars for field label in key-value detection
+
+# ---------------------------------------------------------------------------
+# Generation Workflow Thresholds
+# ---------------------------------------------------------------------------
+generation:
+  # BD.md line threshold — below this, skip bd-summary.json extraction
+  bd_summary_min_lines: 200
+
+  # Max BD items to qualify as "small screen" (single Write call allowed)
+  small_screen_item_threshold: 15
+
+  # Line count above which incremental write strategy is required
+  large_output_line_threshold: 400
+
+  # TC count above which a section should be split into sub-batches
+  large_section_tc_threshold: 200
+
+  # Batch size for writing large validation sections
+  validation_section_batch_size: 50
+
+  # Maximum clarification questions per generate run
+  max_clarification_questions: 7
+
+  # Default Function TC section structure
+  function_sections:
+    A.1: "Screen initialization"
+    A.2: "Function flow"
+    A.3: "Validation"
+
+  # Default Function flow sub-subsections (under A.2)
+  function_flow_subsections:
+    A.2.1: "Create"
+    A.2.2: "Update"
+    A.2.3: "Delete"
+
+  # Default Validation sub-subsections (under A.3)
+  validation_subsections:
+    A.3.1: "Required"
+    A.3.2: "Maxlength"
+    A.3.3: "Text"
+    A.3.4: "Listbox"
+    A.3.5: "Checkbox"
+    A.3.6: "Calendar"
+    A.3.7: "Timepicker"
+    A.3.8: "Start/End time"
+
+# ---------------------------------------------------------------------------
+# Review Workflow Thresholds
+# ---------------------------------------------------------------------------
+review:
+  # Light review conditions (ALL must be true to qualify)
+  light_mode:
+    bd_max_lines: 200
+    bd_max_items: 15
+
+  # Max re-review cycles before forcing export
+  max_revert_cycles: 2
+
+  # Duplicate detection scope
+  duplicate_check_scope: "same_subsection"

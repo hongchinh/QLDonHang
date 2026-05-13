@@ -1,0 +1,47 @@
+.form-inline-grid {
+  display: grid;
+  gap: 8px 10px;
+  align-items: center;
+}
+
+.form-inline-grid .field-label {
+  text-align: right;
+  white-space: nowrap;
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+  color: hsl(var(--muted-foreground));
+}
+
+.form-inline-grid .field-label.required::after {
+  content: " *";
+  color: hsl(var(--destructive));
+  font-weight: 700;
+}
+
+.form-inline-grid .field-message {
+  grid-column: 2 / -1;
+  font-size: 0.75rem;
+  line-height: 1rem;
+  margin-top: -2px;
+}
+
+.form-inline-grid .field-message-code {
+  grid-column: 2 / 3;
+}
+
+.form-inline-grid .field-span-rest {
+  grid-column: span 3;
+}
+
+@media (max-width: 1023px) {
+  .form-inline-grid.customer-row,
+  .form-inline-grid.info-row-2,
+  .form-inline-grid.info-row-3 {
+    grid-template-columns: 90px 1fr !important;
+  }
+
+  .form-inline-grid .field-span-rest,
+  .form-inline-grid .field-message-code {
+    grid-column: 2 / -1;
+  }
+}

@@ -1,0 +1,196 @@
+using System.Text;
+using System.Threading.RateLimiting;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.RateLimiting;
+using Microsoft.IdentityModel.Tokens;
+using Microsoft.OpenApi.Models;
+using OrderMgmt.Application;
+using OrderMgmt.Application.Common.Interfaces;
+using OrderMgmt.Infrastructure;
+using OrderMgmt.Infrastructure.Identity;
+using OrderMgmt.Infrastructure.Persistence;
+using OrderMgmt.Infrastructure.Persistence.Seed;
+using OrderMgmt.WebApi.Authorization;
+using OrderMgmt.WebApi.Middleware;
+using OrderMgmt.WebApi.Services;
+using Serilog;
+
+var builder = WebApplication.CreateBuilder(args);
+
+// Serilog
+const string LogTemplate =
+    "[{Timestamp:HH:mm:ss} {Level:u3}] [{CorrelationId}] [{UserId}] {SourceContext} {Message:lj}{NewLine}{Exception}";
+
+builder.Host.UseSerilog((ctx, lc) => lc
+    .ReadFrom.Configuration(ctx.Configuration)
+    .Enrich.FromLogContext()
+    .WriteTo.Console(outputTemplate: LogTemplate)
+    .WriteTo.File("logs/qldh-.log",
+        outputTemplate: LogTemplate,
+        rollingInterval: RollingInterval.Day,
+        retainedFileCountLimit: 14));
+
+// Application + Infrastructure
+builder.Services.AddApplication();
+builder.Services.AddInfrastructure(builder.Configuration);
+
+// HTTP context & current user
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddScoped<ICurrentUser, CurrentUser>();
+
+// JWT auth — fail fast if configuration is missing/weak (eager guard).
+builder.Configuration.GetSection(JwtOptions.SectionName).Get<JwtOptions>()?.Validate();
+
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJwtBearer();
+
+// Bind JwtBearerOptions lazily from IOptions<JwtOptions> so test overrides (in-memory config)
+// take effect — the options are resolved at request time, not at startup.
+var isDev = builder.Environment.IsDevelopment();
+builder.Services.AddOptions<JwtBearerOptions>(JwtBearerDefaults.AuthenticationScheme)
+    .Configure<Microsoft.Extensions.Options.IOptionsMonitor<JwtOptions>>((bearer, monitor) =>
+    {
+        var jwt = monitor.CurrentValue;
+        jwt.Validate();
+        bearer.RequireHttpsMetadata = !isDev;
+        bearer.SaveToken = true;
+        bearer.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidateAudience = true,
+            ValidateLifetime = true,
+            ValidateIssuerSigningKey = true,
+            ValidIssuer = jwt.Issuer,
+            ValidAudience = jwt.Audience,
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwt.Secret)),
+            ClockSkew = TimeSpan.FromSeconds(30),
+        };
+    });
+
+builder.Services.AddAuthorization();
+builder.Services.AddSingleton<IAuthorizationPolicyProvider, PermissionPolicyProvider>();
+builder.Services.AddScoped<IAuthorizationHandler, PermissionAuthorizationHandler>();
+
+// Rate limiting — brute-force protection for auth endpoints
+builder.Services.AddRateLimiter(o =>
+{
+    o.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+    o.AddPolicy(RateLimitPolicies.Login, httpContext =>
+    {
+        var key = httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown";
+        return RateLimitPartition.GetFixedWindowLimiter(key, _ => new FixedWindowRateLimiterOptions
+        {
+            PermitLimit = 5,
+            Window = TimeSpan.FromMinutes(1),
+            QueueLimit = 0,
+            QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
+            AutoReplenishment = true,
+        });
+    });
+});
+
+// CORS
+builder.Services.AddCors(o => o.AddDefaultPolicy(p => p
+    .WithOrigins(builder.Configuration.GetSection("Cors:Origins").Get<string[]>() ?? new[] { "http://localhost:5173" })
+    .AllowAnyHeader()
+    .AllowAnyMethod()
+    .AllowCredentials()));
+
+// Health checks — liveness (no deps) + readiness (DB).
+builder.Services.AddHealthChecks()
+    .AddDbContextCheck<AppDbContext>("postgres", tags: new[] { "ready" });
+
+// MVC + Swagger
+builder.Services.AddControllers()
+    .AddJsonOptions(o =>
+    {
+        o.JsonSerializerOptions.PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase;
+        o.JsonSerializerOptions.Converters.Add(new System.Text.Json.Serialization.JsonStringEnumConverter());
+    });
+
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen(c =>
+{
+    c.SwaggerDoc("v1", new OpenApiInfo
+    {
+        Title = "QLDonHang API",
+        Version = "v1",
+        Description = "Phần mềm Quản lý Đơn hàng - Báo giá - Bàn giao - Báo cáo",
+    });
+    c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+    {
+        Description = "JWT Authorization. Nhập 'Bearer {token}'",
+        Name = "Authorization",
+        In = ParameterLocation.Header,
+        Type = SecuritySchemeType.ApiKey,
+        Scheme = "Bearer",
+    });
+    c.AddSecurityRequirement(new OpenApiSecurityRequirement
+    {
+        {
+            new OpenApiSecurityScheme
+            {
+                Reference = new OpenApiReference { Type = ReferenceType.SecurityScheme, Id = "Bearer" },
+            },
+            Array.Empty<string>()
+        }
+    });
+});
+
+var app = builder.Build();
+
+// CORS must run before the exception middleware so error responses still carry CORS headers.
+app.UseCors();
+app.UseSerilogRequestLogging();
+app.UseMiddleware<LoggingContextMiddleware>();
+app.UseMiddleware<GlobalExceptionMiddleware>();
+
+if (app.Environment.IsDevelopment())
+{
+    app.UseSwagger();
+    app.UseSwaggerUI(c =>
+    {
+        c.SwaggerEndpoint("/swagger/v1/swagger.json", "QLDonHang API v1");
+        c.RoutePrefix = "swagger";
+    });
+}
+
+app.UseAuthentication();
+app.UseAuthorization();
+app.UseRateLimiter();
+
+app.MapControllers();
+app.MapGet("/", () => app.Environment.IsDevelopment()
+    ? Results.Redirect("/swagger")
+    : Results.Ok(new { service = "OrderMgmt API", status = "ok" }));
+// Liveness: process is up. No external dependencies.
+app.MapHealthChecks("/health/live", new Microsoft.AspNetCore.Diagnostics.HealthChecks.HealthCheckOptions
+{
+    Predicate = _ => false,
+});
+
+// Readiness: process can serve traffic (DB reachable).
+app.MapHealthChecks("/health/ready", new Microsoft.AspNetCore.Diagnostics.HealthChecks.HealthCheckOptions
+{
+    Predicate = c => c.Tags.Contains("ready"),
+});
+
+// Back-compat: keep /health pointing at liveness.
+app.MapHealthChecks("/health", new Microsoft.AspNetCore.Diagnostics.HealthChecks.HealthCheckOptions
+{
+    Predicate = _ => false,
+});
+
+// Auto-migrate is intended for dev/single-instance only. In production, run migrations
+// from CI/CD with `dotnet ef database update`. The advisory lock inside DbSeeder makes
+// the operation safe against concurrent app instances, but the deployment pattern is still
+// preferred. Default is `false`; opt-in via configuration.
+if (app.Configuration.GetValue<bool>("Database:AutoMigrateAndSeed"))
+{
+    await DbSeeder.SeedAsync(app.Services);
+}
+
+app.Run();
+
+// Exposed for integration tests via WebApplicationFactory<Program>.
+public partial class Program { }

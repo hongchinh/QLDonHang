@@ -1,0 +1,64 @@
+using FluentValidation;
+using OrderMgmt.Application.Common.Validators;
+using OrderMgmt.Application.Sales.Quotations.Models;
+
+namespace OrderMgmt.Application.Sales.Quotations.Validators;
+
+public class UpsertQuotationLineRequestValidator : AbstractValidator<UpsertQuotationLineRequest>
+{
+    public UpsertQuotationLineRequestValidator()
+    {
+        RuleFor(x => x.ProductName).NotEmpty().MaximumLength(255);
+        RuleFor(x => x.ProductCode).MaximumLength(50);
+        RuleFor(x => x.Specification).MaximumLength(500);
+        RuleFor(x => x.UnitName).NotEmpty().MaximumLength(100);
+        RuleFor(x => x.PricingMode).IsInEnum();
+        RuleFor(x => x.Quantity).GreaterThan(0);
+        RuleFor(x => x.UnitPrice).GreaterThanOrEqualTo(0);
+        RuleFor(x => x.UnitCost).GreaterThanOrEqualTo(0).When(x => x.UnitCost.HasValue);
+        RuleFor(x => x.Length).GreaterThanOrEqualTo(0).When(x => x.Length.HasValue);
+        RuleFor(x => x.Width).GreaterThanOrEqualTo(0).When(x => x.Width.HasValue);
+        RuleFor(x => x.Thickness).GreaterThanOrEqualTo(0).When(x => x.Thickness.HasValue);
+        RuleFor(x => x.Density).GreaterThanOrEqualTo(0).When(x => x.Density.HasValue);
+        RuleFor(x => x.SheetCount).GreaterThanOrEqualTo(0).When(x => x.SheetCount.HasValue);
+        RuleFor(x => x.Note).MaximumLength(1000);
+    }
+}
+
+public class UpsertQuotationRequestValidator : AbstractValidator<UpsertQuotationRequest>
+{
+    public UpsertQuotationRequestValidator()
+    {
+        RuleFor(x => x.CustomerId).NotEmpty();
+        RuleFor(x => x.CustomerName)
+            .MaximumLength(255).WithMessage("Tên khách hàng tối đa 255 ký tự.")
+            .When(x => !string.IsNullOrWhiteSpace(x.CustomerName));
+        RuleFor(x => x.QuotationDate).NotEqual(default(DateOnly));
+        RuleFor(x => x.TaxRate).InclusiveBetween(0, 100);
+        RuleFor(x => x.Discount).GreaterThanOrEqualTo(0);
+        RuleFor(x => x.Freight).GreaterThanOrEqualTo(0);
+        RuleFor(x => x.InternalNote).MaximumLength(2000);
+        RuleFor(x => x.DeliveryAddress).MaximumLength(1000);
+        RuleFor(x => x.DeliveryRecipient).MaximumLength(255);
+        RuleFor(x => x.DeliveryPhone).MaximumLength(30);
+        RuleFor(x => x.DeliveryNote).MaximumLength(1000);
+
+        RuleFor(x => x.Lines)
+            .Must(l => l != null && l.Count > 0)
+            .WithMessage("Báo giá phải có ít nhất 1 dòng.");
+
+        RuleForEach(x => x.Lines).SetValidator(new UpsertQuotationLineRequestValidator());
+    }
+}
+
+public class QuotationListRequestValidator : PageRequestValidator<QuotationListRequest>
+{
+}
+
+public class TransitionQuotationRequestValidator : AbstractValidator<TransitionQuotationRequest>
+{
+    public TransitionQuotationRequestValidator()
+    {
+        RuleFor(x => x.Action).IsInEnum();
+    }
+}
