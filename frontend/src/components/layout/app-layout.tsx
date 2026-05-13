@@ -111,7 +111,7 @@ export function AppLayout() {
           </div>
           <div className="hidden text-sm text-muted-foreground sm:block">{user?.fullName}</div>
         </header>
-        <div className="flex-1 overflow-y-auto p-4 md:p-6">
+        <div className="flex-1 overflow-y-auto p-4 md:p-3">
           <Outlet />
         </div>
       </main>

@@ -135,6 +135,24 @@ public class ProductCrudTests : IAsyncLifetime
     }
 
     [Fact]
+    public async Task Search_matches_product_name_without_accents()
+    {
+        const string productName = "T\u1EA5m nhua op tuong";
+
+        await _client.PostAsJsonAsync("/api/products", new CreateProductRequest
+        {
+            Name = productName,
+            ProductGroupId = _epsGroupId,
+            UnitId = _tamUnitId,
+        });
+
+        var search = await _client.GetFromJsonAsync<ApiResponse<IReadOnlyList<ProductSuggestionDto>>>(
+            "/api/products/search?q=tam&take=20", TestJson.Options);
+
+        search!.Data.Should().Contain(i => i.Name == productName);
+    }
+
+    [Fact]
     public async Task Delete_then_list_excludes_product()
     {
         var create = await _client.PostAsJsonAsync("/api/products", new CreateProductRequest

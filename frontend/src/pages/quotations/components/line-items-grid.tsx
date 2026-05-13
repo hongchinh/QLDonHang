@@ -18,7 +18,7 @@ const vnd = new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND',
 const PRICING_LABEL: Record<PricingMode, string> = {
   PerUnit: 'ĐV',
   PerSquareMeter: 'm²',
-  PerLinearMeter: 'm dài',
+  PerLinearMeter: 'md',
   PerCubicMeter: 'm³',
 };
 
@@ -106,17 +106,17 @@ export function LineItemsGrid({ form }: Props) {
       <div ref={wrapRef} className="accounting-grid-wrap" tabIndex={-1}>
         <table className="accounting-grid">
           <colgroup>
-            <col style={{ width: 46 }} />
-            <col style={{ width: 190 }} />
-            <col />
-            <col style={{ width: 80 }} />
-            <col style={{ width: 70 }} />
-            <col style={{ width: 240 }} />
-            <col style={{ width: 96 }} />
-            <col style={{ width: 110 }} />
-            <col style={{ width: 110 }} />
+            <col style={{ width: 42 }} />
             <col style={{ width: 130 }} />
-            <col style={{ width: 46 }} />
+            <col />
+            <col style={{ width: 58 }} />
+            <col style={{ width: 62 }} />
+            <col style={{ width: 220 }} />
+            <col style={{ width: 82 }} />
+            <col style={{ width: 104 }} />
+            <col style={{ width: 104 }} />
+            <col style={{ width: 122 }} />
+            <col style={{ width: 42 }} />
           </colgroup>
           <thead>
             <tr>

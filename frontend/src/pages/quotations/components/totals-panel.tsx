@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -17,81 +18,109 @@ export function TotalsPanel({ lines, header, onHeaderChange }: Props) {
   return (
     <Card className="h-full flex flex-col">
       <CardHeader><CardTitle>Tổng cộng</CardTitle></CardHeader>
-      <CardContent className="space-y-3 flex-1 flex flex-col">
-        <Row label="Cộng tiền hàng" value={fmt.format(totals.subtotal)} />
+      <CardContent className="flex flex-1 flex-col justify-between gap-3">
+        <SummaryRow label="Tiền hàng">
+          <MetricValue value={fmt.format(totals.subtotal)} />
+        </SummaryRow>
 
-        <div className="grid grid-cols-3 items-center gap-2">
-          <Label htmlFor="discount" className="col-span-1">Chiết khấu</Label>
-          <Input
-            id="discount"
-            type="number"
-            step="any"
-            value={header.discount}
-            onChange={(e) => onHeaderChange({ discount: Number(e.target.value) || 0 })}
-            className="col-span-2 text-right tabular-nums"
-          />
-        </div>
+        <SummaryRow label="Điều chỉnh">
+          <div className="grid min-w-0 grid-cols-2 gap-2">
+            <EditableMetric
+              id="discount"
+              label="CK"
+              value={header.discount}
+              onChange={(value) => onHeaderChange({ discount: value })}
+            />
+            <EditableMetric
+              id="freight"
+              label="VC"
+              value={header.freight}
+              onChange={(value) => onHeaderChange({ freight: value })}
+            />
+          </div>
+        </SummaryRow>
 
-        <div className="grid grid-cols-3 items-center gap-2">
-          <Label htmlFor="freight" className="col-span-1">Cước vận chuyển</Label>
-          <Input
-            id="freight"
-            type="number"
-            step="any"
-            value={header.freight}
-            onChange={(e) => onHeaderChange({ freight: Number(e.target.value) || 0 })}
-            className="col-span-2 text-right tabular-nums"
-          />
-        </div>
+        <SummaryRow label="Thuế">
+          <div className="grid min-w-0 grid-cols-[92px_1fr] items-end gap-2">
+            <EditableMetric
+              id="taxRate"
+              label="Thuế %"
+              value={header.taxRate}
+              onChange={(value) => onHeaderChange({ taxRate: value })}
+            />
+            <div className="min-w-0 text-right">
+              <div className="text-xs text-muted-foreground">Tiền thuế</div>
+              <MetricValue value={fmt.format(totals.taxAmount)} />
+            </div>
+          </div>
+        </SummaryRow>
 
-        <div className="grid grid-cols-3 items-center gap-2">
-          <Label htmlFor="taxRate" className="col-span-1">Thuế suất %</Label>
-          <Input
-            id="taxRate"
-            type="number"
-            step="any"
-            value={header.taxRate}
-            onChange={(e) => onHeaderChange({ taxRate: Number(e.target.value) || 0 })}
-            className="col-span-2 text-right tabular-nums"
-          />
-        </div>
-
-        <Row label="Tiền thuế" value={fmt.format(totals.taxAmount)} />
-        <div className="my-2 border-t" />
-        <Row label="Tổng cộng" value={fmt.format(totals.total)} bold large />
-
-        <div className="mt-auto space-y-3">
-          <div className="border-t" />
-          <Row label="Tổng giá vốn" value={fmt.format(totals.totalCost)} muted />
-          <Row label="Lợi nhuận gộp" value={fmt.format(totals.grossProfit)} muted />
-        </div>
+        <SummaryRow label="Tổng cộng" emphasized>
+          <div className="min-w-0 text-right">
+            <MetricValue value={fmt.format(totals.total)} bold large />
+            <div className="mt-1 flex flex-wrap justify-end gap-x-3 gap-y-1 text-xs text-muted-foreground">
+              <span className="tabular-nums">Giá vốn: {fmt.format(totals.totalCost)}</span>
+              <span className="tabular-nums">LN gộp: {fmt.format(totals.grossProfit)}</span>
+            </div>
+          </div>
+        </SummaryRow>
       </CardContent>
     </Card>
   );
 }
 
-interface RowProps {
+interface SummaryRowProps {
   label: string;
+  children: ReactNode;
+  emphasized?: boolean;
+}
+
+function SummaryRow({ label, children, emphasized }: SummaryRowProps) {
+  return (
+    <div className={['grid grid-cols-[86px_1fr] items-center gap-3', emphasized ? 'border-t pt-3' : ''].join(' ')}>
+      <span className={emphasized ? 'text-sm font-medium' : 'text-sm text-muted-foreground'}>{label}</span>
+      <div className="min-w-0">{children}</div>
+    </div>
+  );
+}
+
+interface EditableMetricProps {
+  id: string;
+  label: string;
+  value: number;
+  onChange: (value: number) => void;
+}
+
+function EditableMetric({ id, label, value, onChange }: EditableMetricProps) {
+  return (
+    <div className="min-w-0">
+      <Label htmlFor={id} className="mb-1 block text-xs text-muted-foreground">
+        {label}
+      </Label>
+      <Input
+        id={id}
+        type="number"
+        step="any"
+        value={value}
+        onChange={(e) => onChange(Number(e.target.value) || 0)}
+        className="h-8 px-2 text-right tabular-nums"
+      />
+    </div>
+  );
+}
+
+interface MetricValueProps {
   value: string;
   bold?: boolean;
   large?: boolean;
-  muted?: boolean;
 }
 
-function Row({ label, value, bold, large, muted }: RowProps) {
+function MetricValue({ value, bold, large }: MetricValueProps) {
   return (
-    <div className="flex items-center justify-between">
-      <span className={muted ? 'text-sm text-muted-foreground' : 'text-sm'}>{label}</span>
-      <span
-        className={[
-          'tabular-nums',
-          bold ? 'font-bold' : '',
-          large ? 'text-base' : 'text-sm',
-          muted ? 'text-muted-foreground' : '',
-        ].join(' ')}
-      >
-        {value}
-      </span>
-    </div>
+    <span
+      className={['block truncate tabular-nums', bold ? 'font-bold' : '', large ? 'text-base' : 'text-sm'].join(' ')}
+    >
+      {value}
+    </span>
   );
 }

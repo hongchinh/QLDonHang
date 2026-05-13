@@ -196,7 +196,11 @@ public class ProductService : IProductService
             .AsNoTracking()
             .Include(p => p.Unit)
             .Where(p => !p.IsDeleted && p.Status == ProductStatus.Active)
-            .Where(p => EF.Functions.ILike(p.Code, pattern) || EF.Functions.ILike(p.Name, pattern))
+            .Where(p =>
+                EF.Functions.ILike(EF.Functions.Unaccent(p.Code), EF.Functions.Unaccent(pattern))
+                || EF.Functions.ILike(EF.Functions.Unaccent(p.Name), EF.Functions.Unaccent(pattern))
+                || (p.Specification != null
+                    && EF.Functions.ILike(EF.Functions.Unaccent(p.Specification), EF.Functions.Unaccent(pattern))))
             .OrderBy(p => p.Code)
             .Take(take)
             .Select(p => new ProductSuggestionDto
