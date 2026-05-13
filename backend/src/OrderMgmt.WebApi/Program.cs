@@ -12,6 +12,7 @@ using OrderMgmt.Infrastructure.Identity;
 using OrderMgmt.Infrastructure.Persistence;
 using OrderMgmt.Infrastructure.Persistence.Seed;
 using OrderMgmt.WebApi.Authorization;
+using OrderMgmt.WebApi.Configuration;
 using OrderMgmt.WebApi.Middleware;
 using OrderMgmt.WebApi.Services;
 using Serilog;
@@ -38,6 +39,7 @@ builder.Services.AddInfrastructure(builder.Configuration);
 // HTTP context & current user
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<ICurrentUser, CurrentUser>();
+builder.Services.Configure<AuthCookieOptions>(builder.Configuration.GetSection(AuthCookieOptions.SectionName));
 
 // JWT auth — fail fast if configuration is missing/weak (eager guard).
 builder.Configuration.GetSection(JwtOptions.SectionName).Get<JwtOptions>()?.Validate();
@@ -81,6 +83,18 @@ builder.Services.AddRateLimiter(o =>
         return RateLimitPartition.GetFixedWindowLimiter(key, _ => new FixedWindowRateLimiterOptions
         {
             PermitLimit = 5,
+            Window = TimeSpan.FromMinutes(1),
+            QueueLimit = 0,
+            QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
+            AutoReplenishment = true,
+        });
+    });
+    o.AddPolicy(RateLimitPolicies.Refresh, httpContext =>
+    {
+        var key = httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown";
+        return RateLimitPartition.GetFixedWindowLimiter(key, _ => new FixedWindowRateLimiterOptions
+        {
+            PermitLimit = 60,
             Window = TimeSpan.FromMinutes(1),
             QueueLimit = 0,
             QueueProcessingOrder = QueueProcessingOrder.OldestFirst,

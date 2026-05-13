@@ -25,7 +25,10 @@ export function AuthInit({ children }: Props) {
         const user = await authApi.me();
         if (cancelled) return;
         setUser(user);
-      } catch {
+      } catch (error) {
+        if (import.meta.env.DEV) {
+          console.warn('Auth boot refresh failed; no valid refresh cookie/session was available.', error);
+        }
         // No valid session — boot to the login screen.
       } finally {
         if (!cancelled) setReady(true);

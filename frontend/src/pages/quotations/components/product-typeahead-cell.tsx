@@ -185,13 +185,13 @@ export function ProductTypeaheadCell({
           </div>
           {/* eslint-disable-next-line jsx-a11y/no-noninteractive-element-to-interactive-role -- WAI-ARIA combobox listbox pattern */}
           <table className="w-full text-sm" id={listboxId} role="listbox">
-            <thead className="sticky top-0 bg-muted/60 text-left text-xs text-muted-foreground">
+            <thead className="sticky top-0 bg-[#005bac] text-left text-xs font-semibold text-white">
               <tr>
-                <th className="px-2 py-1 font-medium">Mã</th>
-                <th className="px-2 py-1 font-medium">Tên</th>
-                <th className="px-2 py-1 font-medium">Loại</th>
-                <th className="px-2 py-1 font-medium">Quy cách</th>
-                <th className="px-2 py-1 font-medium text-right">Giá bán</th>
+                <th className="px-2 py-1">Mã</th>
+                <th className="px-2 py-1">Tên</th>
+                <th className="px-2 py-1">Loại</th>
+                <th className="px-2 py-1">Quy cách</th>
+                <th className="px-2 py-1 text-right">Giá bán</th>
               </tr>
             </thead>
             <tbody>

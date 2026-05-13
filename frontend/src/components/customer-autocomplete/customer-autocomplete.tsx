@@ -221,14 +221,14 @@ export function CustomerAutocomplete({
             </div>
             {/* eslint-disable-next-line jsx-a11y/no-noninteractive-element-to-interactive-role -- WAI-ARIA combobox listbox pattern */}
             <table className="w-full text-sm" id={listboxId} role="listbox">
-              <thead className="sticky top-0 bg-muted/60 text-left text-xs text-muted-foreground">
+              <thead className="sticky top-0 bg-[#005bac] text-left text-xs font-semibold text-white">
                 <tr>
-                  <th className="px-2 py-1 font-medium">Mã</th>
-                  <th className="px-2 py-1 font-medium">Tên</th>
-                  <th className="px-2 py-1 font-medium">MST</th>
-                  <th className="px-2 py-1 font-medium">Địa chỉ</th>
-                  <th className="px-2 py-1 font-medium">SĐT</th>
-                  <th className="px-2 py-1 font-medium">Loại</th>
+                  <th className="px-2 py-1">Mã</th>
+                  <th className="px-2 py-1">Tên</th>
+                  <th className="px-2 py-1">MST</th>
+                  <th className="px-2 py-1">Địa chỉ</th>
+                  <th className="px-2 py-1">SĐT</th>
+                  <th className="px-2 py-1">Loại</th>
                 </tr>
               </thead>
               <tbody>

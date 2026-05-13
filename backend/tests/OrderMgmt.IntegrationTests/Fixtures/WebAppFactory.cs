@@ -33,6 +33,9 @@ public class WebAppFactory : WebApplicationFactory<Program>, IAsyncLifetime
                 ["Jwt:Audience"] = "OrderMgmtTestClient",
                 ["Jwt:ExpiresInMinutes"] = "60",
                 ["RefreshToken:ExpiresInDays"] = "14",
+                ["AuthCookie:Name"] = "qldh.refresh",
+                ["AuthCookie:Path"] = "/api/auth",
+                ["AuthCookie:SameSite"] = "Lax",
                 ["Database:AutoMigrateAndSeed"] = "false",
                 ["Seed:AdminPassword"] = "Admin@123",
             });

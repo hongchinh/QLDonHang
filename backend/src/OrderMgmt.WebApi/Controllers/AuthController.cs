@@ -2,29 +2,30 @@ using FluentValidation;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
+using Microsoft.Extensions.Options;
 using OrderMgmt.Application.Common.Models;
 using OrderMgmt.Application.Identity.Interfaces;
 using OrderMgmt.Application.Identity.Models;
 using OrderMgmt.Domain.Common;
 using OrderMgmt.WebApi.Authorization;
+using OrderMgmt.WebApi.Configuration;
 
 namespace OrderMgmt.WebApi.Controllers;
 
 public class AuthController : ApiControllerBase
 {
-    // The refresh token is bound to a path-scoped, HttpOnly cookie so it cannot
-    // be read by frontend JavaScript (XSS-resistant). The body field is kept
-    // populated for legacy/CLI clients but the browser frontend ignores it.
-    private const string RefreshCookieName = "qldh.refresh";
-    private const string RefreshCookiePath = "/api/auth";
-
     private readonly IAuthService _authService;
     private readonly IValidator<LoginRequest> _loginValidator;
+    private readonly AuthCookieOptions _cookieOptions;
 
-    public AuthController(IAuthService authService, IValidator<LoginRequest> loginValidator)
+    public AuthController(
+        IAuthService authService,
+        IValidator<LoginRequest> loginValidator,
+        IOptions<AuthCookieOptions> cookieOptions)
     {
         _authService = authService;
         _loginValidator = loginValidator;
+        _cookieOptions = cookieOptions.Value;
     }
 
     [AllowAnonymous]
@@ -40,7 +41,7 @@ public class AuthController : ApiControllerBase
 
     [AllowAnonymous]
     [HttpPost("refresh")]
-    [EnableRateLimiting(RateLimitPolicies.Login)]
+    [EnableRateLimiting(RateLimitPolicies.Refresh)]
     public async Task<ActionResult<ApiResponse<TokenPairResponse>>> Refresh(
         [FromBody] RefreshTokenRequest? request, CancellationToken ct)
     {
@@ -72,7 +73,7 @@ public class AuthController : ApiControllerBase
             }
         }
 
-        Response.Cookies.Delete(RefreshCookieName, new CookieOptions { Path = RefreshCookiePath });
+        Response.Cookies.Delete(_cookieOptions.Name, new CookieOptions { Path = _cookieOptions.Path });
         return Success();
     }
 
@@ -88,19 +89,20 @@ public class AuthController : ApiControllerBase
     {
         // Prefer the HttpOnly cookie — that's the authoritative store for browser
         // sessions. Fall back to the body so non-browser clients still work.
-        var fromCookie = Request.Cookies[RefreshCookieName];
+        var fromCookie = Request.Cookies[_cookieOptions.Name];
         if (!string.IsNullOrWhiteSpace(fromCookie)) return fromCookie;
         return body?.RefreshToken;
     }
 
     private void SetRefreshCookie(string token, DateTimeOffset expires)
     {
-        Response.Cookies.Append(RefreshCookieName, token, new CookieOptions
+        var sameSite = _cookieOptions.GetSameSiteMode();
+        Response.Cookies.Append(_cookieOptions.Name, token, new CookieOptions
         {
             HttpOnly = true,
-            Secure = Request.IsHttps,
-            SameSite = SameSiteMode.Lax,
-            Path = RefreshCookiePath,
+            Secure = _cookieOptions.Secure ?? (Request.IsHttps || sameSite == SameSiteMode.None),
+            SameSite = sameSite,
+            Path = _cookieOptions.Path,
             Expires = expires,
         });
     }

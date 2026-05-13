@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Mockup — Quotation form brand headers (#005bac)</title>
+  <style>
+    :root {
+      --background: hsl(0 0% 100%);
+      --foreground: hsl(222.2 84% 4.9%);
+      --card: hsl(0 0% 100%);
+      --card-foreground: hsl(222.2 84% 4.9%);
+      --muted: hsl(210 40% 96.1%);
+      --muted-foreground: hsl(215.4 16.3% 46.9%);
+      --accent: hsl(210 40% 96.1%);
+      --border: hsl(214.3 31.8% 91.4%);
+      --primary: hsl(221.2 83.2% 53.3%);
+      --destructive: hsl(0 84.2% 60.2%);
+      --header-bg: #005bac;
+      --radius-lg: 0.5rem;
+      --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+      --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; }
+    body {
+      font-family: var(--font-sans);
+      background: hsl(210 40% 96.1%);
+      color: var(--foreground);
+      font-size: 14px;
+      padding: 28px 24px 96px;
+      min-height: 100vh;
+    }
+    .page { max-width: 1320px; margin: 0 auto; display: grid; gap: 18px; }
+
+    .legend {
+      background: #fff8dc;
+      border: 1px solid #f6c945;
+      border-radius: var(--radius-lg);
+      padding: 12px 16px;
+      font-size: 13px;
+      line-height: 1.6;
+    }
+    .legend b { color: #8a6d00; }
+    .legend code { background: rgba(0,0,0,0.05); padding: 1px 6px; border-radius: 4px; font-size: 12px; }
+    .legend .row { display: flex; gap: 24px; flex-wrap: wrap; align-items: center; margin-top: 6px; }
+    .swatch { display: inline-flex; align-items: center; gap: 8px; font-size: 12px; }
+    .swatch .chip { display: inline-block; width: 18px; height: 18px; border-radius: 4px; border: 1px solid rgba(0,0,0,0.1); }
+
+    /* shadcn-like Card */
+    .card {
+      background: var(--card);
+      color: var(--card-foreground);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      box-shadow: 0 1px 3px rgb(0 0 0 / 0.04);
+    }
+    .card-header {
+      padding: 16px 22px 0;
+    }
+    .card-title {
+      font-size: 16px;
+      font-weight: 600;
+      margin: 0 0 8px;
+    }
+    .card-content {
+      padding: 12px 22px 22px;
+    }
+
+    /* Form rows */
+    .field-row {
+      display: grid;
+      grid-template-columns: 90px minmax(180px, 1fr) 90px minmax(180px, 1fr);
+      align-items: center;
+      gap: 12px;
+      padding: 6px 0;
+    }
+    .field-label { font-size: 13px; color: var(--muted-foreground); }
+    .field-input { position: relative; }
+    .field-input input {
+      width: 100%; height: 34px; padding: 0 12px;
+      border: 1px solid var(--border); border-radius: 6px;
+      font: inherit; font-size: 13px; background: var(--background); color: var(--foreground); outline: none;
+    }
+    .field-input input:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 2px hsl(221.2 83.2% 53.3% / 0.18);
+    }
+
+    /* ============ Popover dropdown (CustomerAutocomplete-like) ============ */
+    .dropdown-wrap { position: relative; }
+    .dropdown {
+      position: absolute;
+      left: 0;
+      top: calc(100% + 4px);
+      z-index: 50;
+      min-width: min(760px, calc(100vw - 80px));
+      max-width: calc(100vw - 40px);
+      max-height: 320px;
+      overflow: auto;
+      background: white;
+      color: var(--foreground);
+      border: 1px solid var(--border);
+      border-radius: calc(var(--radius-lg) - 2px);
+      box-shadow: var(--shadow-md);
+    }
+    .dropdown-meta {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--border);
+      background: hsl(210 40% 96.1% / 0.3);
+      padding: 6px 10px;
+      font-size: 12px;
+      color: var(--muted-foreground);
+    }
+    .dropdown-meta .kbd-group { display: flex; align-items: center; gap: 6px; }
+    kbd {
+      display: inline-block;
+      padding: 2px 6px;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      background: var(--background);
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 10px;
+      line-height: 1;
+    }
+
+    table.options { width: 100%; border-collapse: collapse; font-size: 13px; }
+    /* THE CHANGE — popover column thead becomes brand */
+    table.options thead {
+      position: sticky;
+      top: 0;
+      background: var(--header-bg);
+    }
+    table.options thead th {
+      padding: 7px 10px;
+      color: #ffffff;
+      font-weight: 600;
+      font-size: 12px;
+      text-align: left;
+      white-space: nowrap;
+    }
+    table.options tbody td {
+      padding: 6px 10px;
+      border-top: 1px solid var(--border);
+      vertical-align: top;
+    }
+    table.options tbody tr:hover { background: hsl(210 40% 96.1% / 0.4); }
+    table.options tbody tr.highlighted { background: var(--accent); }
+    .muted { color: var(--muted-foreground); }
+    .badge {
+      display: inline-block; background: var(--muted); color: hsl(222.2 47.4% 11.2%);
+      border-radius: 999px; padding: 1px 8px; font-size: 11px; font-weight: 500;
+    }
+
+    /* ============ Accounting grid (line items) ============ */
+    .accounting-grid-wrap {
+      overflow-x: auto;
+      border-top: 1px solid var(--border);
+      margin: 8px -22px 0; /* pull flush within CardContent padding (mockup-only) */
+      padding: 0 22px;
+    }
+    .accounting-grid {
+      width: 100%;
+      min-width: 1180px;
+      border-collapse: collapse;
+      table-layout: fixed;
+      font-family: inherit;
+      font-size: 13px;
+      color: var(--foreground);
+    }
+    .accounting-grid th, .accounting-grid td {
+      border-right: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+      padding: 0;
+      height: 34px;
+      background: var(--card);
+    }
+    /* THE CHANGE — th background + seam-color overrides */
+    .accounting-grid th {
+      background: var(--header-bg);
+      color: #ffffff;
+      font-weight: 600;
+      text-align: center;
+      padding: 8px 6px;
+      border-right-color: rgba(255, 255, 255, 0.12);
+      border-bottom-color: transparent;
+    }
+    /* body td.row-no stays muted (intentional) */
+    .accounting-grid td.row-no {
+      width: 46px;
+      text-align: center;
+      color: var(--muted-foreground);
+      background: hsl(210 40% 96.1% / 0.5);
+      font-weight: 600;
+    }
+    /* THE CHANGE — th.row-no joins brand band */
+    .accounting-grid th.row-no {
+      width: 46px;
+      background: var(--header-bg);
+      color: #ffffff;
+      text-align: center;
+      font-weight: 600;
+    }
+    .accounting-grid .cell-input {
+      width: 100%; height: 33px; border: 0; padding: 0 8px;
+      font-family: inherit; font-size: 13px; color: inherit;
+      background: transparent; outline: none; box-sizing: border-box;
+    }
+    .accounting-grid .cell-input:focus {
+      background: #fff8dc;
+      box-shadow: inset 0 0 0 2px var(--primary);
+    }
+    .accounting-grid .cell-number,
+    .accounting-grid .cell-number .cell-input {
+      text-align: right;
+      font-variant-numeric: tabular-nums;
+    }
+    .accounting-grid .cell-pricing-mode {
+      padding: 0 8px;
+      text-align: center;
+      color: var(--muted-foreground);
+      font-size: 12.5px;
+    }
+    .accounting-grid .dxr-cell {
+      display: grid; grid-template-columns: repeat(4, 1fr); height: 33px;
+    }
+    .accounting-grid .dxr-cell .cell-input {
+      border-right: 1px solid var(--border);
+      text-align: right;
+    }
+    .accounting-grid .dxr-cell .cell-input:last-child { border-right: 0; }
+    .accounting-grid td.cell-action { width: 46px; text-align: center; }
+    .accounting-grid .cell-action button {
+      width: 26px; height: 26px; border: 0; background: transparent;
+      color: var(--muted-foreground); cursor: pointer; border-radius: 4px;
+    }
+
+    /* Product typeahead popover inside line-items cell */
+    .accounting-grid td.product-cell { position: relative; }
+    .accounting-grid .product-popover {
+      position: absolute;
+      top: calc(100% + 2px); left: 0;
+      width: 660px;
+      max-height: 280px;
+      overflow: auto;
+      background: white;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      box-shadow: var(--shadow-md);
+      z-index: 60;
+    }
+
+    /* annotation arrow callouts */
+    .callout {
+      display: inline-block;
+      font-size: 11px;
+      color: #12805c;
+      background: white;
+      padding: 1px 6px;
+      border: 1px solid #12805c;
+      border-radius: 4px;
+      margin-left: 6px;
+      vertical-align: middle;
+      white-space: nowrap;
+    }
+    .callout.bad { color: #b53227; border-color: #b53227; }
+
+    .demo-section-label {
+      font-size: 12px; font-weight: 600; letter-spacing: 0.04em;
+      text-transform: uppercase; color: var(--muted-foreground);
+      margin: 6px 0 2px;
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+
+    <div class="legend">
+      <b>Mockup confirmation</b> — Preview cohesive whole của 3 surface tabular header trong <code>/quotations/new</code>
+      sau khi áp brand color:
+      <div class="row">
+        <span class="swatch"><span class="chip" style="background:#005bac"></span> Header bg <code>#005bac</code></span>
+        <span class="swatch"><span class="chip" style="background:#ffffff;border-color:#ccc"></span> Header text <code>#ffffff</code> · <code>font-weight 600</code></span>
+        <span class="swatch">Contrast <b>5.69:1</b> — WCAG AA pass</span>
+      </div>
+      <div style="margin-top:6px">
+        <b>Chỉ column <code>&lt;thead&gt;</code></b> được re-skin.
+        <b>Meta band</b> trong popover (<code>"Tìm thấy N…"</code> + kbd hints) <b>giữ muted</b>.
+        Body row, <code>td.row-no</code>, cell focus <code>#fff8dc</code> — không đổi.
+      </div>
+    </div>
+
+    <!-- =========== Card 1: Customer search popover OPEN =========== -->
+    <p class="demo-section-label">1 / 3 — Card "Thông tin chung" + Customer popover</p>
+    <div class="card">
+      <div class="card-header"><h3 class="card-title">Thông tin chung</h3></div>
+      <div class="card-content">
+        <div class="field-row">
+          <div class="field-label">Ngày báo giá</div>
+          <div class="field-input"><input type="text" value="13/05/2026" /></div>
+          <div class="field-label">Ngày giao</div>
+          <div class="field-input"><input type="text" value="14/05/2026" /></div>
+        </div>
+        <div class="field-row">
+          <div class="field-label">Mã KH</div>
+          <div class="field-input dropdown-wrap">
+            <input type="text" value="a" autofocus />
+            <div class="dropdown" role="listbox" aria-label="Kết quả tìm kiếm khách hàng">
+              <div class="dropdown-meta">
+                <span>Tìm thấy 5 khách hàng đang hoạt động <span class="callout">stays muted</span></span>
+                <span class="kbd-group">
+                  <kbd>Tab</kbd> duyệt
+                  <kbd>Enter</kbd> chọn
+                  <kbd>Esc</kbd> đóng
+                </span>
+              </div>
+              <table class="options">
+                <thead>
+                  <tr>
+                    <th>Mã</th><th>Tên</th><th>MST</th><th>Địa chỉ</th><th>SĐT</th><th>Loại</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr><td>KH001</td><td>Công ty TNHH An Bình</td><td class="muted">0312345678</td><td class="muted">12 Lê Lợi, Q.1, TP.HCM</td><td class="muted">0909123456</td><td><span class="badge">Khách hàng</span></td></tr>
+                  <tr class="highlighted"><td>KH002</td><td>Công ty CP Anh Minh Phát</td><td class="muted">0301456789</td><td class="muted">88 Trần Hưng Đạo, Q.5, TP.HCM</td><td class="muted">0908765432</td><td><span class="badge">Khách hàng</span></td></tr>
+                  <tr><td>KH003</td><td>Cửa hàng A-Z Furniture</td><td class="muted">8101234567</td><td class="muted">15 Nguyễn Trãi, Hà Nội</td><td class="muted">0978111222</td><td><span class="badge">Khách hàng</span></td></tr>
+                  <tr><td>KH004</td><td>Anh Tuấn — KH lẻ</td><td class="muted"></td><td class="muted">Tân Bình, TP.HCM</td><td class="muted">0913222333</td><td><span class="badge">Khách hàng</span></td></tr>
+                  <tr><td>KH005</td><td>Công ty TNHH An Phú Decor</td><td class="muted">0316543210</td><td class="muted">Lô C12, KCN Tân Bình, TP.HCM</td><td class="muted">0901555888</td><td><span class="badge">Khách hàng</span></td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+          <div class="field-label">Tên KH</div>
+          <div class="field-input"><input type="text" value="" /></div>
+        </div>
+        <!-- spacer so the dropdown can render fully -->
+        <div style="height: 270px"></div>
+      </div>
+    </div>
+
+    <!-- =========== Card 2: Line items grid with Product popover OPEN =========== -->
+    <p class="demo-section-label">2 / 3 — Card "Chi tiết hàng hóa" + line-items <code style="font-size:11px">&lt;thead&gt;</code> + Product popover</p>
+    <div class="card">
+      <div class="card-header"><h3 class="card-title">Chi tiết hàng hóa</h3></div>
+      <div class="card-content">
+        <div class="accounting-grid-wrap">
+          <table class="accounting-grid">
+            <colgroup>
+              <col style="width:46px" />
+              <col style="width:190px" />
+              <col />
+              <col style="width:80px" />
+              <col style="width:70px" />
+              <col style="width:240px" />
+              <col style="width:96px" />
+              <col style="width:110px" />
+              <col style="width:110px" />
+              <col style="width:130px" />
+              <col style="width:46px" />
+            </colgroup>
+            <thead>
+              <tr>
+                <th class="row-no">#</th>
+                <th>Mã hàng</th>
+                <th>Tên hàng</th>
+                <th>ĐVT</th>
+                <th>Loại</th>
+                <th>D × R × Dày × Tấm</th>
+                <th>SL</th>
+                <th>Đơn giá</th>
+                <th>Giá vốn</th>
+                <th>Thành tiền</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td class="row-no">1</td>
+                <td class="product-cell">
+                  <input class="cell-input" value="SP" />
+                  <!-- Product typeahead popover open -->
+                  <div class="product-popover">
+                    <div class="dropdown-meta">
+                      <span>Tìm thấy 4 sản phẩm <span class="callout">stays muted</span></span>
+                      <span class="kbd-group">
+                        <kbd>Tab</kbd> duyệt
+                        <kbd>Enter</kbd> chọn
+                        <kbd>Esc</kbd> đóng
+                      </span>
+                    </div>
+                    <table class="options">
+                      <thead>
+                        <tr>
+                          <th>Mã</th><th>Tên</th><th>Loại</th><th>Quy cách</th><th style="text-align:right">Giá bán</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr><td style="font-family:ui-monospace,monospace">SP001</td><td>Gỗ MDF chống ẩm 18mm</td><td>m²</td><td class="muted">1220×2440×18</td><td class="muted" style="text-align:right">180.000</td></tr>
+                        <tr class="highlighted"><td style="font-family:ui-monospace,monospace">SP002</td><td>Tấm nhựa PVC 1220×2440</td><td>ĐV</td><td class="muted">1220×2440</td><td class="muted" style="text-align:right">320.000</td></tr>
+                        <tr><td style="font-family:ui-monospace,monospace">SP003</td><td>Vít gỗ 4×40</td><td>ĐV</td><td class="muted"></td><td class="muted" style="text-align:right">45.000</td></tr>
+                        <tr><td style="font-family:ui-monospace,monospace">SP004</td><td>Gỗ thông xẻ 30×60</td><td>m dài</td><td class="muted">30×60</td><td class="muted" style="text-align:right">28.000</td></tr>
+                      </tbody>
+                    </table>
+                  </div>
+                </td>
+                <td><input class="cell-input" value="Gỗ MDF chống ẩm 18mm" /></td>
+                <td><input class="cell-input" value="m²" /></td>
+                <td class="cell-pricing-mode">m²</td>
+                <td>
+                  <div class="dxr-cell">
+                    <input class="cell-input" value="1.22" />
+                    <input class="cell-input" value="2.44" />
+                    <input class="cell-input" value="" />
+                    <input class="cell-input" value="2" />
+                  </div>
+                </td>
+                <td class="cell-number"><input class="cell-input cell-number" value="5.953" /></td>
+                <td class="cell-number"><input class="cell-input cell-number" value="180000" /></td>
+                <td class="cell-number"><input class="cell-input cell-number" value="155000" /></td>
+                <td class="cell-number"><div style="padding:0 8px;text-align:right;line-height:1.15"><div>1.071.500</div><div class="muted" style="font-size:11px">LN: 148.815</div></div></td>
+                <td class="cell-action"><button title="Xóa">🗑</button></td>
+              </tr>
+              <tr>
+                <td class="row-no">2 <span class="callout">td.row-no stays muted</span></td>
+                <td><input class="cell-input" value="SP003" /></td>
+                <td><input class="cell-input" value="Vít gỗ 4×40" /></td>
+                <td><input class="cell-input" value="hộp" /></td>
+                <td class="cell-pricing-mode">ĐV</td>
+                <td>
+                  <div class="dxr-cell">
+                    <input class="cell-input" value="" />
+                    <input class="cell-input" value="" />
+                    <input class="cell-input" value="" />
+                    <input class="cell-input" value="" />
+                  </div>
+                </td>
+                <td class="cell-number"><input class="cell-input cell-number" value="3" /></td>
+                <td class="cell-number"><input class="cell-input cell-number" value="45000" /></td>
+                <td class="cell-number"><input class="cell-input cell-number" value="" /></td>
+                <td class="cell-number"><div style="padding:0 8px;text-align:right">135.000</div></td>
+                <td class="cell-action"><button title="Xóa">🗑</button></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <!-- spacer so product popover renders fully -->
+        <div style="height: 240px"></div>
+      </div>
+    </div>
+
+    <div class="legend" style="background:#eef6ff;border-color:#7cb8f0">
+      <b>Recap</b>:
+      <ul style="margin: 6px 0 0; padding-left: 18px;">
+        <li>Customer popover column <code>&lt;thead&gt;</code> → <code>#005bac</code> + trắng + <code>font-weight 600</code>. Meta band ở trên giữ muted.</li>
+        <li>Product popover column <code>&lt;thead&gt;</code> → cùng style.</li>
+        <li><code>.accounting-grid &lt;thead&gt;</code> (Chi tiết hàng hóa) → cùng style + <code>th.row-no</code> tham gia brand band. Không sọc xám 1px giữa các header cell.</li>
+        <li><b>Không đụng</b>: body row, <code>td.row-no</code>, focus <code>#fff8dc</code>, footer, toolbar, empty placeholder, shared shadcn <code>&lt;Table&gt;</code>.</li>
+      </ul>
+    </div>
+
+  </div>
+</body>
+</html>

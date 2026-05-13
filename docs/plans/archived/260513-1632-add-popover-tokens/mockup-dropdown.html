@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Mockup — Customer search dropdown (popover token applied)</title>
+  <style>
+    /* === Design tokens (target state — sau khi Phase 02 apply) === */
+    :root {
+      --background: hsl(0 0% 100%);
+      --foreground: hsl(222.2 84% 4.9%);
+      --card: hsl(0 0% 100%);
+      --card-foreground: hsl(222.2 84% 4.9%);
+      --popover: hsl(0 0% 100%);            /* NEW — target token */
+      --popover-foreground: hsl(222.2 84% 4.9%);  /* NEW — target token */
+      --muted: hsl(210 40% 96.1%);
+      --muted-foreground: hsl(215.4 16.3% 46.9%);
+      --accent: hsl(210 40% 96.1%);
+      --accent-foreground: hsl(222.2 47.4% 11.2%);
+      --border: hsl(214.3 31.8% 91.4%);
+      --primary: hsl(221.2 83.2% 53.3%);
+      --primary-foreground: hsl(210 40% 98%);
+      --destructive: hsl(0 84.2% 60.2%);
+      --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+      --radius: 0.5rem;
+      --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; }
+    body {
+      font-family: var(--font-sans);
+      background: hsl(210 40% 96.1%);
+      color: var(--foreground);
+      font-size: 14px;
+      padding: 32px 24px 96px;
+      min-height: 100vh;
+    }
+
+    .page {
+      max-width: 1100px;
+      margin: 0 auto;
+      display: grid;
+      gap: 16px;
+    }
+
+    .legend {
+      background: #fff8dc;
+      border: 1px solid #f6c945;
+      border-radius: var(--radius);
+      padding: 10px 14px;
+      font-size: 13px;
+      line-height: 1.5;
+    }
+    .legend b { color: #8a6d00; }
+
+    /* "Card" mô phỏng "Thông tin chung" của quotation form, có nền trắng riêng */
+    .card {
+      background: var(--card);
+      color: var(--card-foreground);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px 22px;
+      box-shadow: 0 1px 3px rgb(0 0 0 / 0.04);
+    }
+    .card-title {
+      font-size: 16px;
+      font-weight: 600;
+      margin: 0 0 14px;
+    }
+    .field-row {
+      display: grid;
+      grid-template-columns: 130px 1fr;
+      align-items: center;
+      gap: 12px;
+      padding: 8px 0;
+      border-bottom: 1px dashed transparent;
+    }
+    .field-label {
+      font-size: 13px;
+      color: var(--muted-foreground);
+    }
+    .field-input {
+      position: relative;
+    }
+    .field-input input {
+      width: 100%;
+      height: 36px;
+      padding: 0 12px;
+      border: 1px solid var(--border);
+      border-radius: calc(var(--radius) - 2px);
+      font: inherit;
+      font-size: 14px;
+      background: var(--background);
+      color: var(--foreground);
+      outline: none;
+    }
+    .field-input input:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 2px hsl(221.2 83.2% 53.3% / 0.18);
+    }
+
+    /* "Sample rows phía dưới" — để chứng minh dropdown KHÔNG xuyên thấu các row này */
+    .background-rows {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 14px 18px;
+      display: grid;
+      gap: 10px;
+    }
+    .background-rows .row {
+      display: grid;
+      grid-template-columns: 60px 1fr 120px 100px;
+      gap: 12px;
+      padding: 8px 10px;
+      background: hsl(210 20% 98%);
+      border: 1px solid var(--border);
+      border-radius: calc(var(--radius) - 2px);
+      font-size: 13px;
+      color: var(--muted-foreground);
+    }
+    .background-rows .row strong {
+      color: var(--foreground);
+      font-weight: 600;
+    }
+
+    /* === Dropdown panel — mục tiêu sau khi apply token === */
+    .dropdown-wrap {
+      position: relative;
+    }
+    .dropdown {
+      position: absolute;
+      left: 0;
+      top: calc(100% + 4px);
+      z-index: 50;
+      min-width: min(760px, calc(100vw - 80px));
+      max-width: calc(100vw - 40px);
+      max-height: 320px;
+      overflow: auto;
+      background: var(--popover);                /* ← key fix */
+      color: var(--popover-foreground);          /* ← key fix */
+      border: 1px solid var(--border);
+      border-radius: calc(var(--radius) - 2px);
+      box-shadow: var(--shadow-md);
+    }
+    .dropdown-meta {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--border);
+      background: hsl(210 40% 96.1% / 0.3);
+      padding: 6px 10px;
+      font-size: 12px;
+      color: var(--muted-foreground);
+    }
+    .kbd-group {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    kbd {
+      display: inline-block;
+      padding: 2px 6px;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      background: var(--background);
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 10px;
+      line-height: 1;
+    }
+
+    table.options {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+    table.options thead th {
+      position: sticky;
+      top: 0;
+      background: hsl(210 40% 96.1% / 0.6);
+      color: var(--muted-foreground);
+      font-weight: 500;
+      font-size: 12px;
+      text-align: left;
+      padding: 6px 10px;
+      border-bottom: 1px solid var(--border);
+    }
+    table.options tbody td {
+      padding: 6px 10px;
+      border-top: 1px solid var(--border);
+      vertical-align: top;
+    }
+    table.options tbody tr {
+      cursor: pointer;
+    }
+    table.options tbody tr:hover {
+      background: hsl(210 40% 96.1% / 0.4);
+    }
+    table.options tbody tr.highlighted {
+      background: var(--accent);
+      color: var(--accent-foreground);
+    }
+    .muted { color: var(--muted-foreground); }
+    .badge {
+      display: inline-block;
+      background: hsl(210 40% 96.1%);
+      color: hsl(222.2 47.4% 11.2%);
+      border-radius: 999px;
+      padding: 1px 8px;
+      font-size: 11px;
+      font-weight: 500;
+    }
+
+    /* Pointer line showing the bug being fixed */
+    .annotation {
+      margin-top: 14px;
+      font-size: 12px;
+      color: var(--muted-foreground);
+      line-height: 1.6;
+    }
+    .annotation b { color: var(--foreground); }
+  </style>
+</head>
+<body>
+  <div class="page">
+
+    <div class="legend">
+      <b>Mockup confirmation</b> — Đây là visual mục tiêu của dropdown tìm kiếm <b>Khách hàng</b>
+      (và Mã hàng trong bảng line items) sau khi Phase 02 apply 2 tokens:
+      <code>--popover: 0 0% 100%</code> (light) /
+      <code>--popover-foreground: 222.2 84% 4.9%</code>.
+      <br />
+      Để ý: dropdown đang <b>che hoàn toàn</b> các row phía dưới — đúng là bug user báo:
+      hiện tại nó đang <i>transparent</i>, sau khi apply token sẽ <i>opaque</i> như mockup này.
+    </div>
+
+    <!-- "Thông tin chung" simulated card with the search input -->
+    <div class="card">
+      <h3 class="card-title">Thông tin chung (mô phỏng)</h3>
+      <div class="field-row">
+        <div class="field-label">Mã đối tượng</div>
+        <div class="field-input dropdown-wrap">
+          <input type="text" value="a" autofocus />
+          <!-- dropdown panel -->
+          <div class="dropdown" role="listbox" aria-label="Kết quả tìm kiếm khách hàng">
+            <div class="dropdown-meta">
+              <span>Tìm thấy 5 khách hàng đang hoạt động</span>
+              <span class="kbd-group">
+                <kbd>Tab</kbd> duyệt
+                <kbd>Enter</kbd> chọn
+                <kbd>Esc</kbd> đóng
+              </span>
+            </div>
+            <table class="options">
+              <thead>
+                <tr>
+                  <th>Mã</th>
+                  <th>Tên</th>
+                  <th>MST</th>
+                  <th>Địa chỉ</th>
+                  <th>SĐT</th>
+                  <th>Loại</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr role="option">
+                  <td>KH001</td>
+                  <td>Công ty TNHH An Bình</td>
+                  <td class="muted">0312345678</td>
+                  <td class="muted">12 Lê Lợi, Q.1, TP.HCM</td>
+                  <td class="muted">0909123456</td>
+                  <td><span class="badge">Khách hàng</span></td>
+                </tr>
+                <tr role="option" class="highlighted" aria-selected="true">
+                  <td>KH002</td>
+                  <td>Công ty CP Anh Minh Phát</td>
+                  <td class="muted">0301456789</td>
+                  <td class="muted">88 Trần Hưng Đạo, Q.5, TP.HCM</td>
+                  <td class="muted">0908765432</td>
+                  <td><span class="badge">Khách hàng</span></td>
+                </tr>
+                <tr role="option">
+                  <td>KH003</td>
+                  <td>Cửa hàng A-Z Furniture</td>
+                  <td class="muted">8101234567</td>
+                  <td class="muted">15 Nguyễn Trãi, Hà Nội</td>
+                  <td class="muted">0978111222</td>
+                  <td><span class="badge">Khách hàng</span></td>
+                </tr>
+                <tr role="option">
+                  <td>KH004</td>
+                  <td>Anh Tuấn — KH lẻ</td>
+                  <td class="muted"></td>
+                  <td class="muted">Tân Bình, TP.HCM</td>
+                  <td class="muted">0913222333</td>
+                  <td><span class="badge">Khách hàng</span></td>
+                </tr>
+                <tr role="option">
+                  <td>KH005</td>
+                  <td>Công ty TNHH An Phú Decor</td>
+                  <td class="muted">0316543210</td>
+                  <td class="muted">Lô C12, KCN Tân Bình, TP.HCM</td>
+                  <td class="muted">0901555888</td>
+                  <td><span class="badge">Khách hàng</span></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <div class="field-row">
+        <div class="field-label">Ngày báo giá</div>
+        <div class="field-input"><input type="text" value="13/05/2026" /></div>
+      </div>
+      <div class="field-row">
+        <div class="field-label">Thuế suất (%)</div>
+        <div class="field-input"><input type="text" value="10" /></div>
+      </div>
+      <div class="field-row">
+        <div class="field-label">Chiết khấu</div>
+        <div class="field-input"><input type="text" value="0" /></div>
+      </div>
+    </div>
+
+    <!-- "Background rows" placed AFTER the card to demonstrate dropdown opacity -->
+    <div class="background-rows" aria-hidden="true">
+      <div class="row"><strong>SP001</strong><span>Gỗ MDF chống ẩm 18mm</span><span>m²</span><span>180.000</span></div>
+      <div class="row"><strong>SP002</strong><span>Tấm nhựa PVC 1220x2440</span><span>Tấm</span><span>320.000</span></div>
+      <div class="row"><strong>SP003</strong><span>Vít gỗ 4x40</span><span>Hộp</span><span>45.000</span></div>
+    </div>
+
+    <div class="annotation">
+      <b>Cách đọc mockup:</b>
+      Phía sau dropdown có 1 card "Thông tin chung" + 3 row "background" (SP001–SP003).
+      Trong mockup này dropdown <b>che kín</b> nội dung phía dưới (background trắng đặc).
+      Sau khi Phase 02 chạy, dropdown thật trong app sẽ trông y như vậy.
+      Trước fix: dropdown trong suốt → các row SP001–SP003 sẽ "lộ" xuyên qua dropdown — đây là bug đang fix.
+    </div>
+
+  </div>
+</body>
+</html>

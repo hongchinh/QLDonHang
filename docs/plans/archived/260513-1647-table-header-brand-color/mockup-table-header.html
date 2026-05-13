@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Mockup — Table header brand color #005bac</title>
+  <style>
+    :root {
+      --background: hsl(0 0% 100%);
+      --foreground: hsl(222.2 84% 4.9%);
+      --card: hsl(0 0% 100%);
+      --card-foreground: hsl(222.2 84% 4.9%);
+      --muted: hsl(210 40% 96.1%);
+      --muted-foreground: hsl(215.4 16.3% 46.9%);
+      --border: hsl(214.3 31.8% 91.4%);
+      --header-bg: #005bac;
+      --header-fg: #ffffff;
+      --radius-lg: 0.5rem;
+      --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; }
+    body {
+      font-family: var(--font-sans);
+      background: hsl(210 40% 96.1%);
+      color: var(--foreground);
+      font-size: 14px;
+      padding: 32px 24px 96px;
+      min-height: 100vh;
+    }
+
+    .page {
+      max-width: 1280px;
+      margin: 0 auto;
+      display: grid;
+      gap: 20px;
+    }
+
+    .legend {
+      background: #fff8dc;
+      border: 1px solid #f6c945;
+      border-radius: var(--radius-lg);
+      padding: 12px 16px;
+      font-size: 13px;
+      line-height: 1.6;
+    }
+    .legend b { color: #8a6d00; }
+    .legend code {
+      background: rgba(0,0,0,0.05);
+      padding: 1px 6px;
+      border-radius: 4px;
+      font-size: 12px;
+    }
+    .legend .row { display: flex; gap: 24px; flex-wrap: wrap; align-items: center; margin-top: 6px; }
+    .swatch {
+      display: inline-flex; align-items: center; gap: 8px; font-size: 12px;
+    }
+    .swatch .chip {
+      display: inline-block; width: 18px; height: 18px; border-radius: 4px; border: 1px solid rgba(0,0,0,0.1);
+    }
+
+    .compare-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+    }
+    @media (max-width: 1024px) {
+      .compare-grid { grid-template-columns: 1fr; }
+    }
+
+    .demo-label {
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: var(--muted-foreground);
+      margin: 0 0 8px;
+    }
+    .demo-label.bad::before  { content: "⚠ "; color: #d93025; }
+    .demo-label.good::before { content: "✓ "; color: #12805c; }
+
+    /* shadcn-like Card */
+    .card {
+      background: var(--card);
+      color: var(--card-foreground);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      box-shadow: 0 1px 3px rgb(0 0 0 / 0.04);
+    }
+    .card.clip { overflow: hidden; }      /* the "fixed" version */
+    .card.no-clip { overflow: visible; }  /* the "broken corner" version */
+
+    .card-padding { padding: 20px; }
+    .card-title {
+      font-size: 16px;
+      font-weight: 600;
+      margin: 0 0 12px;
+    }
+    .card-toolbar {
+      display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; gap: 12px;
+    }
+    .card-toolbar input {
+      width: 240px; height: 32px; padding: 0 10px; border: 1px solid var(--border);
+      border-radius: 6px; font: inherit; font-size: 13px; outline: none;
+    }
+    .card-toolbar button {
+      height: 32px; padding: 0 14px; border-radius: 6px;
+      border: 1px solid var(--header-bg); background: var(--header-bg); color: white;
+      font: inherit; font-weight: 500; font-size: 13px; cursor: pointer;
+    }
+
+    /* The Table */
+    table.list-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+    table.list-table thead {
+      background: var(--header-bg);
+    }
+    table.list-table thead th {
+      height: 40px;
+      padding: 0 8px;
+      text-align: left;
+      vertical-align: middle;
+      color: var(--header-fg);
+      font-weight: 600;        /* semibold */
+      font-size: 13px;
+      white-space: nowrap;
+    }
+    table.list-table thead th .sort-icon {
+      display: inline-block; vertical-align: middle; margin-left: 4px; opacity: 0.85;
+    }
+    table.list-table tbody td {
+      padding: 10px 8px;
+      border-top: 1px solid var(--border);
+      vertical-align: middle;
+    }
+    table.list-table tbody tr:hover {
+      background: hsl(210 40% 96.1% / 0.6);
+    }
+    .muted { color: var(--muted-foreground); }
+    .badge {
+      display: inline-block;
+      background: var(--muted);
+      color: hsl(222.2 47.4% 11.2%);
+      border-radius: 999px;
+      padding: 1px 8px;
+      font-size: 11px;
+      font-weight: 500;
+    }
+    .status-active {
+      display: inline-block;
+      padding: 1px 8px;
+      border-radius: 999px;
+      background: #e6f4ec;
+      color: #12805c;
+      font-size: 11px;
+      font-weight: 500;
+    }
+    .status-inactive {
+      display: inline-block;
+      padding: 1px 8px;
+      border-radius: 999px;
+      background: #fdecec;
+      color: #b53227;
+      font-size: 11px;
+      font-weight: 500;
+    }
+    .action-icon {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 26px; height: 26px; border-radius: 4px; color: var(--muted-foreground);
+      cursor: pointer;
+    }
+    .action-icon:hover { background: var(--muted); color: var(--foreground); }
+
+    .footnote {
+      font-size: 12px;
+      color: var(--muted-foreground);
+      line-height: 1.6;
+      margin-top: 4px;
+    }
+    .footnote b { color: var(--foreground); }
+
+    /* Annotation arrow over the bad corner */
+    .corner-annot {
+      position: relative;
+    }
+    .corner-annot::after {
+      content: "Square blue corner spills past rounded Card →";
+      position: absolute;
+      top: -2px;
+      right: 8px;
+      transform: translateY(-100%);
+      font-size: 11px;
+      color: #b53227;
+      background: white;
+      padding: 2px 8px;
+      border: 1px solid #b53227;
+      border-radius: 4px;
+      white-space: nowrap;
+    }
+    @media (max-width: 1024px) {
+      .corner-annot::after { display: none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+
+    <div class="legend">
+      <b>Mockup confirmation</b> — Visual mục tiêu của header bảng list trên 3 trang
+      (<code>/customers</code>, <code>/products</code>, <code>/quotations</code>) sau khi sửa shadcn
+      <code>&lt;Table&gt;</code> primitive.
+      <div class="row">
+        <span class="swatch"><span class="chip" style="background:#005bac"></span> Header bg <code>#005bac</code></span>
+        <span class="swatch"><span class="chip" style="background:#ffffff;border-color:#ccc"></span> Header text <code>#ffffff</code> · <code>font-weight 600</code></span>
+        <span class="swatch">Contrast <b>5.69:1</b> — WCAG AA pass</span>
+      </div>
+      <div style="margin-top:8px">
+        So sánh 2 phương án Card bên dưới để quyết định có cần thêm <code>overflow-hidden</code>
+        cho <code>&lt;Card&gt;</code> ở 3 trang list hay không.
+      </div>
+    </div>
+
+    <div class="compare-grid">
+
+      <!-- ============== Card A: without overflow-hidden (the artifact) ============== -->
+      <div>
+        <p class="demo-label bad">Card A — without <code style="font-size:11px">overflow-hidden</code></p>
+        <div class="card no-clip corner-annot">
+          <div class="card-padding">
+            <div class="card-toolbar">
+              <h3 class="card-title">Danh sách khách hàng</h3>
+              <button type="button">+ Thêm khách hàng</button>
+            </div>
+            <input placeholder="Tìm theo mã / tên / MST / SĐT..." />
+          </div>
+
+          <table class="list-table">
+            <thead>
+              <tr>
+                <th>Mã</th>
+                <th>
+                  Tên
+                  <svg class="sort-icon" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+                </th>
+                <th>MST</th>
+                <th>Địa chỉ</th>
+                <th>SĐT</th>
+                <th>Loại</th>
+                <th>Trạng thái</th>
+                <th>Hành động</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>KH001</td>
+                <td>Công ty TNHH An Bình</td>
+                <td class="muted">0312345678</td>
+                <td class="muted">12 Lê Lợi, Q.1, TP.HCM</td>
+                <td class="muted">0909123456</td>
+                <td><span class="badge">Doanh nghiệp</span></td>
+                <td><span class="status-active">Đang hoạt động</span></td>
+                <td>
+                  <span class="action-icon" title="Sửa">✎</span>
+                  <span class="action-icon" title="Xóa">🗑</span>
+                </td>
+              </tr>
+              <tr>
+                <td>KH002</td>
+                <td>Công ty CP Anh Minh Phát</td>
+                <td class="muted">0301456789</td>
+                <td class="muted">88 Trần Hưng Đạo, Q.5, TP.HCM</td>
+                <td class="muted">0908765432</td>
+                <td><span class="badge">Doanh nghiệp</span></td>
+                <td><span class="status-active">Đang hoạt động</span></td>
+                <td>
+                  <span class="action-icon" title="Sửa">✎</span>
+                  <span class="action-icon" title="Xóa">🗑</span>
+                </td>
+              </tr>
+              <tr>
+                <td>KH003</td>
+                <td>Cửa hàng A-Z Furniture</td>
+                <td class="muted">8101234567</td>
+                <td class="muted">15 Nguyễn Trãi, Hà Nội</td>
+                <td class="muted">0978111222</td>
+                <td><span class="badge">Hộ kinh doanh</span></td>
+                <td><span class="status-active">Đang hoạt động</span></td>
+                <td>
+                  <span class="action-icon" title="Sửa">✎</span>
+                  <span class="action-icon" title="Xóa">🗑</span>
+                </td>
+              </tr>
+              <tr>
+                <td>KH004</td>
+                <td>Anh Tuấn — KH lẻ</td>
+                <td class="muted"></td>
+                <td class="muted">Tân Bình, TP.HCM</td>
+                <td class="muted">0913222333</td>
+                <td><span class="badge">Cá nhân</span></td>
+                <td><span class="status-inactive">Ngừng</span></td>
+                <td>
+                  <span class="action-icon" title="Sửa">✎</span>
+                  <span class="action-icon" title="Xóa">🗑</span>
+                </td>
+              </tr>
+              <tr>
+                <td>KH005</td>
+                <td>Công ty TNHH An Phú Decor</td>
+                <td class="muted">0316543210</td>
+                <td class="muted">Lô C12, KCN Tân Bình, TP.HCM</td>
+                <td class="muted">0901555888</td>
+                <td><span class="badge">Doanh nghiệp</span></td>
+                <td><span class="status-active">Đang hoạt động</span></td>
+                <td>
+                  <span class="action-icon" title="Sửa">✎</span>
+                  <span class="action-icon" title="Xóa">🗑</span>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="footnote">
+          <b>Hiện trạng:</b> header band <code>#005bac</code> tràn ra ngoài 4 góc bo của Card. Góc trên trái/phải
+          xuất hiện hình vuông xanh trên nền card bo tròn → trông thiếu polish.
+        </p>
+      </div>
+
+      <!-- ============== Card B: with overflow-hidden (the fix) ============== -->
+      <div>
+        <p class="demo-label good">Card B — with <code style="font-size:11px">overflow-hidden</code></p>
+        <div class="card clip">
+          <div class="card-padding">
+            <div class="card-toolbar">
+              <h3 class="card-title">Danh sách khách hàng</h3>
+              <button type="button">+ Thêm khách hàng</button>
+            </div>
+            <input placeholder="Tìm theo mã / tên / MST / SĐT..." />
+          </div>
+
+          <table class="list-table">
+            <thead>
+              <tr>
+                <th>Mã</th>
+                <th>
+                  Tên
+                  <svg class="sort-icon" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+                </th>
+                <th>MST</th>
+                <th>Địa chỉ</th>
+                <th>SĐT</th>
+                <th>Loại</th>
+                <th>Trạng thái</th>
+                <th>Hành động</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>KH001</td>
+                <td>Công ty TNHH An Bình</td>
+                <td class="muted">0312345678</td>
+                <td class="muted">12 Lê Lợi, Q.1, TP.HCM</td>
+                <td class="muted">0909123456</td>
+                <td><span class="badge">Doanh nghiệp</span></td>
+                <td><span class="status-active">Đang hoạt động</span></td>
+                <td>
+                  <span class="action-icon" title="Sửa">✎</span>
+                  <span class="action-icon" title="Xóa">🗑</span>
+                </td>
+              </tr>
+              <tr>
+                <td>KH002</td>
+                <td>Công ty CP Anh Minh Phát</td>
+                <td class="muted">0301456789</td>
+                <td class="muted">88 Trần Hưng Đạo, Q.5, TP.HCM</td>
+                <td class="muted">0908765432</td>
+                <td><span class="badge">Doanh nghiệp</span></td>
+                <td><span class="status-active">Đang hoạt động</span></td>
+                <td>
+                  <span class="action-icon" title="Sửa">✎</span>
+                  <span class="action-icon" title="Xóa">🗑</span>
+                </td>
+              </tr>
+              <tr>
+                <td>KH003</td>
+                <td>Cửa hàng A-Z Furniture</td>
+                <td class="muted">8101234567</td>
+                <td class="muted">15 Nguyễn Trãi, Hà Nội</td>
+                <td class="muted">0978111222</td>
+                <td><span class="badge">Hộ kinh doanh</span></td>
+                <td><span class="status-active">Đang hoạt động</span></td>
+                <td>
+                  <span class="action-icon" title="Sửa">✎</span>
+                  <span class="action-icon" title="Xóa">🗑</span>
+                </td>
+              </tr>
+              <tr>
+                <td>KH004</td>
+                <td>Anh Tuấn — KH lẻ</td>
+                <td class="muted"></td>
+                <td class="muted">Tân Bình, TP.HCM</td>
+                <td class="muted">0913222333</td>
+                <td><span class="badge">Cá nhân</span></td>
+                <td><span class="status-inactive">Ngừng</span></td>
+                <td>
+                  <span class="action-icon" title="Sửa">✎</span>
+                  <span class="action-icon" title="Xóa">🗑</span>
+                </td>
+              </tr>
+              <tr>
+                <td>KH005</td>
+                <td>Công ty TNHH An Phú Decor</td>
+                <td class="muted">0316543210</td>
+                <td class="muted">Lô C12, KCN Tân Bình, TP.HCM</td>
+                <td class="muted">0901555888</td>
+                <td><span class="badge">Doanh nghiệp</span></td>
+                <td><span class="status-active">Đang hoạt động</span></td>
+                <td>
+                  <span class="action-icon" title="Sửa">✎</span>
+                  <span class="action-icon" title="Xóa">🗑</span>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="footnote">
+          <b>Fix:</b> thêm <code>className="overflow-hidden"</code> cho <code>&lt;Card&gt;</code> ở 3 trang list.
+          Header band bo tròn theo Card, không tràn góc. Đây là lựa chọn "Confirm + Card fix" trong gate.
+        </p>
+      </div>
+
+    </div>
+
+    <div class="legend" style="background:#eef6ff;border-color:#7cb8f0">
+      <b>Quyết định cần chốt</b>:
+      <ol style="margin: 6px 0 0; padding-left: 18px;">
+        <li><b>Confirm — apply primitive change ONLY</b>: Phase 02 chỉ sửa <code>table.tsx</code>; chấp nhận góc vuông như Card A.</li>
+        <li><b>Confirm — apply primitive change + Card <code>overflow-hidden</code></b>: Phase 02 sửa thêm 3 file list page; kết quả như Card B.</li>
+        <li><b>Need adjustment</b>: muốn đổi màu/font-weight/padding — mô tả cụ thể.</li>
+        <li><b>Cancel plan</b>: bỏ qua, không sửa gì.</li>
+      </ol>
+    </div>
+
+  </div>
+</body>
+</html>

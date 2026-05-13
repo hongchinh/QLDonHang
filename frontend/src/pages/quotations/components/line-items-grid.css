@@ -3,9 +3,9 @@
  * cua docs/bd/ui_form_them_moi_phieu_thu_html.html.
  *
  * Colors bridge to shadcn HSL tokens (--border, --muted, --accent, ...)
- * so the grid follows theme (incl. dark mode). The two yellow/blue cell
- * focus highlights stay hardcoded - they are intentional spreadsheet
- * affordances kept identical across themes.
+ * so the grid follows theme (incl. dark mode). Three exceptions stay hardcoded:
+ * the two yellow/blue cell-focus highlights (intentional spreadsheet affordances)
+ * and the brand-blue header band (#005bac) — both intentional across themes.
  */
 
 .accounting-grid-wrap {
@@ -33,11 +33,13 @@
 }
 
 .accounting-grid th {
-  background: hsl(var(--muted));
-  color: hsl(var(--foreground));
+  background: #005bac;
+  color: #ffffff;
   font-weight: 600;
   text-align: center;
   padding: 8px 6px;
+  border-right-color: rgba(255, 255, 255, 0.12);
+  border-bottom-color: transparent;
 }
 
 .accounting-grid thead th {
@@ -55,6 +57,11 @@
   color: hsl(var(--muted-foreground));
   background: hsl(var(--muted) / 0.5);
   font-weight: 600;
+}
+
+.accounting-grid th.row-no {
+  background: #005bac;
+  color: #ffffff;
 }
 
 .accounting-grid .cell-input {
