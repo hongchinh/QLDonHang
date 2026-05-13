@@ -11,6 +11,8 @@ interface Props {
   onSelect: (s: ProductSuggestion) => void;
   placeholder?: string;
   variant?: 'default' | 'cell';
+  /** ID gán cho input này. */
+  inputId?: string;
   /** ID của input cần focus ngay sau khi commit. */
   nextFocusId?: string;
 }
@@ -30,6 +32,7 @@ export function ProductTypeaheadCell({
   onSelect,
   placeholder,
   variant = 'default',
+  inputId,
   nextFocusId,
 }: Props) {
   const [open, setOpen] = useState(false);
@@ -126,6 +129,7 @@ export function ProductTypeaheadCell({
 
   const triggerProps = {
     ref: inputRef,
+    id: inputId,
     value,
     onFocus: () => {
       syncDropdownRect();

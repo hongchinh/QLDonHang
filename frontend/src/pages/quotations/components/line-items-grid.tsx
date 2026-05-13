@@ -1,8 +1,7 @@
-import { useEffect, useRef, useState } from 'react';
+import { forwardRef, useImperativeHandle, useRef, useState, type KeyboardEvent } from 'react';
 import { useFieldArray, useWatch, type UseFormReturn } from 'react-hook-form';
 import { Plus, Trash2 } from 'lucide-react';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
-import type { PricingMode } from '@/features/products/types';
 import type {
   QuotationFormParsed,
   QuotationFormValues,
@@ -15,18 +14,75 @@ import './line-items-grid.css';
 const fmt = new Intl.NumberFormat('vi-VN');
 const vnd = new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND', maximumFractionDigits: 0 });
 
-const PRICING_LABEL: Record<PricingMode, string> = {
-  PerUnit: 'ĐV',
-  PerSquareMeter: 'm²',
-  PerLinearMeter: 'md',
-  PerCubicMeter: 'm³',
-};
+const LINE_FOCUS_FIELDS = [
+  'product-code',
+  'name',
+  'unit',
+  'length',
+  'width',
+  'thickness',
+  'sheet-count',
+  'quantity',
+  'unit-price',
+  'unit-cost',
+] as const;
+
+type LineFocusField = (typeof LINE_FOCUS_FIELDS)[number];
+
+function getLineCellId(field: LineFocusField, idx: number): string {
+  return `line-${field}-${idx}`;
+}
+
+function parseLineCellId(id: string): { field: LineFocusField; rowIndex: number } | null {
+  const match = /^line-(.+)-(\d+)$/.exec(id);
+  if (!match) return null;
+  const field = match[1] as LineFocusField;
+  if (!LINE_FOCUS_FIELDS.includes(field)) return null;
+  const rowIndex = Number(match[2]);
+  return Number.isInteger(rowIndex) ? { field, rowIndex } : null;
+}
+
+function focusLineCell(field: LineFocusField, rowIndex: number): void {
+  document.getElementById(getLineCellId(field, rowIndex))?.focus();
+}
+
+function focusLineCellAfterRender(field: LineFocusField, rowIndex: number): void {
+  setTimeout(() => focusLineCell(field, rowIndex), 0);
+}
+
+function createEmptyLine(sortOrder: number): QuotationLineFormValues {
+  return {
+    sortOrder,
+    productName: '',
+    unitName: '',
+    pricingMode: 'PerUnit',
+    quantity: 1,
+    unitPrice: 0,
+  } as QuotationLineFormValues;
+}
+
+function isLineFocusFieldDisabled(line: QuotationLineFormValues, field: LineFocusField): boolean {
+  switch (line.pricingMode) {
+    case 'PerUnit':
+      return field === 'length' || field === 'width' || field === 'thickness' || field === 'sheet-count';
+    case 'PerLinearMeter':
+      return field === 'width' || field === 'thickness' || field === 'sheet-count';
+    case 'PerSquareMeter':
+      return field === 'thickness' || field === 'sheet-count';
+    default:
+      return false;
+  }
+}
+
+export interface LineItemsGridHandle {
+  ensureFirstLineAndFocusProductCode: () => void;
+}
 
 interface Props {
   form: UseFormReturn<QuotationFormValues, unknown, QuotationFormParsed>;
 }
 
-export function LineItemsGrid({ form }: Props) {
+export const LineItemsGrid = forwardRef<LineItemsGridHandle, Props>(function LineItemsGrid({ form }, ref) {
   const { fields, append, remove } = useFieldArray({
     control: form.control,
     name: 'lines',
@@ -35,7 +91,19 @@ export function LineItemsGrid({ form }: Props) {
   const rows = watched ?? [];
   const wrapRef = useRef<HTMLDivElement>(null);
   const [activeRowIndex, setActiveRowIndex] = useState<number | null>(null);
+  const [editingMoneyCellId, setEditingMoneyCellId] = useState<string | null>(null);
   const [clearAllOpen, setClearAllOpen] = useState(false);
+
+  useImperativeHandle(ref, () => ({
+    ensureFirstLineAndFocusProductCode() {
+      if (fields.length === 0) {
+        append(createEmptyLine(0));
+        setTimeout(() => document.getElementById(getLineCellId('product-code', 0))?.focus(), 0);
+      } else {
+        document.getElementById(getLineCellId('product-code', 0))?.focus();
+      }
+    },
+  }));
 
   const setLineField = <K extends keyof QuotationLineFormValues>(
     idx: number,
@@ -46,47 +114,75 @@ export function LineItemsGrid({ form }: Props) {
   };
 
   const addLine = () => {
-    append({
-      sortOrder: fields.length,
-      productName: '',
-      unitName: '',
-      pricingMode: 'PerUnit',
-      quantity: 1,
-      unitPrice: 0,
-    } as QuotationLineFormValues);
-    // Auto-focus first input of the newly appended row so subsequent Insert/Ctrl+Delete
-    // keystrokes reach the wrap-scoped listener (especially right after empty-state add).
-    setTimeout(() => {
-      const wrapEl = wrapRef.current;
-      if (!wrapEl) return;
-      const bodyRows = wrapEl.querySelectorAll('tbody tr');
-      const lastRow = bodyRows[bodyRows.length - 1];
-      const firstInput = lastRow?.querySelector<HTMLInputElement>('input');
-      firstInput?.focus();
-    }, 0);
+    append(createEmptyLine(fields.length));
+    focusLineCellAfterRender('product-code', fields.length);
   };
 
-  useEffect(() => {
-    const el = wrapRef.current;
-    if (!el) return;
-    function onKeyDown(e: KeyboardEvent) {
-      if (e.key === 'Insert' && !e.ctrlKey && !e.shiftKey && !e.altKey) {
-        e.preventDefault();
-        addLine();
+  function getLineForNavigation(rowIndex: number): QuotationLineFormValues | undefined {
+    return (rows[rowIndex] ?? fields[rowIndex]) as unknown as QuotationLineFormValues | undefined;
+  }
+
+  function getEnabledFocusFields(rowIndex: number): readonly LineFocusField[] {
+    const line = getLineForNavigation(rowIndex);
+    if (!line) return LINE_FOCUS_FIELDS;
+    return LINE_FOCUS_FIELDS.filter((field) => !isLineFocusFieldDisabled(line, field));
+  }
+
+  function moveLineFocus(current: { field: LineFocusField; rowIndex: number }, direction: 1 | -1) {
+    if (current.rowIndex < 0 || current.rowIndex >= fields.length) return;
+    const enabledFields = getEnabledFocusFields(current.rowIndex);
+    const fieldIndex = enabledFields.indexOf(current.field);
+    if (fieldIndex === -1) return;
+
+    if (direction === 1) {
+      if (fieldIndex < enabledFields.length - 1) {
+        focusLineCell(enabledFields[fieldIndex + 1], current.rowIndex);
         return;
       }
-      if (e.key === 'Delete' && e.ctrlKey) {
-        e.preventDefault();
-        if (activeRowIndex != null && activeRowIndex < fields.length) {
-          remove(activeRowIndex);
-          setActiveRowIndex(null);
-        }
+      if (current.rowIndex < fields.length - 1) {
+        focusLineCell(getEnabledFocusFields(current.rowIndex + 1)[0], current.rowIndex + 1);
+        return;
       }
+      append(createEmptyLine(fields.length));
+      focusLineCellAfterRender('product-code', fields.length);
+      return;
     }
-    el.addEventListener('keydown', onKeyDown);
-    return () => el.removeEventListener('keydown', onKeyDown);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeRowIndex, fields.length]);
+
+    if (fieldIndex > 0) {
+      focusLineCell(enabledFields[fieldIndex - 1], current.rowIndex);
+      return;
+    }
+    if (current.rowIndex > 0) {
+      const previousRowFields = getEnabledFocusFields(current.rowIndex - 1);
+      focusLineCell(previousRowFields[previousRowFields.length - 1], current.rowIndex - 1);
+    }
+  }
+
+  function handleGridKeyDown(e: KeyboardEvent<HTMLDivElement>) {
+    if (e.defaultPrevented) return;
+
+    if (e.key === 'Insert' && !e.ctrlKey && !e.shiftKey && !e.altKey && !e.metaKey) {
+      e.preventDefault();
+      addLine();
+      return;
+    }
+
+    if (e.key === 'Delete' && e.ctrlKey) {
+      e.preventDefault();
+      if (activeRowIndex != null && activeRowIndex < fields.length) {
+        remove(activeRowIndex);
+        setActiveRowIndex(null);
+      }
+      return;
+    }
+
+    if (e.key !== 'Enter' || e.ctrlKey || e.altKey || e.metaKey) return;
+    const target = e.target as HTMLElement;
+    const current = parseLineCellId(target.id);
+    if (!current) return;
+    e.preventDefault();
+    moveLineFocus(current, e.shiftKey ? -1 : 1);
+  }
 
   const subtotal = rows.reduce((sum, line) => sum + computeLineTotal(toLineLike(line)), 0);
 
@@ -103,14 +199,14 @@ export function LineItemsGrid({ form }: Props) {
 
   return (
     <div className="space-y-2">
-      <div ref={wrapRef} className="accounting-grid-wrap" tabIndex={-1}>
+      {/* eslint-disable-next-line jsx-a11y/no-static-element-interactions -- Grid wrapper owns keyboard shortcuts for editable child inputs. */}
+      <div ref={wrapRef} className="accounting-grid-wrap" tabIndex={-1} onKeyDown={handleGridKeyDown}>
         <table className="accounting-grid">
           <colgroup>
             <col style={{ width: 42 }} />
             <col style={{ width: 130 }} />
             <col />
             <col style={{ width: 58 }} />
-            <col style={{ width: 62 }} />
             <col style={{ width: 220 }} />
             <col style={{ width: 82 }} />
             <col style={{ width: 104 }} />
@@ -124,7 +220,6 @@ export function LineItemsGrid({ form }: Props) {
               <th>Mã hàng</th>
               <th>Tên hàng</th>
               <th>ĐVT</th>
-              <th>Loại</th>
               <th>D × R × Dày × Tấm</th>
               <th>SL</th>
               <th>Đơn giá</th>
@@ -138,13 +233,18 @@ export function LineItemsGrid({ form }: Props) {
               const line = rows[idx] ?? (field as unknown as QuotationLineFormValues);
               const lineTotal = computeLineTotal(toLineLike(line));
               const lineCost = computeLineCost(toLineLike(line));
+              const lengthDisabled = isLineFocusFieldDisabled(line, 'length');
+              const widthDisabled = isLineFocusFieldDisabled(line, 'width');
+              const thicknessDisabled = isLineFocusFieldDisabled(line, 'thickness');
+              const sheetCountDisabled = isLineFocusFieldDisabled(line, 'sheet-count');
               return (
                 <tr key={field.id} onFocus={() => setActiveRowIndex(idx)}>
                   <td className="row-no">{idx + 1}</td>
                   <td>
                     <ProductTypeaheadCell
                       variant="cell"
-                      nextFocusId={`line-name-${idx}`}
+                      inputId={getLineCellId('product-code', idx)}
+                      nextFocusId={getLineCellId('name', idx)}
                       value={(line.productCode ?? '') as string}
                       onChange={(v) => setLineField(idx, 'productCode', v)}
                       onSelect={(s) => {
@@ -161,7 +261,7 @@ export function LineItemsGrid({ form }: Props) {
                   </td>
                   <td>
                     <input
-                      id={`line-name-${idx}`}
+                      id={getLineCellId('name', idx)}
                       className="cell-input"
                       aria-label="Tên hàng"
                       value={(line.productName ?? '') as string}
@@ -170,23 +270,23 @@ export function LineItemsGrid({ form }: Props) {
                   </td>
                   <td>
                     <input
+                      id={getLineCellId('unit', idx)}
                       className="cell-input"
                       aria-label="Đơn vị tính"
                       value={(line.unitName ?? '') as string}
                       onChange={(e) => setLineField(idx, 'unitName', e.target.value)}
                     />
                   </td>
-                  <td className="cell-pricing-mode">
-                    {PRICING_LABEL[line.pricingMode] ?? line.pricingMode}
-                  </td>
                   <td>
                     <div className="dxr-cell">
                       <input
+                        id={getLineCellId('length', idx)}
                         className="cell-input"
                         type="number"
                         step="any"
                         placeholder="D"
                         aria-label="Dài"
+                        disabled={lengthDisabled}
                         value={numInput(line.length)}
                         onChange={(e) => {
                           const v = parseNum(e.target.value);
@@ -195,11 +295,13 @@ export function LineItemsGrid({ form }: Props) {
                         }}
                       />
                       <input
+                        id={getLineCellId('width', idx)}
                         className="cell-input"
                         type="number"
                         step="any"
                         placeholder="R"
                         aria-label="Rộng"
+                        disabled={widthDisabled}
                         value={numInput(line.width)}
                         onChange={(e) => {
                           const v = parseNum(e.target.value);
@@ -208,11 +310,13 @@ export function LineItemsGrid({ form }: Props) {
                         }}
                       />
                       <input
+                        id={getLineCellId('thickness', idx)}
                         className="cell-input"
                         type="number"
                         step="any"
                         placeholder="Dày"
                         aria-label="Dày"
+                        disabled={thicknessDisabled}
                         value={numInput(line.thickness)}
                         onChange={(e) => {
                           const v = parseNum(e.target.value);
@@ -221,11 +325,13 @@ export function LineItemsGrid({ form }: Props) {
                         }}
                       />
                       <input
+                        id={getLineCellId('sheet-count', idx)}
                         className="cell-input"
                         type="number"
                         step="any"
                         placeholder="Tấm"
                         aria-label="Số tấm"
+                        disabled={sheetCountDisabled}
                         value={numInput(line.sheetCount)}
                         onChange={(e) => {
                           const v = parseNum(e.target.value);
@@ -237,6 +343,7 @@ export function LineItemsGrid({ form }: Props) {
                   </td>
                   <td className="cell-number">
                     <input
+                      id={getLineCellId('quantity', idx)}
                       className="cell-input cell-number"
                       type="number"
                       step="any"
@@ -247,22 +354,28 @@ export function LineItemsGrid({ form }: Props) {
                   </td>
                   <td className="cell-number">
                     <input
+                      id={getLineCellId('unit-price', idx)}
                       className="cell-input cell-number"
-                      type="number"
-                      step="any"
+                      type="text"
+                      inputMode="decimal"
                       aria-label="Đơn giá"
-                      value={numInput(line.unitPrice)}
-                      onChange={(e) => setLineField(idx, 'unitPrice', (parseNum(e.target.value) ?? 0) as never)}
+                      value={moneyInput(line.unitPrice, editingMoneyCellId === getLineCellId('unit-price', idx))}
+                      onFocus={() => setEditingMoneyCellId(getLineCellId('unit-price', idx))}
+                      onBlur={() => setEditingMoneyCellId(null)}
+                      onChange={(e) => setLineField(idx, 'unitPrice', (parseMoney(e.target.value) ?? 0) as never)}
                     />
                   </td>
                   <td className="cell-number">
                     <input
+                      id={getLineCellId('unit-cost', idx)}
                       className="cell-input cell-number"
-                      type="number"
-                      step="any"
+                      type="text"
+                      inputMode="decimal"
                       aria-label="Giá vốn"
-                      value={numInput(line.unitCost)}
-                      onChange={(e) => setLineField(idx, 'unitCost', parseNum(e.target.value) as never)}
+                      value={moneyInput(line.unitCost, editingMoneyCellId === getLineCellId('unit-cost', idx))}
+                      onFocus={() => setEditingMoneyCellId(getLineCellId('unit-cost', idx))}
+                      onBlur={() => setEditingMoneyCellId(null)}
+                      onChange={(e) => setLineField(idx, 'unitCost', parseMoney(e.target.value) as never)}
                     />
                   </td>
                   <td className="cell-number">
@@ -290,7 +403,7 @@ export function LineItemsGrid({ form }: Props) {
             })}
             {fields.length === 0 && (
               <tr>
-                <td colSpan={11} className="empty-placeholder">
+                <td colSpan={10} className="empty-placeholder">
                   Chưa có dòng nào.{' '}
                   <button type="button" className="empty-placeholder-link" onClick={addLine}>
                     Bấm để thêm dòng đầu tiên
@@ -304,6 +417,9 @@ export function LineItemsGrid({ form }: Props) {
 
       <div className="line-items-footer">
         <div className="keyboard-guide">
+          <span><span className="kbd">Enter</span> Tiếp</span>
+          <span><span className="kbd">Shift</span>+<span className="kbd">Enter</span> Lùi</span>
+          <span><span className="kbd">Ctrl</span>+<span className="kbd">S</span> Lưu</span>
           <span><span className="kbd">Insert</span> Thêm dòng</span>
           <span><span className="kbd">Ctrl</span>+<span className="kbd">Delete</span> Xóa dòng</span>
         </div>
@@ -340,7 +456,7 @@ export function LineItemsGrid({ form }: Props) {
       setLineField(idx, 'quantity', derived as never);
     }
   }
-}
+});
 
 function toLineLike(line: QuotationLineFormValues) {
   return {
@@ -368,7 +484,25 @@ function parseNum(v: string): number | undefined {
   return Number.isFinite(n) ? n : undefined;
 }
 
+function parseMoney(v: string): number | undefined {
+  const trimmed = v.trim();
+  if (trimmed === '') return undefined;
+  const normalized = trimmed.includes(',')
+    ? trimmed.replace(/\./g, '').replace(',', '.')
+    : /^-?\d{1,3}(\.\d{3})+$/.test(trimmed)
+    ? trimmed.replace(/\./g, '')
+    : trimmed;
+  const n = Number(normalized);
+  return Number.isFinite(n) ? n : undefined;
+}
+
 function numInput(v: unknown): string | number {
   if (v === undefined || v === null) return '';
   return v as number | string;
+}
+
+function moneyInput(v: unknown, editing: boolean): string | number {
+  if (editing) return numInput(v);
+  const n = toNum(v);
+  return n === undefined ? '' : fmt.format(n);
 }

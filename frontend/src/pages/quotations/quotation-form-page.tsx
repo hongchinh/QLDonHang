@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useForm, useWatch, type Resolver } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Link, useNavigate, useParams } from 'react-router-dom';
@@ -34,7 +34,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { getErrorMessage } from '@/lib/api-client';
 import { toast } from '@/lib/use-toast';
 import { StatusPill } from './components/status-pill';
-import { LineItemsGrid } from './components/line-items-grid';
+import { LineItemsGrid, type LineItemsGridHandle } from './components/line-items-grid';
 import { TotalsPanel } from './components/totals-panel';
 import type { HeaderLike, LineLike } from './utils/compute-line';
 
@@ -151,6 +151,44 @@ function QuotationFormInner({
         : null,
   );
   const [quickAddOpen, setQuickAddOpen] = useState(false);
+  const lineItemsGridRef = useRef<LineItemsGridHandle>(null);
+
+  const GENERAL_INFO_FIELD_ORDER = [
+    'quotationDate',
+    'deliveryDate',
+    'customerId',
+    'customerName',
+    'deliveryAddress',
+    'deliveryRecipient',
+    'deliveryPhone',
+    'deliveryNote',
+    'internalNote',
+  ] as const;
+
+  function handleGeneralInfoKeyDown(e: React.KeyboardEvent<HTMLDivElement>) {
+    if (e.defaultPrevented) return;
+    if (e.key !== 'Enter' || e.ctrlKey || e.altKey) return;
+    const target = e.target as HTMLInputElement;
+    e.preventDefault();
+    const currentId = target.id;
+    const order = GENERAL_INFO_FIELD_ORDER;
+    const idx = order.indexOf(currentId as typeof order[number]);
+    if (idx === -1) return;
+    if (!e.shiftKey && idx === order.length - 1) {
+      lineItemsGridRef.current?.ensureFirstLineAndFocusProductCode();
+      return;
+    }
+    const nextIdx = e.shiftKey ? idx - 1 : idx + 1;
+    if (nextIdx < 0 || nextIdx >= order.length) return;
+    document.getElementById(order[nextIdx])?.focus();
+  }
+
+  function handleFormKeyDown(e: React.KeyboardEvent<HTMLFormElement>) {
+    if (e.key === 's' && e.ctrlKey && !e.shiftKey && !e.altKey) {
+      e.preventDefault();
+      form.handleSubmit(onSubmit)();
+    }
+  }
 
   useEffect(() => {
     if (!initial) return;
@@ -240,11 +278,12 @@ function QuotationFormInner({
         )}
       </div>
 
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+      {/* eslint-disable-next-line jsx-a11y/no-noninteractive-element-interactions -- Form-level Ctrl+S shortcut delegates to the existing submit handler. */}
+      <form onSubmit={form.handleSubmit(onSubmit)} onKeyDown={handleFormKeyDown} className="space-y-4">
         <div className="grid gap-4 lg:grid-cols-[1fr_320px] items-stretch">
           <Card>
             <CardHeader><CardTitle>Thông tin chung</CardTitle></CardHeader>
-            <CardContent className="space-y-3">
+            <CardContent className="space-y-3" onKeyDown={handleGeneralInfoKeyDown}>
               <div className="form-inline-grid form-cols-2">
                 <Label htmlFor="quotationDate" className="field-label required">Ngày báo giá</Label>
                 <Input
@@ -299,9 +338,12 @@ function QuotationFormInner({
                 )}
               </div>
 
-              <div className="form-inline-grid form-cols-3">
+              <div className="form-inline-grid">
                 <Label htmlFor="deliveryAddress" className="field-label">Địa chỉ giao</Label>
                 <Input id="deliveryAddress" {...form.register('deliveryAddress')} />
+              </div>
+
+              <div className="form-inline-grid form-cols-2">
                 <Label htmlFor="deliveryRecipient" className="field-label">Người nhận</Label>
                 <Input id="deliveryRecipient" {...form.register('deliveryRecipient')} />
                 <Label htmlFor="deliveryPhone" className="field-label">Điện thoại</Label>
@@ -323,7 +365,7 @@ function QuotationFormInner({
           <Card>
             <CardHeader><CardTitle>Chi tiết hàng hóa</CardTitle></CardHeader>
             <CardContent>
-              <LineItemsGrid form={form} />
+              <LineItemsGrid ref={lineItemsGridRef} form={form} />
               {form.formState.errors.lines && (
                 <p className="mt-2 text-sm text-destructive">
                   {String((form.formState.errors.lines as { message?: string }).message ?? 'Báo giá chưa hợp lệ.')}
