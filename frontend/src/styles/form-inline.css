@@ -1,7 +1,22 @@
 .form-inline-grid {
   display: grid;
+  grid-template-columns: var(--qldh-form-grid-columns, 90px 1fr);
   gap: 8px 10px;
   align-items: center;
+}
+
+.form-inline-grid.info-row-2,
+.form-inline-grid.form-cols-2 {
+  --qldh-form-grid-columns: 90px minmax(180px, 1fr) 90px minmax(180px, 1fr);
+}
+
+.form-inline-grid.form-cols-customer {
+  --qldh-form-grid-columns: 90px minmax(180px, 1fr) 90px minmax(220px, 2fr);
+}
+
+.form-inline-grid.info-row-3,
+.form-inline-grid.form-cols-3 {
+  --qldh-form-grid-columns: 90px minmax(220px, 2fr) 90px minmax(120px, 1fr) 90px minmax(120px, 1fr);
 }
 
 .form-inline-grid .field-label {
@@ -36,8 +51,11 @@
 @media (max-width: 1023px) {
   .form-inline-grid.customer-row,
   .form-inline-grid.info-row-2,
-  .form-inline-grid.info-row-3 {
-    grid-template-columns: 90px 1fr !important;
+  .form-inline-grid.info-row-3,
+  .form-inline-grid.form-cols-2,
+  .form-inline-grid.form-cols-3,
+  .form-inline-grid.form-cols-customer {
+    grid-template-columns: 90px 1fr;
   }
 
   .form-inline-grid .field-span-rest,

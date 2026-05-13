@@ -1,0 +1,147 @@
+@layer base {
+  :root {
+    --qldh-font-body: 14px;
+    --qldh-line-body: 20px;
+    --qldh-font-subtle: 13px;
+    --qldh-line-subtle: 19px;
+    --qldh-font-counter: 10px;
+    --qldh-line-counter: 16px;
+
+    --qldh-control-height: 36px;
+    --qldh-control-compact-height: 32px;
+    --qldh-control-radius: 6px;
+    --qldh-control-compact-radius: 3px;
+    --qldh-control-padding-x: 12px;
+    --qldh-control-padding-y: 8px;
+    --qldh-control-compact-padding-x: 10px;
+    --qldh-control-compact-padding-top: 5px;
+    --qldh-control-compact-padding-bottom: 6px;
+
+    --qldh-menu-item-height: 32px;
+    --qldh-menu-item-padding-x: 16px;
+    --qldh-table-head-height: 36px;
+    --qldh-table-cell-padding: 8px;
+
+    --qldh-brand-header: #005bac;
+    --qldh-brand-header-foreground: #ffffff;
+    --qldh-cell-focus-bg: #fff8dc;
+  }
+}
+
+@layer components {
+  .qldh-text-body {
+    font-size: var(--qldh-font-body);
+    line-height: var(--qldh-line-body);
+  }
+
+  .qldh-text-subtle {
+    font-size: var(--qldh-font-subtle);
+    line-height: var(--qldh-line-subtle);
+  }
+
+  .qldh-control {
+    height: var(--qldh-control-height);
+    border-radius: var(--qldh-control-radius);
+    padding: var(--qldh-control-padding-y) var(--qldh-control-padding-x);
+    font-size: var(--qldh-font-body);
+    line-height: var(--qldh-line-body);
+  }
+
+  .qldh-control-compact {
+    height: var(--qldh-control-compact-height);
+    border-radius: var(--qldh-control-compact-radius);
+    padding: var(--qldh-control-compact-padding-top) var(--qldh-control-compact-padding-x)
+      var(--qldh-control-compact-padding-bottom);
+    font-size: var(--qldh-font-body);
+    line-height: var(--qldh-line-body);
+  }
+
+  .qldh-button {
+    height: var(--qldh-control-height);
+    border-radius: var(--qldh-control-radius);
+    padding: var(--qldh-control-padding-y) 16px;
+    font-size: var(--qldh-font-body);
+    line-height: var(--qldh-line-body);
+  }
+
+  .qldh-button-sm {
+    height: var(--qldh-control-compact-height);
+    border-radius: var(--qldh-control-radius);
+    padding-inline: 12px;
+    font-size: var(--qldh-font-body);
+    line-height: var(--qldh-line-body);
+  }
+
+  .qldh-button-lg {
+    height: 40px;
+    border-radius: var(--qldh-control-radius);
+    padding-inline: 24px;
+    font-size: var(--qldh-font-body);
+    line-height: var(--qldh-line-body);
+  }
+
+  .qldh-button-icon {
+    width: var(--qldh-control-height);
+    height: var(--qldh-control-height);
+    border-radius: var(--qldh-control-radius);
+    padding: 0;
+  }
+
+  .qldh-menu-item {
+    min-height: var(--qldh-menu-item-height);
+    padding-block: 0;
+    padding-inline: var(--qldh-menu-item-padding-x);
+    font-size: var(--qldh-font-body);
+    line-height: var(--qldh-menu-item-height);
+  }
+
+  .qldh-table {
+    font-size: var(--qldh-font-body);
+    line-height: var(--qldh-line-body);
+  }
+
+  .qldh-table-head {
+    height: var(--qldh-table-head-height);
+    padding-inline: var(--qldh-table-cell-padding);
+  }
+
+  .qldh-table-header-band {
+    background: var(--qldh-brand-header);
+    color: var(--qldh-brand-header-foreground);
+  }
+
+  .qldh-table-cell {
+    padding: var(--qldh-table-cell-padding);
+  }
+
+  .qldh-lookup-table {
+    width: 100%;
+    font-size: var(--qldh-font-body);
+    line-height: var(--qldh-line-body);
+  }
+
+  .qldh-lookup-table-header {
+    position: sticky;
+    top: 0;
+    background: var(--qldh-brand-header);
+    color: var(--qldh-brand-header-foreground);
+    text-align: left;
+    font-size: var(--qldh-font-subtle);
+    line-height: var(--qldh-line-subtle);
+    font-weight: 600;
+  }
+
+  .qldh-lookup-row-highlight {
+    background: hsl(var(--accent));
+    color: hsl(var(--accent-foreground));
+    outline: 1px solid hsl(var(--ring));
+    outline-offset: -1px;
+  }
+
+  .qldh-badge-counter {
+    min-height: var(--qldh-line-counter);
+    padding-inline: 5px;
+    font-size: var(--qldh-font-counter);
+    line-height: var(--qldh-line-counter);
+  }
+}

@@ -220,8 +220,8 @@ export function CustomerAutocomplete({
               </span>
             </div>
             {/* eslint-disable-next-line jsx-a11y/no-noninteractive-element-to-interactive-role -- WAI-ARIA combobox listbox pattern */}
-            <table className="w-full text-sm" id={listboxId} role="listbox">
-              <thead className="sticky top-0 bg-[#005bac] text-left text-xs font-semibold text-white">
+            <table className="qldh-lookup-table" id={listboxId} role="listbox">
+              <thead className="qldh-lookup-table-header">
                 <tr>
                   <th className="px-2 py-1">Mã</th>
                   <th className="px-2 py-1">Tên</th>
@@ -271,7 +271,7 @@ export function CustomerAutocomplete({
                         onMouseEnter={() => setHighlightedIndex(i)}
                         className={cn(
                           'cursor-pointer border-t',
-                          highlighted && 'bg-accent text-accent-foreground',
+                          highlighted && 'qldh-lookup-row-highlight',
                         )}
                       >
                         <td className="px-2 py-1 align-top">{c.code}</td>

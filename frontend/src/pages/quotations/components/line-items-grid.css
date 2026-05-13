@@ -33,8 +33,8 @@
 }
 
 .accounting-grid th {
-  background: #005bac;
-  color: #ffffff;
+  background: var(--qldh-brand-header);
+  color: var(--qldh-brand-header-foreground);
   font-weight: 600;
   text-align: center;
   padding: 8px 6px;
@@ -60,8 +60,8 @@
 }
 
 .accounting-grid th.row-no {
-  background: #005bac;
-  color: #ffffff;
+  background: var(--qldh-brand-header);
+  color: var(--qldh-brand-header-foreground);
 }
 
 .accounting-grid .cell-input {
@@ -78,7 +78,7 @@
 }
 
 .accounting-grid .cell-input:focus {
-  background: #fff8dc;
+  background: var(--qldh-cell-focus-bg);
   box-shadow: inset 0 0 0 2px hsl(var(--ring));
 }
 
@@ -190,10 +190,15 @@
 
 .accounting-grid .empty-placeholder-link:hover,
 .accounting-grid .empty-placeholder-link:focus-visible {
-  outline: none;
   color: hsl(var(--primary));
   text-decoration: underline;
   filter: brightness(0.9);
+}
+
+.accounting-grid .empty-placeholder-link:focus-visible {
+  outline: 2px solid hsl(var(--ring));
+  outline-offset: 2px;
+  border-radius: 2px;
 }
 
 .line-items-footer {

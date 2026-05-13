@@ -245,10 +245,7 @@ function QuotationFormInner({
           <Card>
             <CardHeader><CardTitle>Thông tin chung</CardTitle></CardHeader>
             <CardContent className="space-y-3">
-              <div
-                className="form-inline-grid info-row-2"
-                style={{ gridTemplateColumns: '90px minmax(180px,1fr) 90px minmax(180px,1fr)' }}
-              >
+              <div className="form-inline-grid form-cols-2">
                 <Label htmlFor="quotationDate" className="field-label required">Ngày báo giá</Label>
                 <Input
                   id="quotationDate"
@@ -270,10 +267,7 @@ function QuotationFormInner({
                 )}
               </div>
 
-              <div
-                className="form-inline-grid info-row-2"
-                style={{ gridTemplateColumns: '90px minmax(180px,1fr) 90px minmax(220px,2fr)' }}
-              >
+              <div className="form-inline-grid form-cols-customer">
                 <Label htmlFor="customerId" className="field-label required">Mã KH</Label>
                 <CustomerAutocomplete
                   inputId="customerId"
@@ -305,10 +299,7 @@ function QuotationFormInner({
                 )}
               </div>
 
-              <div
-                className="form-inline-grid info-row-3"
-                style={{ gridTemplateColumns: '90px minmax(220px,2fr) 90px minmax(120px,1fr) 90px minmax(120px,1fr)' }}
-              >
+              <div className="form-inline-grid form-cols-3">
                 <Label htmlFor="deliveryAddress" className="field-label">Địa chỉ giao</Label>
                 <Input id="deliveryAddress" {...form.register('deliveryAddress')} />
                 <Label htmlFor="deliveryRecipient" className="field-label">Người nhận</Label>
@@ -317,10 +308,7 @@ function QuotationFormInner({
                 <Input id="deliveryPhone" {...form.register('deliveryPhone')} />
               </div>
 
-              <div
-                className="form-inline-grid info-row-2"
-                style={{ gridTemplateColumns: '90px minmax(180px,1fr) 90px minmax(180px,1fr)' }}
-              >
+              <div className="form-inline-grid form-cols-2">
                 <Label htmlFor="deliveryNote" className="field-label">Ghi chú GH</Label>
                 <Input id="deliveryNote" {...form.register('deliveryNote')} />
                 <Label htmlFor="internalNote" className="field-label">Ghi chú NB</Label>
