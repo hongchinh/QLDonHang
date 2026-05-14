@@ -1,9 +1,12 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 using OrderMgmt.Application.Common.Interfaces;
 using OrderMgmt.Application.Common.Models;
+using OrderMgmt.Application.Common.Options;
 using OrderMgmt.Application.Sales.Quotations.Interfaces;
 using OrderMgmt.Application.Sales.Quotations.Models;
 using OrderMgmt.Domain.Common;
+using OrderMgmt.Domain.Constants;
 using OrderMgmt.Domain.Entities.Catalog;
 using OrderMgmt.Domain.Entities.Sales;
 using OrderMgmt.Domain.Enums;
@@ -30,26 +33,84 @@ public class QuotationService : IQuotationService
     private readonly ICurrentUser _currentUser;
     private readonly IQuotationExcelRenderer _excelRenderer;
     private readonly IQuotationSpreadsheetPdfConverter _pdfConverter;
+    private readonly IOptionsMonitor<FeatureOptions> _features;
+    private readonly IQuotationExportPathResolver _templatePathResolver;
 
     public QuotationService(
         IAppDbContext db,
         IDateTime clock,
         ICurrentUser currentUser,
         IQuotationExcelRenderer excelRenderer,
-        IQuotationSpreadsheetPdfConverter pdfConverter)
+        IQuotationSpreadsheetPdfConverter pdfConverter,
+        IOptionsMonitor<FeatureOptions> features,
+        IQuotationExportPathResolver templatePathResolver)
     {
         _db = db;
         _clock = clock;
         _currentUser = currentUser;
         _excelRenderer = excelRenderer;
         _pdfConverter = pdfConverter;
+        _features = features;
+        _templatePathResolver = templatePathResolver;
+    }
+
+    private IQueryable<Quotation> ApplyOwnerScope(IQueryable<Quotation> query)
+    {
+        if (!_features.CurrentValue.QuotationOwnerScope) return query;
+        if (_currentUser.HasPermission(Permissions.Quotations.ViewAll)) return query;
+        var uid = _currentUser.UserId ?? Guid.Empty;
+        return query.Where(x => x.OwnerUserId == uid);
+    }
+
+    private void EnsureCanAccess(Quotation quotation)
+    {
+        if (!_features.CurrentValue.QuotationOwnerScope) return;
+        if (_currentUser.HasPermission(Permissions.Quotations.ViewAll)) return;
+        if (quotation.OwnerUserId != _currentUser.UserId)
+            throw new ForbiddenException("Bạn không có quyền truy cập báo giá này.");
+    }
+
+    private async Task EnsureCanModifyAsync(Quotation q, CancellationToken ct)
+    {
+        if (q.Status == QuotationStatus.Cancelled)
+            throw new DomainException("CONFLICT", "Báo giá đã hủy không thể chỉnh sửa.");
+
+        var isOwnerDeleted = await _db.Users.IgnoreQueryFilters()
+            .Where(u => u.Id == q.OwnerUserId)
+            .Select(u => (bool?)u.IsDeleted)
+            .FirstOrDefaultAsync(ct) ?? false;
+        if (isOwnerDeleted)
+            throw new DomainException("CONFLICT", "Báo giá có chủ sở hữu đã ngừng hoạt động — chỉ có thể clone.");
+
+        if (_currentUser.HasPermission(Permissions.Quotations.BypassLock)) return;
+
+        var settings = await _db.UserQuotationSettings
+            .AsNoTracking()
+            .FirstOrDefaultAsync(s => s.UserId == _currentUser.UserId, ct);
+        if (settings?.LockAtStatus is { } threshold && CompareStatus(q.Status, threshold) >= 0)
+            throw new DomainException("CONFLICT",
+                $"Báo giá ở trạng thái '{q.Status}' đã bị khoá theo cấu hình của bạn.");
+    }
+
+    private static int CompareStatus(QuotationStatus a, QuotationStatus b)
+    {
+        // Order: Draft(1) < Sent(2) < Confirmed(3) < ConvertedToOrder(4). Cancelled handled separately.
+        static int Rank(QuotationStatus s) => s switch
+        {
+            QuotationStatus.Draft => 0,
+            QuotationStatus.Sent => 1,
+            QuotationStatus.Confirmed => 2,
+            QuotationStatus.ConvertedToOrder => 3,
+            _ => -1,
+        };
+        return Rank(a).CompareTo(Rank(b));
     }
 
     public async Task<PagedResult<QuotationListItemDto>> ListAsync(QuotationListRequest request, CancellationToken ct = default)
     {
-        var query = _db.Quotations
+        var query = ApplyOwnerScope(_db.Quotations
             .AsNoTracking()
-            .Where(q => !q.IsDeleted);
+            .Where(q => !q.IsDeleted));
 
         if (request.Status.HasValue)
             query = query.Where(q => q.Status == request.Status.Value);
@@ -93,8 +154,24 @@ public class QuotationService : IQuotationService
                 ContactPhone = q.ContactPhone,
                 Total = q.Total,
                 Status = q.Status,
+                OwnerUserId = q.OwnerUserId,
+                OwnerFullName = _db.Users.IgnoreQueryFilters()
+                    .Where(u => u.Id == q.OwnerUserId)
+                    .Select(u => u.FullName)
+                    .FirstOrDefault(),
+                IsOwnerDeleted = _db.Users.IgnoreQueryFilters()
+                    .Where(u => u.Id == q.OwnerUserId)
+                    .Select(u => (bool?)u.IsDeleted)
+                    .FirstOrDefault() ?? false,
+                CanClone = _db.Users.IgnoreQueryFilters()
+                    .Where(u => u.Id == q.OwnerUserId)
+                    .Select(u => (bool?)u.IsDeleted)
+                    .FirstOrDefault() ?? false,
                 CreatedByName = q.CreatedBy.HasValue
-                    ? _db.Users.Where(u => u.Id == q.CreatedBy).Select(u => u.FullName).FirstOrDefault()
+                    ? _db.Users.IgnoreQueryFilters()
+                        .Where(u => u.Id == q.CreatedBy)
+                        .Select(u => u.FullName)
+                        .FirstOrDefault()
                     : null,
                 CreatedAt = q.CreatedAt,
             })
@@ -117,7 +194,31 @@ public class QuotationService : IQuotationService
             .FirstOrDefaultAsync(q => q.Id == id && !q.IsDeleted, ct)
             ?? throw new NotFoundException(nameof(Quotation), id);
 
-        return MapToDto(quotation);
+        EnsureCanAccess(quotation);
+
+        var owner = await _db.Users.IgnoreQueryFilters()
+            .AsNoTracking()
+            .Where(u => u.Id == quotation.OwnerUserId)
+            .Select(u => new { u.FullName, u.IsDeleted })
+            .FirstOrDefaultAsync(ct);
+
+        var canEdit = await ComputeCanEditAsync(quotation, owner?.IsDeleted ?? false, ct);
+        return MapToDto(quotation, owner?.FullName, owner?.IsDeleted ?? false, canEdit);
+    }
+
+    private async Task<bool> ComputeCanEditAsync(Quotation q, bool isOwnerDeleted, CancellationToken ct)
+    {
+        if (q.Status == QuotationStatus.Cancelled) return false;
+        if (isOwnerDeleted) return false;
+        if (_currentUser.HasPermission(Permissions.Quotations.BypassLock)) return true;
+
+        var lockAt = await _db.UserQuotationSettings
+            .AsNoTracking()
+            .Where(s => s.UserId == _currentUser.UserId)
+            .Select(s => s.LockAtStatus)
+            .FirstOrDefaultAsync(ct);
+        if (lockAt is { } threshold && CompareStatus(q.Status, threshold) >= 0) return false;
+        return true;
     }
 
     public async Task<QuotationDto> CreateAsync(UpsertQuotationRequest request, CancellationToken ct = default)
@@ -135,6 +236,8 @@ public class QuotationService : IQuotationService
             {
                 Code = code,
                 QuotationDate = request.QuotationDate,
+                OwnerUserId = _currentUser.UserId
+                    ?? throw new UnauthorizedAccessException("User not authenticated."),
                 CustomerId = customer.Id,
                 CustomerName = string.IsNullOrWhiteSpace(request.CustomerName)
                     ? customer.Name
@@ -182,8 +285,8 @@ public class QuotationService : IQuotationService
             .FirstOrDefaultAsync(q => q.Id == id && !q.IsDeleted, ct)
             ?? throw new NotFoundException(nameof(Quotation), id);
 
-        if (quotation.Status == QuotationStatus.Cancelled)
-            throw new DomainException("CONFLICT", "Báo giá đã hủy không thể chỉnh sửa.");
+        EnsureCanAccess(quotation);
+        await EnsureCanModifyAsync(quotation, ct);
 
         var customer = await EnsureCustomerAsync(request.CustomerId, ct);
 
@@ -220,6 +323,8 @@ public class QuotationService : IQuotationService
             .FirstOrDefaultAsync(q => q.Id == id && !q.IsDeleted, ct)
             ?? throw new NotFoundException(nameof(Quotation), id);
 
+        EnsureCanAccess(quotation);
+
         quotation.IsDeleted = true;
         quotation.DeletedAt = _clock.UtcNow;
         quotation.DeletedBy = _currentUser.UserId;
@@ -230,14 +335,16 @@ public class QuotationService : IQuotationService
     public async Task<(byte[] Excel, string FileName)> RenderExcelAsync(Guid id, CancellationToken ct = default)
     {
         var dto = await GetAsync(id, ct);
-        var bytes = await _excelRenderer.RenderAsync(dto, ct);
+        var templatePath = await _templatePathResolver.ResolveTemplatePathAsync(dto.OwnerUserId, ct);
+        var bytes = await _excelRenderer.RenderAsync(dto, templatePath, ct);
         return (bytes, $"BaoGia_{dto.Code}.xlsx");
     }
 
     public async Task<(byte[] Pdf, string FileName)> RenderPdfAsync(Guid id, CancellationToken ct = default)
     {
         var dto = await GetAsync(id, ct);
-        var excelBytes = await _excelRenderer.RenderAsync(dto, ct);
+        var templatePath = await _templatePathResolver.ResolveTemplatePathAsync(dto.OwnerUserId, ct);
+        var excelBytes = await _excelRenderer.RenderAsync(dto, templatePath, ct);
         var pdfBytes = await _pdfConverter.ConvertAsync(excelBytes, ct);
         return (pdfBytes, $"BaoGia_{dto.Code}.pdf");
     }
@@ -248,12 +355,176 @@ public class QuotationService : IQuotationService
             .FirstOrDefaultAsync(q => q.Id == id && !q.IsDeleted, ct)
             ?? throw new NotFoundException(nameof(Quotation), id);
 
+        EnsureCanAccess(quotation);
+
         if (!Transitions.TryGetValue((quotation.Status, action), out var next))
             throw new DomainException("CONFLICT", $"Không thể chuyển trạng thái '{quotation.Status}' bằng hành động '{action}'.");
+
+        // Cancel always allowed; other actions are subject to lock-at and orphan/cancelled guards.
+        if (action != QuotationAction.Cancel)
+            await EnsureCanModifyAsync(quotation, ct);
 
         quotation.Status = next;
         await _db.SaveChangesAsync(ct);
         return await GetAsync(quotation.Id, ct);
+    }
+
+    public async Task<QuotationDto> CloneAsync(Guid id, CancellationToken ct = default)
+    {
+        var source = await _db.Quotations
+            .AsNoTracking()
+            .Include(q => q.Lines.OrderBy(l => l.SortOrder))
+            .FirstOrDefaultAsync(q => q.Id == id && !q.IsDeleted, ct)
+            ?? throw new NotFoundException(nameof(Quotation), id);
+
+        var ownerInfo = await _db.Users.IgnoreQueryFilters()
+            .AsNoTracking()
+            .Where(u => u.Id == source.OwnerUserId)
+            .Select(u => new { u.IsDeleted })
+            .FirstOrDefaultAsync(ct);
+        var isOrphan = ownerInfo?.IsDeleted ?? false;
+
+        if (isOrphan)
+        {
+            if (!_currentUser.HasPermission(Permissions.Quotations.CloneOrphan))
+                throw new ForbiddenException("Bạn không có quyền clone báo giá của user đã ngừng hoạt động.");
+        }
+        else
+        {
+            EnsureCanAccess(source);
+        }
+
+        var currentUserId = _currentUser.UserId
+            ?? throw new UnauthorizedAccessException("User not authenticated.");
+
+        for (var attempt = 1; attempt <= MaxCreateAttempts; attempt++)
+        {
+            var code = await GenerateCodeAsync(ct);
+            if (await _db.Quotations.AnyAsync(q => q.Code == code, ct)) continue;
+
+            var clone = new Quotation
+            {
+                Code = code,
+                QuotationDate = DateOnly.FromDateTime(_clock.Now.DateTime),
+                OwnerUserId = currentUserId,
+                CustomerId = source.CustomerId,
+                CustomerName = source.CustomerName,
+                CustomerTaxCode = source.CustomerTaxCode,
+                CustomerAddress = source.CustomerAddress,
+                ContactPerson = source.ContactPerson,
+                ContactPhone = source.ContactPhone,
+                DeliveryAddress = source.DeliveryAddress,
+                DeliveryRecipient = source.DeliveryRecipient,
+                DeliveryPhone = source.DeliveryPhone,
+                DeliveryDate = source.DeliveryDate,
+                DeliveryNote = source.DeliveryNote,
+                TaxRate = source.TaxRate,
+                Discount = source.Discount,
+                Freight = source.Freight,
+                InternalNote = source.InternalNote,
+                Status = QuotationStatus.Draft,
+            };
+
+            foreach (var srcLine in source.Lines.Where(l => !l.IsDeleted))
+            {
+                clone.Lines.Add(new QuotationLine
+                {
+                    SortOrder = srcLine.SortOrder,
+                    ProductId = srcLine.ProductId,
+                    ProductCode = srcLine.ProductCode,
+                    ProductName = srcLine.ProductName,
+                    Specification = srcLine.Specification,
+                    UnitName = srcLine.UnitName,
+                    PricingMode = srcLine.PricingMode,
+                    Length = srcLine.Length,
+                    Width = srcLine.Width,
+                    Thickness = srcLine.Thickness,
+                    Density = srcLine.Density,
+                    SheetCount = srcLine.SheetCount,
+                    Quantity = srcLine.Quantity,
+                    UnitPrice = srcLine.UnitPrice,
+                    UnitCost = srcLine.UnitCost,
+                    Note = srcLine.Note,
+                });
+            }
+
+            Recompute(clone);
+            _db.Quotations.Add(clone);
+
+            try
+            {
+                await _db.SaveChangesAsync(ct);
+                return await GetAsync(clone.Id, ct);
+            }
+            catch (DbUpdateException ex) when (IsUniqueViolation(ex) && attempt < MaxCreateAttempts)
+            {
+                _db.Entry(clone).State = EntityState.Detached;
+                foreach (var line in clone.Lines)
+                    _db.Entry(line).State = EntityState.Detached;
+            }
+        }
+
+        throw new ConflictException("Không thể tạo mã báo giá tự động sau nhiều lần thử. Vui lòng thử lại.");
+    }
+
+    public async Task<QuotationDto> TransferOwnerAsync(Guid id, TransferOwnerRequest request, CancellationToken ct = default)
+    {
+        var quotation = await _db.Quotations
+            .FirstOrDefaultAsync(q => q.Id == id && !q.IsDeleted, ct)
+            ?? throw new NotFoundException(nameof(Quotation), id);
+
+        var actorId = _currentUser.UserId
+            ?? throw new UnauthorizedAccessException("User not authenticated.");
+
+        var isOwner = quotation.OwnerUserId == actorId;
+        var permRequired = isOwner
+            ? Permissions.Quotations.TransferOwn
+            : Permissions.Quotations.TransferAny;
+        if (!_currentUser.HasPermission(permRequired))
+            throw new ForbiddenException("Bạn không có quyền chuyển nhượng báo giá này.");
+
+        var currentOwner = await _db.Users.IgnoreQueryFilters()
+            .AsNoTracking()
+            .Where(u => u.Id == quotation.OwnerUserId)
+            .Select(u => new { u.IsDeleted })
+            .FirstOrDefaultAsync(ct);
+        if (currentOwner?.IsDeleted == true)
+            throw new DomainException("CONFLICT",
+                "Báo giá có chủ sở hữu đã ngừng hoạt động — dùng bulk-transfer để chuyển toàn bộ.");
+
+        var newOwner = await _db.Users
+            .AsNoTracking()
+            .FirstOrDefaultAsync(u => u.Id == request.NewOwnerUserId, ct)
+            ?? throw new NotFoundException(nameof(Domain.Entities.Identity.User), request.NewOwnerUserId);
+        if (newOwner.Status != UserStatus.Active)
+            throw new DomainException("VALIDATION", "User nhận chuyển nhượng đang bị vô hiệu hoá.");
+
+        var oldOwnerId = quotation.OwnerUserId;
+        quotation.OwnerUserId = request.NewOwnerUserId;
+
+        _db.QuotationOwnerHistory.Add(new QuotationOwnerHistory
+        {
+            QuotationId = quotation.Id,
+            OldOwnerUserId = oldOwnerId,
+            NewOwnerUserId = request.NewOwnerUserId,
+            ActorUserId = actorId,
+            Reason = request.Reason,
+            ChangedAt = _clock.UtcNow,
+        });
+
+        await _db.SaveChangesAsync(ct);
+
+        // After transfer the caller may no longer have access; map DTO directly without guard.
+        var refreshed = await _db.Quotations
+            .AsNoTracking()
+            .Include(q => q.Lines.OrderBy(l => l.SortOrder))
+            .FirstAsync(q => q.Id == quotation.Id, ct);
+        var ownerAfter = await _db.Users.IgnoreQueryFilters()
+            .AsNoTracking()
+            .Where(u => u.Id == refreshed.OwnerUserId)
+            .Select(u => new { u.FullName, u.IsDeleted })
+            .FirstOrDefaultAsync(ct);
+        return MapToDto(refreshed, ownerAfter?.FullName, ownerAfter?.IsDeleted ?? false);
     }
 
     private async Task<Customer> EnsureCustomerAsync(Guid customerId, CancellationToken ct)
@@ -307,6 +578,10 @@ public class QuotationService : IQuotationService
                 var newLine = new QuotationLine();
                 ApplyLine(newLine, line, products);
                 quotation.Lines.Add(newLine);
+                // BaseEntity initializes Id with Guid.NewGuid() in its constructor, so EF's
+                // entity-state heuristic (non-default PK ⇒ Modified) would emit an UPDATE
+                // instead of an INSERT and fail with 0 rows affected. Force the Added state.
+                _db.Entry(newLine).State = EntityState.Added;
             }
         }
 
@@ -401,11 +676,16 @@ public class QuotationService : IQuotationService
     private static string EscapeLike(string input) =>
         input.Replace("\\", "\\\\").Replace("%", "\\%").Replace("_", "\\_");
 
-    private static QuotationDto MapToDto(Quotation q) => new()
+    private static QuotationDto MapToDto(Quotation q, string? ownerFullName = null, bool isOwnerDeleted = false, bool canEdit = true) => new()
     {
         Id = q.Id,
         Code = q.Code,
         QuotationDate = q.QuotationDate,
+        OwnerUserId = q.OwnerUserId,
+        OwnerFullName = ownerFullName,
+        IsOwnerDeleted = isOwnerDeleted,
+        CanEdit = canEdit && q.Status != QuotationStatus.Cancelled && !isOwnerDeleted,
+        CanClone = isOwnerDeleted,
         CustomerId = q.CustomerId,
         CustomerName = q.CustomerName,
         CustomerTaxCode = q.CustomerTaxCode,

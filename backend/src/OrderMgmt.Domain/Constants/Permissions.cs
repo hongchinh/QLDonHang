@@ -46,6 +46,16 @@ public static class Permissions
         public const string Print = "quotations.print";
         public const string ConvertToOrder = "quotations.convert";
         public const string ViewCost = "quotations.view_cost";
+        public const string ViewAll = "quotations.view_all";
+        public const string TransferOwn = "quotations.transfer_own";
+        public const string TransferAny = "quotations.transfer_any";
+        public const string CloneOrphan = "quotations.clone_orphan";
+        public const string BypassLock = "quotations.bypass_lock";
+    }
+
+    public static class UserSettings
+    {
+        public const string Manage = "user_settings.manage";
     }
 
     public static class Orders

@@ -98,9 +98,23 @@ Mọi controller trả `ApiResponse<T>` (success) hoặc `ApiResponse` với `er
 - Unique index **filtered** trên `IsDeleted = false` để cho phép tái sử dụng `Code`/`Username`/`Email` sau khi soft-delete.
 - Join tables (`UserRole`, `RolePermission`) có query filter dựa trên principal entities (`!User.IsDeleted && !Role.IsDeleted`).
 
+## Per-user quotation scoping
+
+- `Quotation.OwnerUserId` (NOT NULL, FK Users, Restrict) — chủ sở hữu báo giá; service set `OwnerUserId = currentUser.UserId` ở `CreateAsync`.
+- `QuotationService.ApplyOwnerScope` lọc list/detail theo owner; user có permission `quotations.view_all` bypass (mặc định gán ADMIN/MANAGER).
+- Permissions mới: `quotations.{view_all, transfer_own, transfer_any, clone_orphan, bypass_lock}`, `user_settings.manage`.
+- Feature flag `Features:QuotationOwnerScope = false` để rollback nhanh (bỏ qua scope + access guard, vẫn giữ `[HasPermission]` & lock-at).
+- `UserQuotationSettings (UserId UNIQUE, LockAtStatus, TemplateFileName, ...)` — config per-user; admin sửa qua `/api/admin/user-settings/{userId}/lock-at`; user chỉ xem qua `/api/me/quotation-settings`.
+- Lock-at: user không có `quotations.bypass_lock` không sửa được báo giá có `status >= LockAtStatus` (thứ tự logic Draft<Sent<Confirmed<ConvertedToOrder; Cancelled tách riêng).
+- Template Excel per-user: upload qua `PUT /api/me/quotation-settings/template` (validate magic bytes, MIME, .xlsx, zip-bomb cap, ClosedXML parse). File lưu `templates/users/{userId}.xlsx`. Render dùng template của *owner báo giá*, fallback về `QuotationExport:TemplatePath`.
+- Audit `QuotationOwnerHistory` ghi mọi lần chuyển nhượng (single hoặc bulk).
+- Bulk-transfer: `POST /api/admin/users/{userId}/transfer-quotations` (idempotent, chuyển toàn bộ owner=userId; option `IncludeCancelled`).
+- Clone: `POST /api/quotations/{id}/clone` — bản sao Draft với owner = currentUser; orphan source cần `quotations.clone_orphan`.
+- Dashboard: `GET /api/dashboard/quotation-stats` — tự scope theo owner; revenue loại Cancelled.
+
 ## Migration & seed
 
-- 3 migrations: `CreatePermissionsTable`, `AddFilteredUniqueIndexes`, `AddRefreshTokens`.
+- 10 migrations: `CreatePermissionsTable`, `AddFilteredUniqueIndexes`, `AddRefreshTokens`, `SnakeCaseNamingConvention`, `AddPricingModeToProduct`, `AddQuotations`, `EnableUnaccent`, `AddQuotationOwner`, `AddQuotationOwnerHistory`, `AddUserQuotationSettings`.
 - Auto-migrate được bật qua config `Database:AutoMigrateAndSeed` (Development only). Production dùng CI/CD `dotnet ef database update`.
 - `DbSeeder` chạy bên trong Postgres `pg_advisory_lock` để concurrent app instances tuần tự hoá migrate + seed.
 - Admin user chỉ seed khi `Seed:AdminPassword` được cung cấp.

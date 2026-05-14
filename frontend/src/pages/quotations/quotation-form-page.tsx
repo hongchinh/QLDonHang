@@ -4,6 +4,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft, Send, CheckCircle2, Ban, Printer, FileSpreadsheet } from 'lucide-react';
 import {
+  useCloneQuotation,
   useCreateQuotation,
   useQuotation,
   useTransitionQuotation,
@@ -150,6 +151,8 @@ function QuotationFormInner({
   onPrint,
   onDownloadExcel,
 }: InnerProps) {
+  const navigateInner = useNavigate();
+  const clone = useCloneQuotation();
   const form = useForm<QuotationFormValues, unknown, QuotationFormParsed>({
     resolver: zodResolver(quotationSchema) as unknown as Resolver<QuotationFormValues, unknown, QuotationFormParsed>,
     defaultValues: toFormDefaults(initial),
@@ -300,6 +303,37 @@ function QuotationFormInner({
           </div>
         )}
       </div>
+
+      {isEdit && initial && !initial.canEdit && (
+        <div className="rounded-md border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900">
+          {initial.isOwnerDeleted
+            ? 'Chủ sở hữu báo giá đã ngừng hoạt động — chỉ có thể clone.'
+            : initial.status === 'Cancelled'
+            ? 'Báo giá đã huỷ — không thể chỉnh sửa.'
+            : initial.status === 'ConvertedToOrder'
+            ? 'Báo giá đã chuyển đơn hàng — không thể chỉnh sửa.'
+            : `Báo giá đang ở trạng thái ${initial.status} — cấu hình khoá của bạn không cho phép sửa.`}
+          {initial.canClone && (
+            <Button
+              className="ml-3"
+              size="sm"
+              variant="outline"
+              onClick={() => {
+                clone.mutate(initial.id, {
+                  onSuccess: (cloned) => {
+                    toast({ variant: 'success', title: 'Đã clone báo giá', description: cloned.code });
+                    navigateInner(`/quotations/${cloned.id}`);
+                  },
+                  onError: (err) => toast({ variant: 'destructive', title: 'Clone thất bại', description: getErrorMessage(err) }),
+                });
+              }}
+              disabled={clone.isPending}
+            >
+              Clone
+            </Button>
+          )}
+        </div>
+      )}
 
       {/* eslint-disable-next-line jsx-a11y/no-noninteractive-element-interactions -- Form-level Ctrl+S shortcut delegates to the existing submit handler. */}
       <form onSubmit={form.handleSubmit(onSubmit)} onKeyDown={handleFormKeyDown} className="space-y-4">

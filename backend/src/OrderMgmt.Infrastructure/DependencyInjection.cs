@@ -46,6 +46,7 @@ public static class DependencyInjection
         services.Configure<QuotationExportOptions>(configuration.GetSection(QuotationExportOptions.SectionName));
         services.AddScoped<IQuotationExcelRenderer, QuotationExcelRenderer>();
         services.AddScoped<IQuotationSpreadsheetPdfConverter, LibreOfficeSpreadsheetPdfConverter>();
+        services.AddScoped<IQuotationExportPathResolver, QuotationExportPathResolver>();
 
         return services;
     }

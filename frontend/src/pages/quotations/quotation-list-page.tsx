@@ -6,11 +6,13 @@ import {
   useReactTable,
   type ColumnDef,
 } from '@tanstack/react-table';
-import { Plus, Pencil, Printer, Ban, Search } from 'lucide-react';
+import { Plus, Pencil, Printer, Ban, Search, Copy } from 'lucide-react';
 import {
   useQuotations,
   useTransitionQuotation,
+  useCloneQuotation,
 } from '@/features/quotations/hooks';
+import { useAuthStore } from '@/stores/auth-store';
 import { quotationsApi } from '@/features/quotations/api';
 import type {
   QuotationListItem,
@@ -78,6 +80,8 @@ export function QuotationListPage() {
     to: toDate || undefined,
   });
   const transition = useTransitionQuotation();
+  const clone = useCloneQuotation();
+  const hasViewAll = useAuthStore((s) => s.hasPermission('quotations.view_all'));
 
   const columns = useMemo<ColumnDef<QuotationListItem>[]>(
     () => [
@@ -101,6 +105,22 @@ export function QuotationListPage() {
         accessorKey: 'status',
         cell: ({ row }) => <StatusPill status={row.original.status} />,
       },
+      ...(hasViewAll
+        ? [{
+            header: 'Chủ sở hữu',
+            id: 'owner',
+            cell: ({ row }: { row: { original: QuotationListItem } }) => (
+              <span>
+                {row.original.ownerFullName ?? '—'}
+                {row.original.isOwnerDeleted && (
+                  <span className="ml-2 rounded bg-amber-100 px-2 py-0.5 text-xs text-amber-900">
+                    đã nghỉ
+                  </span>
+                )}
+              </span>
+            ),
+          } as ColumnDef<QuotationListItem>]
+        : []),
       { header: 'Người lập', accessorKey: 'createdByName' },
       {
         id: 'actions',
@@ -115,6 +135,25 @@ export function QuotationListPage() {
                   <Link to={`/quotations/${q.id}`}><Pencil className="h-4 w-4" /></Link>
                 </Button>
               </Can>
+              {q.canClone && (
+                <Can permission="quotations.create">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    aria-label="Clone"
+                    onClick={() => {
+                      clone.mutate(q.id, {
+                        onSuccess: (cloned) =>
+                          toast({ variant: 'success', title: 'Đã clone báo giá', description: cloned.code }),
+                        onError: (err) =>
+                          toast({ variant: 'destructive', title: 'Không thể clone', description: getErrorMessage(err) }),
+                      });
+                    }}
+                  >
+                    <Copy className="h-4 w-4" />
+                  </Button>
+                </Can>
+              )}
               <Can permission="quotations.print">
                 <Button
                   variant="ghost"
@@ -146,7 +185,7 @@ export function QuotationListPage() {
         },
       },
     ],
-    [],
+    [hasViewAll, clone],
   );
 
   const table = useReactTable({

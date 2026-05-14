@@ -92,4 +92,25 @@ public class QuotationsController : ApiControllerBase
         var (bytes, fileName) = await _quotations.RenderPdfAsync(id, ct);
         return File(bytes, "application/pdf", fileName);
     }
+
+    [HttpPost("{id:guid}/clone")]
+    [HasPermission(Permissions.Quotations.Create)]
+    [ProducesResponseType(typeof(ApiResponse<QuotationDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status403Forbidden)]
+    public async Task<ActionResult<ApiResponse<QuotationDto>>> Clone(Guid id, CancellationToken ct)
+        => Success(await _quotations.CloneAsync(id, ct));
+
+    [HttpPatch("{id:guid}/owner")]
+    [ProducesResponseType(typeof(ApiResponse<QuotationDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status403Forbidden)]
+    public async Task<ActionResult<ApiResponse<QuotationDto>>> TransferOwner(
+        Guid id,
+        [FromBody] TransferOwnerRequest request,
+        [FromServices] IValidator<TransferOwnerRequest> validator,
+        CancellationToken ct)
+    {
+        await validator.ValidateAndThrowAsync(request, ct);
+        return Success(await _quotations.TransferOwnerAsync(id, request, ct));
+    }
 }

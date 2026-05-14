@@ -1,7 +1,12 @@
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { quotationsApi } from './api';
 import { quotationKeys } from './keys';
-import type { QuotationAction, QuotationListParams, UpsertQuotationRequest } from './types';
+import type {
+  QuotationAction,
+  QuotationListParams,
+  TransferOwnerRequest,
+  UpsertQuotationRequest,
+} from './types';
 
 export function useQuotations(params: QuotationListParams) {
   return useQuery({
@@ -56,5 +61,25 @@ export function useTransitionQuotation() {
       qc.invalidateQueries({ queryKey: quotationKeys.lists() });
       qc.invalidateQueries({ queryKey: quotationKeys.detail(id) });
     },
+  });
+}
+
+export function useTransferOwner() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, data }: { id: string; data: TransferOwnerRequest }) =>
+      quotationsApi.transferOwner(id, data),
+    onSuccess: (_data, { id }) => {
+      qc.invalidateQueries({ queryKey: quotationKeys.lists() });
+      qc.invalidateQueries({ queryKey: quotationKeys.detail(id) });
+    },
+  });
+}
+
+export function useCloneQuotation() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => quotationsApi.clone(id),
+    onSuccess: () => qc.invalidateQueries({ queryKey: quotationKeys.lists() }),
   });
 }

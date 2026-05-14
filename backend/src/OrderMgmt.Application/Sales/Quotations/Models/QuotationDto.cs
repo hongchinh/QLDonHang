@@ -16,6 +16,10 @@ public class QuotationDto
     public string Code { get; set; } = default!;
     public DateOnly QuotationDate { get; set; }
 
+    public Guid OwnerUserId { get; set; }
+    public string? OwnerFullName { get; set; }
+    public bool IsOwnerDeleted { get; set; }
+
     public Guid CustomerId { get; set; }
     public string CustomerName { get; set; } = default!;
     public string? CustomerTaxCode { get; set; }
@@ -40,6 +44,9 @@ public class QuotationDto
 
     public QuotationStatus Status { get; set; }
     public string? InternalNote { get; set; }
+
+    public bool CanEdit { get; set; }
+    public bool CanClone { get; set; }
 
     public List<QuotationLineDto> Lines { get; set; } = new();
 
@@ -84,6 +91,10 @@ public class QuotationListItemDto
     public string? ContactPhone { get; set; }
     public decimal Total { get; set; }
     public QuotationStatus Status { get; set; }
+    public Guid OwnerUserId { get; set; }
+    public string? OwnerFullName { get; set; }
+    public bool IsOwnerDeleted { get; set; }
+    public bool CanClone { get; set; }
     public string? CreatedByName { get; set; }
     public DateTimeOffset CreatedAt { get; set; }
 }
@@ -142,4 +153,10 @@ public class QuotationListRequest : PageRequest
 public class TransitionQuotationRequest
 {
     public QuotationAction Action { get; set; }
+}
+
+public class TransferOwnerRequest
+{
+    public Guid NewOwnerUserId { get; set; }
+    public string? Reason { get; set; }
 }

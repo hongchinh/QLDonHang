@@ -62,3 +62,12 @@ public class TransitionQuotationRequestValidator : AbstractValidator<TransitionQ
         RuleFor(x => x.Action).IsInEnum();
     }
 }
+
+public class TransferOwnerRequestValidator : AbstractValidator<TransferOwnerRequest>
+{
+    public TransferOwnerRequestValidator()
+    {
+        RuleFor(x => x.NewOwnerUserId).NotEmpty();
+        RuleFor(x => x.Reason).MaximumLength(500);
+    }
+}

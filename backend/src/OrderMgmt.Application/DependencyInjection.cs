@@ -10,6 +10,8 @@ using OrderMgmt.Application.Catalog.Products.Interfaces;
 using OrderMgmt.Application.Catalog.Products.Services;
 using OrderMgmt.Application.Identity.Interfaces;
 using OrderMgmt.Application.Identity.Services;
+using OrderMgmt.Application.Identity.UserSettings.Interfaces;
+using OrderMgmt.Application.Identity.UserSettings.Services;
 using OrderMgmt.Application.Sales.Quotations.Interfaces;
 using OrderMgmt.Application.Sales.Quotations.Services;
 
@@ -34,6 +36,9 @@ public static class DependencyInjection
         services.AddScoped<IProductService, ProductService>();
         services.AddScoped<ICatalogLookupService, CatalogLookupService>();
         services.AddScoped<IQuotationService, QuotationService>();
+        services.AddScoped<IQuotationDashboardService, QuotationDashboardService>();
+        services.AddScoped<IUserQuotationSettingsService, UserQuotationSettingsService>();
+        services.AddScoped<IQuotationBulkTransferService, QuotationBulkTransferService>();
 
         return services;
     }

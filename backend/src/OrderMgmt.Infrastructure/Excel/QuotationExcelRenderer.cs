@@ -18,8 +18,12 @@ public class QuotationExcelRenderer : IQuotationExcelRenderer
         => _options = options;
 
     public Task<byte[]> RenderAsync(QuotationDto quotation, CancellationToken ct = default)
+        => RenderAsync(quotation, ResolveDefaultTemplatePath(), ct);
+
+    public Task<byte[]> RenderAsync(QuotationDto quotation, string templatePath, CancellationToken ct = default)
     {
-        using var workbook = new XLWorkbook(ResolveTemplatePath());
+        var resolved = ResolveAbsolutePath(templatePath);
+        using var workbook = new XLWorkbook(resolved);
         var ws = workbook.Worksheet(1);
 
         FillHeader(ws, quotation);
@@ -30,9 +34,11 @@ public class QuotationExcelRenderer : IQuotationExcelRenderer
         return Task.FromResult(ms.ToArray());
     }
 
-    private string ResolveTemplatePath()
+    private string ResolveDefaultTemplatePath() => ResolveAbsolutePath(_options.Value.TemplatePath);
+
+    private static string ResolveAbsolutePath(string path)
     {
-        var p = _options.Value.TemplatePath;
+        var p = path;
         if (!Path.IsPathRooted(p))
             p = Path.Combine(AppContext.BaseDirectory, p);
         if (!File.Exists(p))

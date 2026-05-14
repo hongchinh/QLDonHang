@@ -14,6 +14,7 @@ public interface IAppDbContext
     DbSet<UserRole> UserRoles { get; }
     DbSet<RolePermission> RolePermissions { get; }
     DbSet<RefreshToken> RefreshTokens { get; }
+    DbSet<UserQuotationSettings> UserQuotationSettings { get; }
 
     DbSet<Customer> Customers { get; }
     DbSet<CustomerAddress> CustomerAddresses { get; }
@@ -23,6 +24,7 @@ public interface IAppDbContext
 
     DbSet<Quotation> Quotations { get; }
     DbSet<QuotationLine> QuotationLines { get; }
+    DbSet<QuotationOwnerHistory> QuotationOwnerHistory { get; }
 
     EntityEntry<TEntity> Entry<TEntity>(TEntity entity) where TEntity : class;
 

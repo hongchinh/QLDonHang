@@ -29,6 +29,7 @@ public class AppDbContext : DbContext, IAppDbContext
     public DbSet<UserRole> UserRoles => Set<UserRole>();
     public DbSet<RolePermission> RolePermissions => Set<RolePermission>();
     public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
+    public DbSet<UserQuotationSettings> UserQuotationSettings => Set<UserQuotationSettings>();
 
     public DbSet<Customer> Customers => Set<Customer>();
     public DbSet<CustomerAddress> CustomerAddresses => Set<CustomerAddress>();
@@ -38,6 +39,7 @@ public class AppDbContext : DbContext, IAppDbContext
 
     public DbSet<Quotation> Quotations => Set<Quotation>();
     public DbSet<QuotationLine> QuotationLines => Set<QuotationLine>();
+    public DbSet<QuotationOwnerHistory> QuotationOwnerHistory => Set<QuotationOwnerHistory>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

@@ -31,6 +31,11 @@ export interface Quotation {
   id: string;
   code: string;
   quotationDate: string;
+  ownerUserId: string;
+  ownerFullName?: string;
+  isOwnerDeleted: boolean;
+  canEdit: boolean;
+  canClone: boolean;
   customerId: string;
   customerName: string;
   customerTaxCode?: string;
@@ -65,8 +70,17 @@ export interface QuotationListItem {
   contactPhone?: string;
   total: number;
   status: QuotationStatus;
+  ownerUserId: string;
+  ownerFullName?: string;
+  isOwnerDeleted: boolean;
+  canClone: boolean;
   createdByName?: string;
   createdAt: string;
+}
+
+export interface TransferOwnerRequest {
+  newOwnerUserId: string;
+  reason?: string;
 }
 
 export interface UpsertQuotationLineRequest {

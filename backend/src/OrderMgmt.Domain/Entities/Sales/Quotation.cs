@@ -1,5 +1,6 @@
 using OrderMgmt.Domain.Common;
 using OrderMgmt.Domain.Entities.Catalog;
+using OrderMgmt.Domain.Entities.Identity;
 using OrderMgmt.Domain.Enums;
 
 namespace OrderMgmt.Domain.Entities.Sales;
@@ -8,6 +9,9 @@ public class Quotation : BaseEntity
 {
     public string Code { get; set; } = default!;
     public DateOnly QuotationDate { get; set; }
+
+    public Guid OwnerUserId { get; set; }
+    public User? Owner { get; set; }
 
     public Guid CustomerId { get; set; }
     public Customer? Customer { get; set; }

@@ -788,6 +788,74 @@ namespace OrderMgmt.Infrastructure.Migrations
                     b.ToTable("users", (string)null);
                 });
 
+            modelBuilder.Entity("OrderMgmt.Domain.Entities.Identity.UserQuotationSettings", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid?>("CreatedBy")
+                        .HasColumnType("uuid")
+                        .HasColumnName("created_by");
+
+                    b.Property<DateTimeOffset?>("DeletedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("deleted_at");
+
+                    b.Property<Guid?>("DeletedBy")
+                        .HasColumnType("uuid")
+                        .HasColumnName("deleted_by");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_deleted");
+
+                    b.Property<int?>("LockAtStatus")
+                        .HasColumnType("integer")
+                        .HasColumnName("lock_at_status");
+
+                    b.Property<string>("TemplateFileName")
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("template_file_name");
+
+                    b.Property<string>("TemplateOriginalName")
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("template_original_name");
+
+                    b.Property<DateTimeOffset?>("TemplateUploadedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("template_uploaded_at");
+
+                    b.Property<DateTimeOffset?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.Property<Guid?>("UpdatedBy")
+                        .HasColumnType("uuid")
+                        .HasColumnName("updated_by");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("user_id");
+
+                    b.HasKey("Id")
+                        .HasName("pk_user_quotation_settings");
+
+                    b.HasIndex("UserId")
+                        .IsUnique()
+                        .HasDatabaseName("ix_user_quotation_settings_user_id")
+                        .HasFilter("is_deleted = false");
+
+                    b.ToTable("user_quotation_settings", (string)null);
+                });
+
             modelBuilder.Entity("OrderMgmt.Domain.Entities.Identity.UserRole", b =>
                 {
                     b.Property<Guid>("UserId")
@@ -911,6 +979,10 @@ namespace OrderMgmt.Infrastructure.Migrations
                         .HasColumnType("boolean")
                         .HasColumnName("is_deleted");
 
+                    b.Property<Guid>("OwnerUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("owner_user_id");
+
                     b.Property<DateOnly>("QuotationDate")
                         .HasColumnType("date")
                         .HasColumnName("quotation_date");
@@ -963,6 +1035,9 @@ namespace OrderMgmt.Infrastructure.Migrations
 
                     b.HasIndex("Status")
                         .HasDatabaseName("ix_quotations_status");
+
+                    b.HasIndex("OwnerUserId", "IsDeleted", "QuotationDate")
+                        .HasDatabaseName("ix_quotations_owner_status_date");
 
                     b.ToTable("quotations", (string)null);
                 });
@@ -1101,6 +1176,75 @@ namespace OrderMgmt.Infrastructure.Migrations
                     b.ToTable("quotation_lines", (string)null);
                 });
 
+            modelBuilder.Entity("OrderMgmt.Domain.Entities.Sales.QuotationOwnerHistory", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<Guid>("ActorUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("actor_user_id");
+
+                    b.Property<DateTimeOffset>("ChangedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("changed_at");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid?>("CreatedBy")
+                        .HasColumnType("uuid")
+                        .HasColumnName("created_by");
+
+                    b.Property<DateTimeOffset?>("DeletedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("deleted_at");
+
+                    b.Property<Guid?>("DeletedBy")
+                        .HasColumnType("uuid")
+                        .HasColumnName("deleted_by");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_deleted");
+
+                    b.Property<Guid>("NewOwnerUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("new_owner_user_id");
+
+                    b.Property<Guid?>("OldOwnerUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("old_owner_user_id");
+
+                    b.Property<Guid>("QuotationId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("quotation_id");
+
+                    b.Property<string>("Reason")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
+                        .HasColumnName("reason");
+
+                    b.Property<DateTimeOffset?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.Property<Guid?>("UpdatedBy")
+                        .HasColumnType("uuid")
+                        .HasColumnName("updated_by");
+
+                    b.HasKey("Id")
+                        .HasName("pk_quotation_owner_history");
+
+                    b.HasIndex("QuotationId", "ChangedAt")
+                        .HasDatabaseName("ix_quotation_owner_history_quotation_changed");
+
+                    b.ToTable("quotation_owner_history", (string)null);
+                });
+
             modelBuilder.Entity("OrderMgmt.Domain.Entities.Catalog.CustomerAddress", b =>
                 {
                     b.HasOne("OrderMgmt.Domain.Entities.Catalog.Customer", "Customer")
@@ -1165,6 +1309,18 @@ namespace OrderMgmt.Infrastructure.Migrations
                     b.Navigation("Role");
                 });
 
+            modelBuilder.Entity("OrderMgmt.Domain.Entities.Identity.UserQuotationSettings", b =>
+                {
+                    b.HasOne("OrderMgmt.Domain.Entities.Identity.User", "User")
+                        .WithOne()
+                        .HasForeignKey("OrderMgmt.Domain.Entities.Identity.UserQuotationSettings", "UserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_user_quotation_settings_users_user_id");
+
+                    b.Navigation("User");
+                });
+
             modelBuilder.Entity("OrderMgmt.Domain.Entities.Identity.UserRole", b =>
                 {
                     b.HasOne("OrderMgmt.Domain.Entities.Identity.Role", "Role")
@@ -1195,7 +1351,16 @@ namespace OrderMgmt.Infrastructure.Migrations
                         .IsRequired()
                         .HasConstraintName("fk_quotations_customers_customer_id");
 
+                    b.HasOne("OrderMgmt.Domain.Entities.Identity.User", "Owner")
+                        .WithMany()
+                        .HasForeignKey("OwnerUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_quotations_users_owner_user_id");
+
                     b.Navigation("Customer");
+
+                    b.Navigation("Owner");
                 });
 
             modelBuilder.Entity("OrderMgmt.Domain.Entities.Sales.QuotationLine", b =>

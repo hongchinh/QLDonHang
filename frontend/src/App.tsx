@@ -15,6 +15,9 @@ import { ProductListPage } from '@/pages/products/product-list-page';
 import { ProductFormPage } from '@/pages/products/product-form-page';
 import { QuotationListPage } from '@/pages/quotations/quotation-list-page';
 import { QuotationFormPage } from '@/pages/quotations/quotation-form-page';
+import { MyQuotationSettingsPage } from '@/pages/settings/my-quotation-settings-page';
+import { UserSettingsPage } from '@/pages/admin/user-settings-page';
+import { BulkTransferPage } from '@/pages/admin/bulk-transfer-page';
 import { ForbiddenPage, NotFoundPage } from '@/pages/error-pages';
 
 const PLACEHOLDER = (title: string) => (
@@ -118,6 +121,26 @@ export function App() {
                     }
                   />
                 </Route>
+                <Route
+                  path="settings/my-quotation-settings"
+                  element={<MyQuotationSettingsPage />}
+                />
+                <Route
+                  path="admin/user-settings/:userId"
+                  element={
+                    <ProtectedRoute permission="user_settings.manage">
+                      <UserSettingsPage />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="admin/users/:userId/transfer-quotations"
+                  element={
+                    <ProtectedRoute permission="quotations.transfer_any">
+                      <BulkTransferPage />
+                    </ProtectedRoute>
+                  }
+                />
                 <Route path="orders" element={<ProtectedRoute permission="orders.view">{PLACEHOLDER('Đơn hàng')}</ProtectedRoute>} />
                 <Route path="deliveries" element={<ProtectedRoute permission="orders.deliver">{PLACEHOLDER('Bàn giao')}</ProtectedRoute>} />
                 <Route path="payments" element={<ProtectedRoute permission="orders.pay">{PLACEHOLDER('Thanh toán & Công nợ')}</ProtectedRoute>} />

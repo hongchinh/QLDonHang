@@ -39,6 +39,11 @@ public class QuotationConfiguration : IEntityTypeConfiguration<Quotation>
             .HasForeignKey(x => x.CustomerId)
             .OnDelete(DeleteBehavior.Restrict);
 
+        b.HasOne(x => x.Owner)
+            .WithMany()
+            .HasForeignKey(x => x.OwnerUserId)
+            .OnDelete(DeleteBehavior.Restrict);
+
         // Physical cascade is misleading because Quotation uses soft-delete; AppDbContext
         // cascade-propagates IsDeleted through the Lines navigation instead.
         b.HasMany(x => x.Lines)
@@ -50,6 +55,8 @@ public class QuotationConfiguration : IEntityTypeConfiguration<Quotation>
         b.HasIndex(x => x.CustomerId);
         b.HasIndex(x => x.QuotationDate);
         b.HasIndex(x => x.Status);
+        b.HasIndex(x => new { x.OwnerUserId, x.IsDeleted, x.QuotationDate })
+            .HasDatabaseName("ix_quotations_owner_status_date");
         b.HasQueryFilter(x => !x.IsDeleted);
     }
 }
@@ -88,5 +95,19 @@ public class QuotationLineConfiguration : IEntityTypeConfiguration<QuotationLine
             .OnDelete(DeleteBehavior.SetNull);
 
         b.HasQueryFilter(x => !x.IsDeleted && !x.Quotation!.IsDeleted);
+    }
+}
+
+public class QuotationOwnerHistoryConfiguration : IEntityTypeConfiguration<QuotationOwnerHistory>
+{
+    public void Configure(EntityTypeBuilder<QuotationOwnerHistory> b)
+    {
+        b.ToTable("quotation_owner_history");
+        b.HasKey(x => x.Id);
+
+        b.Property(x => x.Reason).HasMaxLength(500);
+
+        b.HasIndex(x => new { x.QuotationId, x.ChangedAt })
+            .HasDatabaseName("ix_quotation_owner_history_quotation_changed");
     }
 }

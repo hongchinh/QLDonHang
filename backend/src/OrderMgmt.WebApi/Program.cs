@@ -7,6 +7,7 @@ using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using OrderMgmt.Application;
 using OrderMgmt.Application.Common.Interfaces;
+using OrderMgmt.Application.Common.Options;
 using OrderMgmt.Infrastructure;
 using OrderMgmt.Infrastructure.Identity;
 using OrderMgmt.Infrastructure.Persistence;
@@ -35,6 +36,13 @@ builder.Host.UseSerilog((ctx, lc) => lc
 // Application + Infrastructure
 builder.Services.AddApplication();
 builder.Services.AddInfrastructure(builder.Configuration);
+
+// Feature flags
+builder.Services.Configure<FeatureOptions>(builder.Configuration.GetSection(FeatureOptions.SectionName));
+
+// Template upload options (bound from QuotationExport section so it shares config with Excel renderer).
+builder.Services.Configure<OrderMgmt.Application.Identity.UserSettings.Models.TemplateUploadOptions>(
+    builder.Configuration.GetSection("QuotationExport"));
 
 // HTTP context & current user
 builder.Services.AddHttpContextAccessor();

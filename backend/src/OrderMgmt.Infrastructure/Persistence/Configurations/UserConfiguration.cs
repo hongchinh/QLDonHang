@@ -96,3 +96,25 @@ public class RolePermissionConfiguration : IEntityTypeConfiguration<RolePermissi
         b.HasQueryFilter(x => !x.Role.IsDeleted && !x.Permission.IsDeleted);
     }
 }
+
+public class UserQuotationSettingsConfiguration : IEntityTypeConfiguration<UserQuotationSettings>
+{
+    public void Configure(EntityTypeBuilder<UserQuotationSettings> b)
+    {
+        b.ToTable("user_quotation_settings");
+        b.HasKey(x => x.Id);
+
+        b.Property(x => x.LockAtStatus).HasConversion<int?>();
+        b.Property(x => x.TemplateFileName).HasMaxLength(255);
+        b.Property(x => x.TemplateOriginalName).HasMaxLength(255);
+
+        b.HasIndex(x => x.UserId).IsUnique().HasFilter("is_deleted = false");
+
+        b.HasOne(x => x.User)
+            .WithOne()
+            .HasForeignKey<UserQuotationSettings>(x => x.UserId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        b.HasQueryFilter(x => !x.IsDeleted);
+    }
+}

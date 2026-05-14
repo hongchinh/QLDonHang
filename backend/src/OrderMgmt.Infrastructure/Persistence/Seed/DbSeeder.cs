@@ -84,6 +84,12 @@ public static class DbSeeder
             (Permissions.Quotations.Print, Permissions.SalesModule, "In báo giá"),
             (Permissions.Quotations.ConvertToOrder, Permissions.SalesModule, "Chuyển báo giá thành đơn hàng"),
             (Permissions.Quotations.ViewCost, Permissions.SalesModule, "Xem giá vốn/lợi nhuận báo giá"),
+            (Permissions.Quotations.ViewAll, Permissions.SalesModule, "Xem mọi báo giá (bypass owner)"),
+            (Permissions.Quotations.TransferOwn, Permissions.SalesModule, "Chuyển báo giá của mình cho user khác"),
+            (Permissions.Quotations.TransferAny, Permissions.SalesModule, "Chuyển báo giá của bất kỳ user nào"),
+            (Permissions.Quotations.CloneOrphan, Permissions.SalesModule, "Clone báo giá của user đã nghỉ"),
+            (Permissions.Quotations.BypassLock, Permissions.SalesModule, "Bypass khoá trạng thái báo giá"),
+            (Permissions.UserSettings.Manage, Permissions.SystemModule, "Cấu hình thiết lập của user khác"),
 
             (Permissions.Orders.View, Permissions.SalesModule, "Xem đơn hàng"),
             (Permissions.Orders.Create, Permissions.SalesModule, "Tạo đơn hàng"),
@@ -122,6 +128,7 @@ public static class DbSeeder
                 Permissions.Products.View,
                 Permissions.Quotations.View, Permissions.Quotations.Create, Permissions.Quotations.Update,
                 Permissions.Quotations.Print, Permissions.Quotations.ConvertToOrder,
+                Permissions.Quotations.TransferOwn,
                 Permissions.Orders.View, Permissions.Orders.Create, Permissions.Orders.Update, Permissions.Orders.Print,
             }),
             (RoleCodes.Accountant, "Kế toán", new[]
