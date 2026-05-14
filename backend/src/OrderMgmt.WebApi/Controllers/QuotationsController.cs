@@ -76,7 +76,15 @@ public class QuotationsController : ApiControllerBase
         return Success(await _quotations.TransitionAsync(id, request.Action, ct));
     }
 
-    // Returns raw PDF bytes (not wrapped in ApiResponse) so browsers can save it directly.
+    // Returns raw bytes (not wrapped in ApiResponse) so browsers can save directly.
+    [HttpGet("{id:guid}/excel")]
+    [HasPermission(Permissions.Quotations.Print)]
+    public async Task<IActionResult> Excel(Guid id, CancellationToken ct)
+    {
+        var (bytes, fileName) = await _quotations.RenderExcelAsync(id, ct);
+        return File(bytes, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", fileName);
+    }
+
     [HttpGet("{id:guid}/pdf")]
     [HasPermission(Permissions.Quotations.Print)]
     public async Task<IActionResult> Pdf(Guid id, CancellationToken ct)

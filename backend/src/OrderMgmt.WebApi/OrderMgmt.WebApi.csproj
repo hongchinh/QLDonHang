@@ -22,4 +22,10 @@
     <ProjectReference Include="..\OrderMgmt.Application\OrderMgmt.Application.csproj" />
     <ProjectReference Include="..\OrderMgmt.Infrastructure\OrderMgmt.Infrastructure.csproj" />
   </ItemGroup>
+  <ItemGroup>
+    <Content Include="templates\template_baogia.xlsx">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+    </Content>
+  </ItemGroup>
 </Project>

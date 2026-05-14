@@ -4,23 +4,18 @@ using Microsoft.Extensions.DependencyInjection;
 using OrderMgmt.Application.Common.Interfaces;
 using OrderMgmt.Application.Identity.Interfaces;
 using OrderMgmt.Application.Sales.Quotations.Interfaces;
+using OrderMgmt.Infrastructure.Excel;
 using OrderMgmt.Infrastructure.Identity;
-using OrderMgmt.Infrastructure.Pdf;
 using OrderMgmt.Infrastructure.Persistence;
 using OrderMgmt.Infrastructure.Persistence.Seed;
 using OrderMgmt.Infrastructure.Services;
-using QuestPDF.Drawing;
-using QuestPDF.Infrastructure;
 
 namespace OrderMgmt.Infrastructure;
 
 public static class DependencyInjection
 {
-    private static int _questPdfBootstrapped;
-
     public static IServiceCollection AddInfrastructure(this IServiceCollection services, IConfiguration configuration)
     {
-        BootstrapQuestPdf();
         services.AddDbContext<AppDbContext>((sp, options) =>
         {
             // Read at resolution time so WebApplicationFactory overrides (in-memory config added
@@ -48,26 +43,10 @@ public static class DependencyInjection
 
         services.Configure<SeedOptions>(configuration.GetSection(SeedOptions.SectionName));
 
-        services.AddScoped<IQuotationPdfRenderer, QuotationPdfRenderer>();
+        services.Configure<QuotationExportOptions>(configuration.GetSection(QuotationExportOptions.SectionName));
+        services.AddScoped<IQuotationExcelRenderer, QuotationExcelRenderer>();
+        services.AddScoped<IQuotationSpreadsheetPdfConverter, LibreOfficeSpreadsheetPdfConverter>();
 
         return services;
-    }
-
-    private static void BootstrapQuestPdf()
-    {
-        if (Interlocked.Exchange(ref _questPdfBootstrapped, 1) == 1) return;
-
-        QuestPDF.Settings.License = LicenseType.Community;
-
-        var assembly = typeof(DependencyInjection).Assembly;
-        foreach (var resourceName in assembly.GetManifestResourceNames())
-        {
-            if (!resourceName.Contains(".Pdf.Fonts.", StringComparison.OrdinalIgnoreCase)) continue;
-            if (!resourceName.EndsWith(".ttf", StringComparison.OrdinalIgnoreCase)) continue;
-
-            using var stream = assembly.GetManifestResourceStream(resourceName);
-            if (stream is null) continue;
-            FontManager.RegisterFont(stream);
-        }
     }
 }

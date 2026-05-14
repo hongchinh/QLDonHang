@@ -1,12 +1,12 @@
 # Execution Report: Quotation Form Enter Navigation
 
-> Date: 2026-05-13 23:44:39
+> Date: 2026-05-14 13:23:30
 >
 > Mode: Batch
 
 ## Summary
 
-- Completed.
+- Completed with manual browser QA pending.
 - Added scoped `Enter` / `Shift+Enter` navigation for the quotation **Thong tin chung** fields.
 - Added `Ctrl+S` save behavior through the existing React Hook Form submit path.
 - Added a line-items grid focus API so the last general-info field can focus the first product-code cell and create an empty row when needed.
@@ -20,7 +20,7 @@
 - Phase 2: General Info Keyboard Handler - done
   - Implemented: explicit general-info field order, scoped `CardContent` Enter handler, form-level `Ctrl+S` handler, and grid ref wiring.
   - Verification: `npm run typecheck` passed.
-  - Notes: Autocomplete-owned `Enter` is preserved through `e.defaultPrevented`; date inputs follow the plan's mitigation and are not hijacked.
+  - Notes: Autocomplete-owned `Enter` is preserved through `e.defaultPrevented`; date inputs follow the plan's mitigation and are not hijacked. The form-level shortcut handler now also returns when a child handler has already prevented default behavior.
 - Phase 3: Verification and Polish - done
   - Implemented: footer keyboard guide entries for `Enter`, `Shift+Enter`, and `Ctrl+S`.
   - Verification: lint, typecheck, tests, and build passed.
@@ -59,3 +59,4 @@
 - `frontend/src/pages/quotations/quotation-form-page.tsx`
 - `frontend/src/pages/quotations/components/line-items-grid.tsx`
 - `frontend/src/pages/quotations/components/product-typeahead-cell.tsx`
+- `docs/plans/archived/260513-2324-quotation-enter-navigation/EXECUTION-REPORT.md`

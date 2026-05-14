@@ -38,6 +38,9 @@ public class WebAppFactory : WebApplicationFactory<Program>, IAsyncLifetime
                 ["AuthCookie:SameSite"] = "Lax",
                 ["Database:AutoMigrateAndSeed"] = "false",
                 ["Seed:AdminPassword"] = "Admin@123",
+                ["QuotationExport:TemplatePath"] = Path.Combine(AppContext.BaseDirectory, "templates", "template_baogia.xlsx"),
+                ["QuotationExport:LibreOfficePath"] = "soffice",
+                ["QuotationExport:ConversionTimeoutSeconds"] = "60",
             });
         });
 

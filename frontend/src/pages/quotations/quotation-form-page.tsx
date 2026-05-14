@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useForm, useWatch, type Resolver } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, Send, CheckCircle2, Ban, Printer } from 'lucide-react';
+import { ArrowLeft, Send, CheckCircle2, Ban, Printer, FileSpreadsheet } from 'lucide-react';
 import {
   useCreateQuotation,
   useQuotation,
@@ -105,6 +105,22 @@ export function QuotationFormPage() {
           toast({ variant: 'destructive', title: 'Không tải được PDF', description: getErrorMessage(err) });
         }
       }}
+      onDownloadExcel={async () => {
+        if (!id || !isEdit || !quotation) return;
+        try {
+          const blob = await quotationsApi.downloadExcel(id);
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = `BaoGia_${quotation.code}.xlsx`;
+          document.body.appendChild(a);
+          a.click();
+          a.remove();
+          URL.revokeObjectURL(url);
+        } catch (err) {
+          toast({ variant: 'destructive', title: 'Không tải được Excel', description: getErrorMessage(err) });
+        }
+      }}
     />
   );
 }
@@ -119,6 +135,7 @@ interface InnerProps {
   onSubmit: (parsed: QuotationFormParsed) => void;
   onTransition: (action: QuotationAction) => void;
   onPrint: () => void;
+  onDownloadExcel: () => void;
 }
 
 function QuotationFormInner({
@@ -131,6 +148,7 @@ function QuotationFormInner({
   onSubmit,
   onTransition,
   onPrint,
+  onDownloadExcel,
 }: InnerProps) {
   const form = useForm<QuotationFormValues, unknown, QuotationFormParsed>({
     resolver: zodResolver(quotationSchema) as unknown as Resolver<QuotationFormValues, unknown, QuotationFormParsed>,
@@ -169,11 +187,12 @@ function QuotationFormInner({
     if (e.defaultPrevented) return;
     if (e.key !== 'Enter' || e.ctrlKey || e.altKey) return;
     const target = e.target as HTMLInputElement;
-    e.preventDefault();
+    if (target.type === 'date') return;
     const currentId = target.id;
     const order = GENERAL_INFO_FIELD_ORDER;
     const idx = order.indexOf(currentId as typeof order[number]);
     if (idx === -1) return;
+    e.preventDefault();
     if (!e.shiftKey && idx === order.length - 1) {
       lineItemsGridRef.current?.ensureFirstLineAndFocusProductCode();
       return;
@@ -184,6 +203,7 @@ function QuotationFormInner({
   }
 
   function handleFormKeyDown(e: React.KeyboardEvent<HTMLFormElement>) {
+    if (e.defaultPrevented) return;
     if (e.key === 's' && e.ctrlKey && !e.shiftKey && !e.altKey) {
       e.preventDefault();
       form.handleSubmit(onSubmit)();
@@ -271,6 +291,9 @@ function QuotationFormInner({
                 <Ban className="mr-2 h-4 w-4" />Hủy
               </Button>
             )}
+            <Button variant="outline" size="sm" onClick={onDownloadExcel} disabled={submitting}>
+              <FileSpreadsheet className="mr-2 h-4 w-4" />Excel
+            </Button>
             <Button variant="outline" size="sm" onClick={onPrint} disabled={submitting}>
               <Printer className="mr-2 h-4 w-4" />In
             </Button>

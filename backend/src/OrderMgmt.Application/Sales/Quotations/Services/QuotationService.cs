@@ -28,18 +28,21 @@ public class QuotationService : IQuotationService
     private readonly IAppDbContext _db;
     private readonly IDateTime _clock;
     private readonly ICurrentUser _currentUser;
-    private readonly IQuotationPdfRenderer _pdfRenderer;
+    private readonly IQuotationExcelRenderer _excelRenderer;
+    private readonly IQuotationSpreadsheetPdfConverter _pdfConverter;
 
     public QuotationService(
         IAppDbContext db,
         IDateTime clock,
         ICurrentUser currentUser,
-        IQuotationPdfRenderer pdfRenderer)
+        IQuotationExcelRenderer excelRenderer,
+        IQuotationSpreadsheetPdfConverter pdfConverter)
     {
         _db = db;
         _clock = clock;
         _currentUser = currentUser;
-        _pdfRenderer = pdfRenderer;
+        _excelRenderer = excelRenderer;
+        _pdfConverter = pdfConverter;
     }
 
     public async Task<PagedResult<QuotationListItemDto>> ListAsync(QuotationListRequest request, CancellationToken ct = default)
@@ -224,12 +227,19 @@ public class QuotationService : IQuotationService
         await _db.SaveChangesAsync(ct);
     }
 
+    public async Task<(byte[] Excel, string FileName)> RenderExcelAsync(Guid id, CancellationToken ct = default)
+    {
+        var dto = await GetAsync(id, ct);
+        var bytes = await _excelRenderer.RenderAsync(dto, ct);
+        return (bytes, $"BaoGia_{dto.Code}.xlsx");
+    }
+
     public async Task<(byte[] Pdf, string FileName)> RenderPdfAsync(Guid id, CancellationToken ct = default)
     {
         var dto = await GetAsync(id, ct);
-        var bytes = _pdfRenderer.Render(dto);
-        var fileName = $"BaoGia_{dto.Code}.pdf";
-        return (bytes, fileName);
+        var excelBytes = await _excelRenderer.RenderAsync(dto, ct);
+        var pdfBytes = await _pdfConverter.ConvertAsync(excelBytes, ct);
+        return (pdfBytes, $"BaoGia_{dto.Code}.pdf");
     }
 
     public async Task<QuotationDto> TransitionAsync(Guid id, QuotationAction action, CancellationToken ct = default)

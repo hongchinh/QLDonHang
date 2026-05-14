@@ -22,4 +22,8 @@ export const quotationsApi = {
     const res = await api.get(`/quotations/${id}/pdf`, { responseType: 'blob' });
     return res.data as Blob;
   },
+  downloadExcel: async (id: string): Promise<Blob> => {
+    const res = await api.get(`/quotations/${id}/excel`, { responseType: 'blob' });
+    return res.data as Blob;
+  },
 };

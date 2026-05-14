@@ -11,5 +11,6 @@ public interface IQuotationService
     Task<QuotationDto> UpdateAsync(Guid id, UpsertQuotationRequest request, CancellationToken ct = default);
     Task DeleteAsync(Guid id, CancellationToken ct = default);
     Task<QuotationDto> TransitionAsync(Guid id, QuotationAction action, CancellationToken ct = default);
+    Task<(byte[] Excel, string FileName)> RenderExcelAsync(Guid id, CancellationToken ct = default);
     Task<(byte[] Pdf, string FileName)> RenderPdfAsync(Guid id, CancellationToken ct = default);
 }

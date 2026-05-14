@@ -23,4 +23,10 @@
     <ProjectReference Include="..\..\src\OrderMgmt.Application\OrderMgmt.Application.csproj" />
     <ProjectReference Include="..\..\src\OrderMgmt.Domain\OrderMgmt.Domain.csproj" />
   </ItemGroup>
+  <ItemGroup>
+    <Content Include="..\..\src\OrderMgmt.WebApi\templates\template_baogia.xlsx">
+      <Link>templates\template_baogia.xlsx</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
 </Project>
