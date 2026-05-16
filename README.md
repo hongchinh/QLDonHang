@@ -302,6 +302,11 @@ Trong service Frontend → tab **Variables**, thêm:
 **Frontend không gọi đúng API**
 - DevTools → Network → request URL vẫn là `/api/...` (relative) → biến `VITE_API_BASE_URL` không được inject vào build. Khai báo trong **Build Args** rồi Redeploy frontend service (không phải Restart).
 
+**Frontend build lỗi `npm error EUSAGE … Missing: esbuild@0.28.0 from lock file`**
+- Nguyên nhân: `vitest@4` peer trên `vite^6+`, nhưng project pin `vite@5`. npm 10 (Railway) và npm 11 (local) resolve `package-lock.json` khác nhau nên `npm ci` từ chối.
+- Đã fix trong `frontend/Dockerfile`: dùng `npm install --legacy-peer-deps` thay cho `npm ci`.
+- Fix bền vững (làm sau): hoặc nâng `vite` lên `^6`, hoặc hạ `vitest` xuống `^3.x` để khớp peer.
+
 ---
 
 ## Lộ trình tiếp theo (theo BD §21 MVP)

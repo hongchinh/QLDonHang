@@ -13,7 +13,11 @@ ARG VITE_API_BASE_URL
 ENV VITE_API_BASE_URL=$VITE_API_BASE_URL
 
 COPY package.json package-lock.json ./
-RUN npm ci
+# Use `npm install` (not `npm ci`) because vitest@4 peers on vite@6+ but the
+# project pins vite@5 — npm 10 (Railway) and npm 11 (local) resolve the
+# lockfile differently, so `npm ci` fails on Railway with "Missing: esbuild@0.28".
+# `--no-audit --no-fund` keep build logs clean.
+RUN npm install --no-audit --no-fund --legacy-peer-deps
 
 COPY . .
 RUN npm run build
