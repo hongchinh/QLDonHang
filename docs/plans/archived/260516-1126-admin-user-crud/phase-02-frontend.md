@@ -1,6 +1,6 @@
 # Phase 02 — Frontend dialogs + actions
 
-**Status:** [ ] pending
+**Status:** [x] complete
 **Complexity:** M
 
 ## Objective
@@ -9,8 +9,8 @@ Mở rộng `features/admin-users` với mutation hooks + types mới; thêm 2 d
 ## Files
 
 ### New (shadcn primitives)
-- `frontend/src/components/ui/alert-dialog.tsx` — copy chuẩn shadcn (Radix `@radix-ui/react-alert-dialog` đã có trong `package.json`? — kiểm tra; nếu chưa, `npm install @radix-ui/react-alert-dialog`).
-- `frontend/src/components/ui/dropdown-menu.tsx` — copy chuẩn shadcn (Radix `@radix-ui/react-dropdown-menu` — kiểm tra; cài nếu thiếu).
+- `frontend/src/components/ui/alert-dialog.tsx` — copy chuẩn shadcn. Radix `@radix-ui/react-alert-dialog` **chưa có** trong `package.json` (verified) → cần `npm install @radix-ui/react-alert-dialog`.
+- `frontend/src/components/ui/dropdown-menu.tsx` — copy chuẩn shadcn. Radix `@radix-ui/react-dropdown-menu` **đã có** (`^2.1.2` — verified), chỉ cần thêm file wrapper.
 
 ### New (feature components)
 - `frontend/src/pages/admin/components/user-form-dialog.tsx` — dùng cho cả Create + Edit (props `mode: 'create' | 'edit'`, `userId?: string`).
@@ -110,9 +110,9 @@ Mở rộng `features/admin-users` với mutation hooks + types mới; thêm 2 d
 
 ### Shadcn primitives
 
-6. Kiểm tra `frontend/package.json` xem đã có `@radix-ui/react-alert-dialog` và `@radix-ui/react-dropdown-menu` chưa. Nếu thiếu:
+6. Cài Radix package thiếu (`@radix-ui/react-dropdown-menu` đã có, chỉ cần alert-dialog):
    ```powershell
-   cd frontend; npm install @radix-ui/react-alert-dialog @radix-ui/react-dropdown-menu
+   cd frontend; npm install @radix-ui/react-alert-dialog
    ```
 7. Tạo `frontend/src/components/ui/alert-dialog.tsx` và `dropdown-menu.tsx` theo template shadcn chuẩn (lookup từ `components/ui/dialog.tsx` để giữ style consistent — class `cn(...)`, import `cva` nếu cần).
 

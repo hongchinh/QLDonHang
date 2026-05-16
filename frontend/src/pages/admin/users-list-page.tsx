@@ -1,12 +1,11 @@
-import { useMemo } from 'react';
-import { Link } from 'react-router-dom';
+import { useMemo, useState } from 'react';
 import {
   flexRender,
   getCoreRowModel,
   useReactTable,
   type ColumnDef,
 } from '@tanstack/react-table';
-import { Search, Settings2, ArrowRightLeft } from 'lucide-react';
+import { Search, UserPlus } from 'lucide-react';
 import { useAdminUsers } from '@/features/admin-users/hooks';
 import type { AdminUserListItem } from '@/features/admin-users/types';
 import { useSearchParamString } from '@/lib/use-search-param-state';
@@ -18,12 +17,15 @@ import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Can } from '@/components/auth/can';
 import { getErrorMessage } from '@/lib/api-client';
+import { UserActionsMenu } from '@/pages/admin/components/user-actions-menu';
+import { UserFormDialog } from '@/pages/admin/components/user-form-dialog';
 
 export function UsersListPage() {
   const [search, setSearch] = useSearchParamString('q');
   const [activeOnlyRaw, setActiveOnlyRaw] = useSearchParamString('active');
   const activeOnly = activeOnlyRaw === '1';
   const debouncedSearch = useDebouncedValue(search, 300);
+  const [createOpen, setCreateOpen] = useState(false);
 
   const { data, isLoading, isError, error } = useAdminUsers({
     search: debouncedSearch || undefined,
@@ -58,19 +60,8 @@ export function UsersListPage() {
         id: 'actions',
         header: '',
         cell: ({ row }) => (
-          <div className="flex justify-end gap-2">
-            <Button asChild variant="ghost" size="icon" aria-label="Cấu hình báo giá">
-              <Link to={`/admin/user-settings/${row.original.id}`}>
-                <Settings2 className="h-4 w-4" />
-              </Link>
-            </Button>
-            <Can permission="quotations.transfer_any">
-              <Button asChild variant="ghost" size="icon" aria-label="Chuyển nhượng báo giá">
-                <Link to={`/admin/users/${row.original.id}/transfer-quotations`}>
-                  <ArrowRightLeft className="h-4 w-4" />
-                </Link>
-              </Button>
-            </Can>
+          <div className="flex justify-end">
+            <UserActionsMenu user={row.original} />
           </div>
         ),
       },
@@ -86,11 +77,19 @@ export function UsersListPage() {
 
   return (
     <div className="space-y-4">
-      <div>
-        <h1 className="text-2xl font-bold">Quản lý người dùng</h1>
-        <p className="text-sm text-muted-foreground">
-          Cấu hình báo giá theo từng user, chuyển nhượng báo giá hàng loạt.
-        </p>
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-bold">Quản lý người dùng</h1>
+          <p className="text-sm text-muted-foreground">
+            Tạo, sửa, đặt lại mật khẩu, khoá/mở khoá và chuyển nhượng báo giá theo từng user.
+          </p>
+        </div>
+        <Can permission="users.create">
+          <Button onClick={() => setCreateOpen(true)}>
+            <UserPlus className="mr-2 h-4 w-4" />
+            Thêm user
+          </Button>
+        </Can>
       </div>
 
       <Card>
@@ -157,6 +156,8 @@ export function UsersListPage() {
           </Table>
         </CardContent>
       </Card>
+
+      <UserFormDialog mode="create" open={createOpen} onOpenChange={setCreateOpen} />
     </div>
   );
 }

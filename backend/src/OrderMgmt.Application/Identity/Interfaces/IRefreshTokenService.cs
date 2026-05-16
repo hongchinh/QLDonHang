@@ -12,4 +12,6 @@ public interface IRefreshTokenService
         string rawToken, string? fromIp, string? userAgent, CancellationToken ct = default);
 
     Task RevokeAsync(string rawToken, string reason, CancellationToken ct = default);
+
+    Task<int> RevokeAllActiveForUserAsync(Guid userId, string reason, CancellationToken ct = default);
 }

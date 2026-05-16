@@ -29,15 +29,20 @@ Cho admin (có quyền `users.{create,update,delete}`) thực hiện trọn vòn
 - UI dialog đặt cùng folder `pages/admin/components/` (folder mới) — không tạo route riêng.
 
 ## Risks
-- **Reset-password ↔ refresh tokens**: nếu quên revoke refresh tokens, user bị đổi password vẫn duy trì được session qua refresh → giảm bảo mật. Mitigation: thêm method `RevokeAllActiveForUserAsync` trên service và gọi trong cả `ResetPasswordAsync` lẫn `SetStatusAsync(Disabled)`.
+- **Reset-password ↔ refresh tokens**: nếu quên revoke refresh tokens, user bị đổi password vẫn duy trì được session qua refresh → giảm bảo mật. Mitigation: refactor `RevokeFamilyAsync` (đang là `private` trong `RefreshTokenService`) thành public qua interface, dùng lại cho cả `ResetPasswordAsync`, `SetStatusAsync(Disabled)`, và `SoftDeleteAsync` (để có audit `RevokedReason` thay vì dựa side-effect).
 - **Tự xoá / tự khoá**: admin đang đăng nhập có thể vô tình tự khoá tài khoản. Mitigation: service check `id == ICurrentUser.UserId` → throw `ForbiddenException` cho cả delete và set-status-to-disabled.
-- **Xoá admin cuối**: hệ thống mất quản trị nếu xoá admin cuối. Mitigation: trước khi xoá, đếm user còn active (chưa soft-delete, status Active) đang gán role ADMIN — nếu = 1 và id = user đang xoá → 409.
-- **Cascade soft-delete**: `AppDbContext` đã cascade `User → UserRoles, RefreshTokens, UserQuotationSettings`. Quotation FK Restrict + non-soft-delete cascade nên check owner thủ công trước khi `IsDeleted = true`.
+- **Mất admin cuối**: hệ thống mất quản trị nếu xoá / disable / đổi role admin cuối. Mitigation: trước mỗi thao tác có thể loại admin cuối (delete, set-status Disabled, update đổi role khỏi ADMIN), đếm số user khác đang Active + chưa soft-delete + còn role ADMIN — nếu = 0 → 409. Extract thành helper `EnsureNotLastActiveAdminAsync(excludedId, ct)` để 3 chỗ gọi chung.
+- **Cascade soft-delete không phủ hết các bảng phụ**:
+  - `RefreshTokens` cascade tự động (có nav collection trên `User`, là `ISoftDeletable`).
+  - `UserRoles` **không** cascade (không phải `ISoftDeletable`) — query filter `!x.User.IsDeleted && !x.Role.IsDeleted` ở `UserConfiguration` chỉ ẩn join row khỏi query, row vẫn còn trong DB. Chấp nhận được vì không tác dụng phụ.
+  - `UserQuotationSettings` **không có navigation** trên `User` entity → cascade soft-delete **không touch UQS**. Mitigation: trong `SoftDeleteAsync` load + set `IsDeleted = true` cho UQS thủ công (hoặc thêm nav `UserQuotationSettings?` lên `User` — out of scope vì cần migration).
+  - Quotation Owner FK `Restrict` chỉ chặn hard-delete; với soft-delete cần check owner báo giá thủ công như đã ghi.
+- **Access token sống tới khi hết TTL**: Disable / delete user chỉ chặn refresh; JWT đang phát hành vẫn dùng được tới khi access-token expire (~15 phút theo `JwtOptions`). Chấp nhận window này; không thêm token blacklist trong phase này.
 
 ## Phases
-- [ ] Phase 01 — Backend CRUD (M) — `phase-01-backend.md`
-- [ ] Phase 02 — Frontend dialogs + actions (M) — `phase-02-frontend.md`
-- [ ] Phase 03 — Integration tests (S) — `phase-03-tests.md`
+- [x] Phase 01 — Backend CRUD (M) — `phase-01-backend.md`
+- [x] Phase 02 — Frontend dialogs + actions (M) — `phase-02-frontend.md`
+- [x] Phase 03 — Integration tests (S) — `phase-03-tests.md`
 
 ## Final Verification
 

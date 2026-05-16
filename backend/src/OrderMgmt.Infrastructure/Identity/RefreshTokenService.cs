@@ -131,6 +131,12 @@ public class RefreshTokenService : IRefreshTokenService
         await _db.SaveChangesAsync(ct);
     }
 
+    public async Task<int> RevokeAllActiveForUserAsync(Guid userId, string reason, CancellationToken ct = default)
+    {
+        await RevokeFamilyAsync(userId, reason, _clock.UtcNow, ct);
+        return await _db.SaveChangesAsync(ct);
+    }
+
     private async Task RevokeFamilyAsync(Guid userId, string reason, DateTimeOffset now, CancellationToken ct)
     {
         var active = await _db.RefreshTokens

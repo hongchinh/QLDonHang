@@ -82,9 +82,19 @@ DependencyInjection.cs
 Identity/Admin/
  Interfaces/IAdminUserService.cs
  Models/
+  AdminUserDetailDto.cs
   AdminUserListItemDto.cs
   AdminUserListQuery.cs
+  CreateUserRequest.cs
+  ResetPasswordRequest.cs
+  SetUserStatusRequest.cs
+  UpdateUserRequest.cs
  Services/AdminUserService.cs
+ Validators/
+  CreateUserRequestValidator.cs
+  ResetPasswordRequestValidator.cs
+  SetUserStatusRequestValidator.cs
+  UpdateUserRequestValidator.cs
 Identity/Interfaces/
  IAuthService.cs
  IJwtTokenGenerator.cs
