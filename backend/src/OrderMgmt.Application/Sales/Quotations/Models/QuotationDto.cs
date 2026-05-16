@@ -43,6 +43,10 @@ public class QuotationDto
     public decimal GrossProfit { get; set; }
 
     public QuotationStatus Status { get; set; }
+    public DateTime? ConfirmedAt { get; set; }
+    public Guid? ConfirmedByUserId { get; set; }
+    public string? ConfirmedByName { get; set; }
+    public DateTime? CancelledAt { get; set; }
     public string? InternalNote { get; set; }
 
     public bool CanEdit { get; set; }
@@ -91,6 +95,7 @@ public class QuotationListItemDto
     public string? ContactPhone { get; set; }
     public decimal Total { get; set; }
     public QuotationStatus Status { get; set; }
+    public DateTime? ConfirmedAt { get; set; }
     public Guid OwnerUserId { get; set; }
     public string? OwnerFullName { get; set; }
     public bool IsOwnerDeleted { get; set; }

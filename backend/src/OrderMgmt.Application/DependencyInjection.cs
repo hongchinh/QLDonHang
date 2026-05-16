@@ -8,10 +8,14 @@ using OrderMgmt.Application.Catalog.Lookups.Interfaces;
 using OrderMgmt.Application.Catalog.Lookups.Services;
 using OrderMgmt.Application.Catalog.Products.Interfaces;
 using OrderMgmt.Application.Catalog.Products.Services;
+using OrderMgmt.Application.Identity.Admin.Interfaces;
+using OrderMgmt.Application.Identity.Admin.Services;
 using OrderMgmt.Application.Identity.Interfaces;
 using OrderMgmt.Application.Identity.Services;
 using OrderMgmt.Application.Identity.UserSettings.Interfaces;
 using OrderMgmt.Application.Identity.UserSettings.Services;
+using OrderMgmt.Application.Reports.SalesRevenue.Interfaces;
+using OrderMgmt.Application.Reports.SalesRevenue.Services;
 using OrderMgmt.Application.Sales.Quotations.Interfaces;
 using OrderMgmt.Application.Sales.Quotations.Services;
 
@@ -37,8 +41,11 @@ public static class DependencyInjection
         services.AddScoped<ICatalogLookupService, CatalogLookupService>();
         services.AddScoped<IQuotationService, QuotationService>();
         services.AddScoped<IQuotationDashboardService, QuotationDashboardService>();
+        services.AddScoped<IDashboardService, DashboardService>();
         services.AddScoped<IUserQuotationSettingsService, UserQuotationSettingsService>();
         services.AddScoped<IQuotationBulkTransferService, QuotationBulkTransferService>();
+        services.AddScoped<IAdminUserService, AdminUserService>();
+        services.AddScoped<ISalesRevenueReportService, SalesRevenueReportService>();
 
         return services;
     }

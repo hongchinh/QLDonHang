@@ -290,7 +290,20 @@ function QuotationFormInner({
               </Button>
             )}
             {(status === 'Draft' || status === 'Sent' || status === 'Confirmed') && (
-              <Button variant="outline" size="sm" onClick={() => onTransition('Cancel')} disabled={submitting}>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  if (status === 'Confirmed') {
+                    const ok = window.confirm(
+                      'Báo giá đã xác nhận — hủy sẽ ghi nhận giảm doanh thu của sale. Cần quyền quotations.cancel_confirmed. Tiếp tục?',
+                    );
+                    if (!ok) return;
+                  }
+                  onTransition('Cancel');
+                }}
+                disabled={submitting}
+              >
                 <Ban className="mr-2 h-4 w-4" />Hủy
               </Button>
             )}
@@ -310,8 +323,6 @@ function QuotationFormInner({
             ? 'Chủ sở hữu báo giá đã ngừng hoạt động — chỉ có thể clone.'
             : initial.status === 'Cancelled'
             ? 'Báo giá đã huỷ — không thể chỉnh sửa.'
-            : initial.status === 'ConvertedToOrder'
-            ? 'Báo giá đã chuyển đơn hàng — không thể chỉnh sửa.'
             : `Báo giá đang ở trạng thái ${initial.status} — cấu hình khoá của bạn không cho phép sửa.`}
           {initial.canClone && (
             <Button

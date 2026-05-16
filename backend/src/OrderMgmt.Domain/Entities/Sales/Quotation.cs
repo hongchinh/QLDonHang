@@ -38,6 +38,9 @@ public class Quotation : BaseEntity
     public decimal GrossProfit { get; set; }
 
     public QuotationStatus Status { get; set; } = QuotationStatus.Draft;
+    public DateTime? ConfirmedAt { get; set; }
+    public Guid? ConfirmedByUserId { get; set; }
+    public DateTime? CancelledAt { get; set; }
     public string? InternalNote { get; set; }
 
     public ICollection<QuotationLine> Lines { get; set; } = new List<QuotationLine>();

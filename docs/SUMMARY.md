@@ -1,6 +1,7 @@
 # Documentation Summary
 
-**QLDonHang** — Phần mềm Quản lý Đơn hàng, Báo giá, Bàn giao, Báo cáo.
+**QLDonHang** — Phần mềm Quản lý Báo giá.
+Quản lý vòng đời báo giá: Draft → Sent → Confirmed → Cancelled. Doanh thu ghi nhận khi báo giá Confirmed.
 Backend: .NET 9 Clean Architecture + Npgsql/EF Core. Frontend: React + Vite + TanStack.
 
 ## Architecture

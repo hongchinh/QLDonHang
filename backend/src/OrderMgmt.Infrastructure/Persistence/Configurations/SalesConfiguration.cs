@@ -34,6 +34,9 @@ public class QuotationConfiguration : IEntityTypeConfiguration<Quotation>
 
         b.Property(x => x.Status).HasConversion<int>();
 
+        b.Property(x => x.ConfirmedAt).HasColumnType("timestamptz");
+        b.Property(x => x.CancelledAt).HasColumnType("timestamptz");
+
         b.HasOne(x => x.Customer)
             .WithMany()
             .HasForeignKey(x => x.CustomerId)
@@ -57,6 +60,8 @@ public class QuotationConfiguration : IEntityTypeConfiguration<Quotation>
         b.HasIndex(x => x.Status);
         b.HasIndex(x => new { x.OwnerUserId, x.IsDeleted, x.QuotationDate })
             .HasDatabaseName("ix_quotations_owner_status_date");
+        b.HasIndex(x => new { x.OwnerUserId, x.IsDeleted, x.Status, x.ConfirmedAt })
+            .HasDatabaseName("ix_quotations_owner_status_confirmed_at");
         b.HasQueryFilter(x => !x.IsDeleted);
     }
 }

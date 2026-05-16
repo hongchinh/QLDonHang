@@ -27,7 +27,7 @@ describe('useAuthStore', () => {
   it('hasPermission reflects current user', () => {
     useAuthStore.getState().setAuth('t', new Date(Date.now() + 60_000).toISOString(), user);
     expect(useAuthStore.getState().hasPermission('customers.view')).toBe(true);
-    expect(useAuthStore.getState().hasPermission('orders.pay')).toBe(false);
+    expect(useAuthStore.getState().hasPermission('customers.delete')).toBe(false);
   });
 
   it('isInRole reflects current user', () => {

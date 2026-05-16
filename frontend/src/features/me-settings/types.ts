@@ -1,4 +1,4 @@
-export type LockAtStatus = 'Sent' | 'Confirmed' | 'ConvertedToOrder' | null;
+export type LockAtStatus = 'Sent' | 'Confirmed' | null;
 
 export interface MyQuotationSettings {
   userId: string;

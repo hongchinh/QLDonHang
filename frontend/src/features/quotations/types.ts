@@ -1,7 +1,7 @@
 import type { PagedResult } from '@/features/customers/types';
 import type { PricingMode } from '@/features/products/types';
 
-export type QuotationStatus = 'Draft' | 'Sent' | 'Confirmed' | 'ConvertedToOrder' | 'Cancelled';
+export type QuotationStatus = 'Draft' | 'Sent' | 'Confirmed' | 'Cancelled';
 export type QuotationAction = 'Send' | 'Confirm' | 'Cancel';
 
 export interface QuotationLine {
@@ -56,6 +56,10 @@ export interface Quotation {
   totalCost: number;
   grossProfit: number;
   status: QuotationStatus;
+  confirmedAt?: string;
+  confirmedByUserId?: string;
+  confirmedByName?: string;
+  cancelledAt?: string;
   internalNote?: string;
   lines: QuotationLine[];
   createdAt: string;
@@ -70,6 +74,7 @@ export interface QuotationListItem {
   contactPhone?: string;
   total: number;
   status: QuotationStatus;
+  confirmedAt?: string;
   ownerUserId: string;
   ownerFullName?: string;
   isOwnerDeleted: boolean;

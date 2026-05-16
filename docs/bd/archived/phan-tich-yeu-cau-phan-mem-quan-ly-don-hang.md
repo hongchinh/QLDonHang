@@ -1,5 +1,7 @@
 # PHÂN TÍCH YÊU CẦU PHẦN MỀM QUẢN LÝ ĐƠN HÀNG
 
+> **ARCHIVED (2026-05-15).** Tài liệu này phản ánh scope ban đầu (báo giá → đơn hàng → bàn giao → thanh toán → báo cáo). Sản phẩm đã pivot sang scope "báo giá là chứng từ duy nhất". Mục tiêu hiện tại xem [../../project-pdr/product-goals.md](../../project-pdr/product-goals.md). Giữ file này làm reference lịch sử.
+
 ## 1. Thông tin chung
 
 ### 1.1. Tên tài liệu

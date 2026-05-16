@@ -19,11 +19,6 @@ export const PERMISSIONS = [
   'quotations.clone_orphan',
   'quotations.bypass_lock',
   'user_settings.manage',
-  'orders.view',
-  'orders.create',
-  'orders.update',
-  'orders.deliver',
-  'orders.pay',
   'reports.revenue',
 ] as const;
 

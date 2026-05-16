@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -7,6 +7,7 @@ import { Label } from '@/components/ui/label';
 import { toast } from '@/lib/use-toast';
 import { getErrorMessage } from '@/lib/api-client';
 import { useBulkTransfer } from '@/features/admin-user-settings/hooks';
+import { useAdminUsers } from '@/features/admin-users/hooks';
 
 export function BulkTransferPage() {
   const { userId } = useParams<{ userId: string }>();
@@ -14,6 +15,12 @@ export function BulkTransferPage() {
   const [includeCancelled, setIncludeCancelled] = useState(false);
   const [reason, setReason] = useState('');
   const bulk = useBulkTransfer(userId ?? '');
+  const { data: users, isLoading: usersLoading, isError: usersError, error: usersErr } = useAdminUsers({ activeOnly: true });
+
+  const recipients = useMemo(
+    () => (users ?? []).filter((u) => u.id !== userId),
+    [users, userId],
+  );
 
   if (!userId) return <div>Thiếu userId trong URL.</div>;
 
@@ -49,13 +56,27 @@ export function BulkTransferPage() {
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="toUserId">User ID nhận</Label>
-            <Input
-              id="toUserId"
-              placeholder="GUID của user nhận"
-              value={toUserId}
-              onChange={(e) => setToUserId(e.target.value)}
-            />
+            <Label htmlFor="toUserId">User nhận</Label>
+            {usersError ? (
+              <p className="text-sm text-destructive">{getErrorMessage(usersErr)}</p>
+            ) : (
+              <select
+                id="toUserId"
+                value={toUserId}
+                onChange={(e) => setToUserId(e.target.value)}
+                disabled={usersLoading}
+                className="w-full max-w-md rounded-md border px-3 py-2"
+              >
+                <option value="">
+                  {usersLoading ? 'Đang tải danh sách user...' : '— Chọn user nhận —'}
+                </option>
+                {recipients.map((u) => (
+                  <option key={u.id} value={u.id}>
+                    {u.fullName} ({u.username}){u.roleCode ? ` · ${u.roleCode}` : ''}
+                  </option>
+                ))}
+              </select>
+            )}
           </div>
           <div className="space-y-2">
             <Label htmlFor="reason">Lý do (tuỳ chọn)</Label>

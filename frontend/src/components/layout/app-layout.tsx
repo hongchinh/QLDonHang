@@ -5,11 +5,9 @@ import {
   Users,
   Package,
   FileText,
-  ClipboardList,
-  Truck,
-  Wallet,
   BarChart3,
-  Settings,
+  UserCog,
+  Users2,
   LogOut,
   Menu,
   X,
@@ -28,16 +26,35 @@ interface NavItem {
   role?: Role;
 }
 
-const navItems: NavItem[] = [
-  { to: '/', label: 'Tổng quan', icon: LayoutDashboard },
-  { to: '/customers', label: 'Khách hàng', icon: Users, permission: 'customers.view' },
-  { to: '/products', label: 'Hàng hóa', icon: Package, permission: 'products.view' },
-  { to: '/quotations', label: 'Báo giá', icon: FileText, permission: 'quotations.view' },
-  { to: '/orders', label: 'Đơn hàng', icon: ClipboardList, permission: 'orders.view' },
-  { to: '/deliveries', label: 'Bàn giao', icon: Truck, permission: 'orders.deliver' },
-  { to: '/payments', label: 'Thanh toán & Công nợ', icon: Wallet, permission: 'orders.pay' },
-  { to: '/reports', label: 'Báo cáo', icon: BarChart3, permission: 'reports.revenue' },
-  { to: '/settings', label: 'Cấu hình', icon: Settings, role: 'ADMIN' },
+interface NavGroup {
+  label: string;
+  items: NavItem[];
+}
+
+const navGroups: NavGroup[] = [
+  {
+    label: 'Chức năng',
+    items: [
+      { to: '/customers', label: 'Khách hàng', icon: Users, permission: 'customers.view' },
+      { to: '/products', label: 'Hàng hóa', icon: Package, permission: 'products.view' },
+      { to: '/quotations', label: 'Báo giá', icon: FileText, permission: 'quotations.view' },
+    ],
+  },
+  {
+    label: 'Báo cáo',
+    items: [
+      { to: '/reports/revenue', label: 'Doanh thu', icon: BarChart3, permission: 'reports.revenue' },
+      { to: '/reports/sales-revenue', label: 'Doanh thu sale', icon: BarChart3, permission: 'reports.revenue' },
+      { to: '/reports/sales-performance', label: 'Hiệu suất sale', icon: BarChart3, permission: 'quotations.view_all' },
+    ],
+  },
+  {
+    label: 'Setting',
+    items: [
+      { to: '/settings/my-quotation-settings', label: 'Cài đặt của tôi', icon: UserCog },
+      { to: '/admin/users', label: 'Quản lý người dùng', icon: Users2, permission: 'user_settings.manage' },
+    ],
+  },
 ];
 
 export function AppLayout() {
@@ -54,11 +71,20 @@ export function AppLayout() {
     setMobileOpen(false);
   }, [location.pathname]);
 
-  const visibleNavItems = navItems.filter((item) => {
-    if (item.permission && !hasPermission(item.permission)) return false;
-    if (item.role && !isInRole(item.role)) return false;
-    return true;
-  });
+  const dashboardItem: NavItem = hasPermission('quotations.view_all')
+    ? { to: '/admin/dashboard', label: 'Tổng quan', icon: LayoutDashboard }
+    : { to: '/', label: 'Tổng quan', icon: LayoutDashboard };
+
+  const visibleGroups = navGroups
+    .map((group) => ({
+      ...group,
+      items: group.items.filter((item) => {
+        if (item.permission && !hasPermission(item.permission)) return false;
+        if (item.role && !isInRole(item.role)) return false;
+        return true;
+      }),
+    }))
+    .filter((group) => group.items.length > 0);
 
   const handleLogout = () => logout.mutate();
 
@@ -67,7 +93,8 @@ export function AppLayout() {
       {/* Desktop sidebar */}
       <aside className="hidden w-64 flex-col border-r bg-card md:flex">
         <SidebarContent
-          items={visibleNavItems}
+          dashboardItem={dashboardItem}
+          groups={visibleGroups}
           user={user}
           onLogout={handleLogout}
         />
@@ -88,7 +115,8 @@ export function AppLayout() {
         )}
       >
         <SidebarContent
-          items={visibleNavItems}
+          dashboardItem={dashboardItem}
+          groups={visibleGroups}
           user={user}
           onLogout={handleLogout}
           onClose={() => setMobileOpen(false)}
@@ -120,13 +148,34 @@ export function AppLayout() {
 }
 
 interface SidebarContentProps {
-  items: NavItem[];
+  dashboardItem: NavItem;
+  groups: NavGroup[];
   user: ReturnType<typeof useAuthStore.getState>['user'];
   onLogout: () => void;
   onClose?: () => void;
 }
 
-function SidebarContent({ items, user, onLogout, onClose }: SidebarContentProps) {
+function NavLinkItem({ to, label, icon: Icon }: NavItem) {
+  return (
+    <NavLink
+      to={to}
+      end={to === '/'}
+      className={({ isActive }) =>
+        cn(
+          'flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors',
+          isActive
+            ? 'bg-primary text-primary-foreground'
+            : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground',
+        )
+      }
+    >
+      <Icon className="h-4 w-4" />
+      {label}
+    </NavLink>
+  );
+}
+
+function SidebarContent({ dashboardItem, groups, user, onLogout, onClose }: SidebarContentProps) {
   return (
     <>
       <div className="flex h-16 items-center justify-between border-b px-6 font-semibold">
@@ -137,24 +186,19 @@ function SidebarContent({ items, user, onLogout, onClose }: SidebarContentProps)
           </Button>
         )}
       </div>
-      <nav className="flex-1 space-y-1 overflow-y-auto p-3">
-        {items.map(({ to, label, icon: Icon }) => (
-          <NavLink
-            key={to}
-            to={to}
-            end={to === '/'}
-            className={({ isActive }) =>
-              cn(
-                'flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors',
-                isActive
-                  ? 'bg-primary text-primary-foreground'
-                  : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground',
-              )
-            }
-          >
-            <Icon className="h-4 w-4" />
-            {label}
-          </NavLink>
+      <nav className="flex-1 overflow-y-auto p-3">
+        <div className="space-y-1">
+          <NavLinkItem {...dashboardItem} />
+        </div>
+        {groups.map((group) => (
+          <div key={group.label} className="mt-4 space-y-1">
+            <div className="px-3 pb-1 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+              {group.label}
+            </div>
+            {group.items.map((item) => (
+              <NavLinkItem key={item.to} {...item} />
+            ))}
+          </div>
         ))}
       </nav>
       <div className="border-t p-3">

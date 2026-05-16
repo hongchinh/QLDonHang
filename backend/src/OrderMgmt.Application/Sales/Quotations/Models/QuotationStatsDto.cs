@@ -6,7 +6,6 @@ public class QuotationStatsDto
     public int DraftCount { get; set; }
     public int SentCount { get; set; }
     public int ConfirmedCount { get; set; }
-    public int ConvertedCount { get; set; }
     public int CancelledCount { get; set; }
     public decimal TotalRevenue { get; set; }
     public decimal TodayRevenue { get; set; }

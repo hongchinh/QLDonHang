@@ -16,18 +16,15 @@ import { ProductFormPage } from '@/pages/products/product-form-page';
 import { QuotationListPage } from '@/pages/quotations/quotation-list-page';
 import { QuotationFormPage } from '@/pages/quotations/quotation-form-page';
 import { MyQuotationSettingsPage } from '@/pages/settings/my-quotation-settings-page';
+import { SettingsHubPage } from '@/pages/settings/settings-hub-page';
 import { UserSettingsPage } from '@/pages/admin/user-settings-page';
+import { UsersListPage } from '@/pages/admin/users-list-page';
 import { BulkTransferPage } from '@/pages/admin/bulk-transfer-page';
+import { AdminDashboardPage } from '@/pages/admin/admin-dashboard-page';
+import { RevenuePage } from '@/pages/reports/revenue-page';
+import { SalesPerformancePage } from '@/pages/reports/sales-performance-page';
+import { SalesRevenuePage } from '@/pages/reports/sales-revenue-page';
 import { ForbiddenPage, NotFoundPage } from '@/pages/error-pages';
-
-const PLACEHOLDER = (title: string) => (
-  <div className="space-y-2">
-    <h1 className="text-2xl font-bold">{title}</h1>
-    <p className="text-sm text-muted-foreground">
-      Module này chưa được hiện thực — tham khảo pattern của module Khách hàng để mở rộng.
-    </p>
-  </div>
-);
 
 export function App() {
   return (
@@ -126,6 +123,14 @@ export function App() {
                   element={<MyQuotationSettingsPage />}
                 />
                 <Route
+                  path="admin/users"
+                  element={
+                    <ProtectedRoute permission="user_settings.manage">
+                      <UsersListPage />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
                   path="admin/user-settings/:userId"
                   element={
                     <ProtectedRoute permission="user_settings.manage">
@@ -141,11 +146,42 @@ export function App() {
                     </ProtectedRoute>
                   }
                 />
-                <Route path="orders" element={<ProtectedRoute permission="orders.view">{PLACEHOLDER('Đơn hàng')}</ProtectedRoute>} />
-                <Route path="deliveries" element={<ProtectedRoute permission="orders.deliver">{PLACEHOLDER('Bàn giao')}</ProtectedRoute>} />
-                <Route path="payments" element={<ProtectedRoute permission="orders.pay">{PLACEHOLDER('Thanh toán & Công nợ')}</ProtectedRoute>} />
-                <Route path="reports" element={<ProtectedRoute permission="reports.revenue">{PLACEHOLDER('Báo cáo')}</ProtectedRoute>} />
-                <Route path="settings" element={<ProtectedRoute requireRole="ADMIN">{PLACEHOLDER('Cấu hình hệ thống')}</ProtectedRoute>} />
+                <Route
+                  path="admin/dashboard"
+                  element={
+                    <ProtectedRoute permission="quotations.view_all">
+                      <AdminDashboardPage />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route path="reports">
+                  <Route index element={<Navigate to="revenue" replace />} />
+                  <Route
+                    path="revenue"
+                    element={
+                      <ProtectedRoute permission="reports.revenue">
+                        <RevenuePage />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="sales-performance"
+                    element={
+                      <ProtectedRoute permission="quotations.view_all">
+                        <SalesPerformancePage />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="sales-revenue"
+                    element={
+                      <ProtectedRoute permission="reports.revenue">
+                        <SalesRevenuePage />
+                      </ProtectedRoute>
+                    }
+                  />
+                </Route>
+                <Route path="settings" element={<SettingsHubPage />} />
               </Route>
 
               <Route path="/404" element={<NotFoundPage />} />

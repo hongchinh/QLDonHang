@@ -127,7 +127,7 @@ export function QuotationListPage() {
         header: '',
         cell: ({ row }) => {
           const q = row.original;
-          const canCancel = q.status !== 'Cancelled' && q.status !== 'ConvertedToOrder';
+          const canCancel = q.status !== 'Cancelled';
           return (
             <div className="flex justify-end gap-1">
               <Can permission="quotations.update">
@@ -337,9 +337,15 @@ export function QuotationListPage() {
         title="Hủy báo giá?"
         description={
           pendingCancel ? (
-            <>
-              Bạn chắc chắn muốn hủy báo giá <strong>{pendingCancel.code}</strong>? Báo giá đã hủy không thể chỉnh sửa lại.
-            </>
+            pendingCancel.status === 'Confirmed' ? (
+              <>
+                Báo giá <strong>{pendingCancel.code}</strong> đã được xác nhận — hủy sẽ trừ doanh thu của sale. Cần quyền <code>quotations.cancel_confirmed</code>. Tiếp tục?
+              </>
+            ) : (
+              <>
+                Bạn chắc chắn muốn hủy báo giá <strong>{pendingCancel.code}</strong>? Báo giá đã hủy không thể chỉnh sửa lại.
+              </>
+            )
           ) : null
         }
         destructive

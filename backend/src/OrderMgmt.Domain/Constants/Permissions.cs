@@ -44,7 +44,7 @@ public static class Permissions
         public const string Update = "quotations.update";
         public const string Delete = "quotations.delete";
         public const string Print = "quotations.print";
-        public const string ConvertToOrder = "quotations.convert";
+        public const string CancelConfirmed = "quotations.cancel_confirmed";
         public const string ViewCost = "quotations.view_cost";
         public const string ViewAll = "quotations.view_all";
         public const string TransferOwn = "quotations.transfer_own";
@@ -56,18 +56,6 @@ public static class Permissions
     public static class UserSettings
     {
         public const string Manage = "user_settings.manage";
-    }
-
-    public static class Orders
-    {
-        public const string View = "orders.view";
-        public const string Create = "orders.create";
-        public const string Update = "orders.update";
-        public const string Delete = "orders.delete";
-        public const string Print = "orders.print";
-        public const string Deliver = "orders.deliver";
-        public const string Pay = "orders.pay";
-        public const string ViewCost = "orders.view_cost";
     }
 
     public static class Reports

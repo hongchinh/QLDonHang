@@ -11,7 +11,6 @@ const MAX_BYTES = 5 * 1024 * 1024;
 const LOCK_LABELS: Record<string, string> = {
   Sent: 'Đã gửi',
   Confirmed: 'Đã xác nhận',
-  ConvertedToOrder: 'Đã chuyển đơn hàng',
 };
 
 export function MyQuotationSettingsPage() {

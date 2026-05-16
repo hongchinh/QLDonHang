@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
+import { ArrowRightLeft } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Can } from '@/components/auth/can';
 import { toast } from '@/lib/use-toast';
 import { getErrorMessage } from '@/lib/api-client';
 import { useSetLockAt, useUserSettings } from '@/features/admin-user-settings/hooks';
@@ -11,11 +13,11 @@ const OPTIONS: { value: '' | NonNullable<LockAtStatus>; label: string }[] = [
   { value: '', label: 'Không khoá' },
   { value: 'Sent', label: 'Từ Đã gửi' },
   { value: 'Confirmed', label: 'Từ Đã xác nhận' },
-  { value: 'ConvertedToOrder', label: 'Từ Đã chuyển đơn hàng' },
 ];
 
 export function UserSettingsPage() {
   const { userId } = useParams<{ userId: string }>();
+  const navigate = useNavigate();
   const { data: settings, isLoading } = useUserSettings(userId);
   const setLockAt = useSetLockAt(userId ?? '');
   const [value, setValue] = useState<'' | NonNullable<LockAtStatus>>('');
@@ -66,6 +68,51 @@ export function UserSettingsPage() {
           <Button onClick={handleSave} disabled={setLockAt.isPending}>Lưu</Button>
         </CardContent>
       </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Template báo giá của user</CardTitle>
+          <CardDescription>Thông tin template do user tự upload (chỉ xem).</CardDescription>
+        </CardHeader>
+        <CardContent>
+          {settings.templateFileName ? (
+            <div className="space-y-1 text-sm">
+              <p>
+                <strong>{settings.templateOriginalName ?? settings.templateFileName}</strong>
+              </p>
+              {settings.templateUploadedAt && (
+                <p className="text-muted-foreground">
+                  Cập nhật {new Date(settings.templateUploadedAt).toLocaleString('vi-VN')}
+                </p>
+              )}
+            </div>
+          ) : (
+            <p className="text-sm text-muted-foreground">
+              User đang dùng template mặc định của hệ thống.
+            </p>
+          )}
+        </CardContent>
+      </Card>
+
+      <Can permission="quotations.transfer_any">
+        <Card>
+          <CardHeader>
+            <CardTitle>Chuyển nhượng báo giá</CardTitle>
+            <CardDescription>
+              Chuyển toàn bộ báo giá thuộc user này sang user khác (dùng khi user nghỉ việc).
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Button
+              variant="outline"
+              onClick={() => navigate(`/admin/users/${userId}/transfer-quotations`)}
+            >
+              <ArrowRightLeft className="mr-2 h-4 w-4" />
+              Mở trang chuyển nhượng
+            </Button>
+          </CardContent>
+        </Card>
+      </Can>
     </div>
   );
 }

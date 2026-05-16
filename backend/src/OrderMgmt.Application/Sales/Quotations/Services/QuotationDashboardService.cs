@@ -57,7 +57,6 @@ public class QuotationDashboardService : IQuotationDashboardService
                 case QuotationStatus.Draft: dto.DraftCount = row.Count; break;
                 case QuotationStatus.Sent: dto.SentCount = row.Count; break;
                 case QuotationStatus.Confirmed: dto.ConfirmedCount = row.Count; break;
-                case QuotationStatus.ConvertedToOrder: dto.ConvertedCount = row.Count; break;
                 case QuotationStatus.Cancelled: dto.CancelledCount = row.Count; break;
             }
             if (row.Status != QuotationStatus.Cancelled)

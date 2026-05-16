@@ -105,7 +105,7 @@ Mọi controller trả `ApiResponse<T>` (success) hoặc `ApiResponse` với `er
 - Permissions mới: `quotations.{view_all, transfer_own, transfer_any, clone_orphan, bypass_lock}`, `user_settings.manage`.
 - Feature flag `Features:QuotationOwnerScope = false` để rollback nhanh (bỏ qua scope + access guard, vẫn giữ `[HasPermission]` & lock-at).
 - `UserQuotationSettings (UserId UNIQUE, LockAtStatus, TemplateFileName, ...)` — config per-user; admin sửa qua `/api/admin/user-settings/{userId}/lock-at`; user chỉ xem qua `/api/me/quotation-settings`.
-- Lock-at: user không có `quotations.bypass_lock` không sửa được báo giá có `status >= LockAtStatus` (thứ tự logic Draft<Sent<Confirmed<ConvertedToOrder; Cancelled tách riêng).
+- Lock-at: user không có `quotations.bypass_lock` không sửa được báo giá có `status >= LockAtStatus` (thứ tự logic Draft<Sent<Confirmed; Cancelled tách riêng).
 - Template Excel per-user: upload qua `PUT /api/me/quotation-settings/template` (validate magic bytes, MIME, .xlsx, zip-bomb cap, ClosedXML parse). File lưu `templates/users/{userId}.xlsx`. Render dùng template của *owner báo giá*, fallback về `QuotationExport:TemplatePath`.
 - Audit `QuotationOwnerHistory` ghi mọi lần chuyển nhượng (single hoặc bulk).
 - Bulk-transfer: `POST /api/admin/users/{userId}/transfer-quotations` (idempotent, chuyển toàn bộ owner=userId; option `IncludeCancelled`).

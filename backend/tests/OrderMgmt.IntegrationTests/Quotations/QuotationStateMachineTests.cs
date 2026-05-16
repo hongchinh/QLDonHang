@@ -23,9 +23,12 @@ public class QuotationStateMachineTests : QuotationTestBase
 
         var afterConfirm = await TransitionAsync(draft.Id, QuotationAction.Confirm);
         afterConfirm.Status.Should().Be(QuotationStatus.Confirmed);
+        afterConfirm.ConfirmedAt.Should().NotBeNull();
+        afterConfirm.ConfirmedByUserId.Should().NotBeNull();
 
         var afterCancel = await TransitionAsync(draft.Id, QuotationAction.Cancel);
         afterCancel.Status.Should().Be(QuotationStatus.Cancelled);
+        afterCancel.CancelledAt.Should().NotBeNull();
     }
 
     [Fact]

@@ -92,15 +92,28 @@ public class QuotationService : IQuotationService
                 $"Báo giá ở trạng thái '{q.Status}' đã bị khoá theo cấu hình của bạn.");
     }
 
+    private void ApplyStatusTimestamps(Quotation q, QuotationStatus newStatus)
+    {
+        var nowUtc = _clock.UtcNow.UtcDateTime;
+        if (newStatus == QuotationStatus.Confirmed && q.ConfirmedAt == null)
+        {
+            q.ConfirmedAt = nowUtc;
+            q.ConfirmedByUserId = _currentUser.UserId;
+        }
+        if (newStatus == QuotationStatus.Cancelled && q.CancelledAt == null)
+        {
+            q.CancelledAt = nowUtc;
+        }
+    }
+
     private static int CompareStatus(QuotationStatus a, QuotationStatus b)
     {
-        // Order: Draft(1) < Sent(2) < Confirmed(3) < ConvertedToOrder(4). Cancelled handled separately.
+        // Order: Draft(1) < Sent(2) < Confirmed(3). Cancelled handled separately.
         static int Rank(QuotationStatus s) => s switch
         {
             QuotationStatus.Draft => 0,
             QuotationStatus.Sent => 1,
             QuotationStatus.Confirmed => 2,
-            QuotationStatus.ConvertedToOrder => 3,
             _ => -1,
         };
         return Rank(a).CompareTo(Rank(b));
@@ -154,6 +167,7 @@ public class QuotationService : IQuotationService
                 ContactPhone = q.ContactPhone,
                 Total = q.Total,
                 Status = q.Status,
+                ConfirmedAt = q.ConfirmedAt,
                 OwnerUserId = q.OwnerUserId,
                 OwnerFullName = _db.Users.IgnoreQueryFilters()
                     .Where(u => u.Id == q.OwnerUserId)
@@ -202,8 +216,18 @@ public class QuotationService : IQuotationService
             .Select(u => new { u.FullName, u.IsDeleted })
             .FirstOrDefaultAsync(ct);
 
+        string? confirmedByName = null;
+        if (quotation.ConfirmedByUserId.HasValue)
+        {
+            confirmedByName = await _db.Users.IgnoreQueryFilters()
+                .AsNoTracking()
+                .Where(u => u.Id == quotation.ConfirmedByUserId.Value)
+                .Select(u => u.FullName)
+                .FirstOrDefaultAsync(ct);
+        }
+
         var canEdit = await ComputeCanEditAsync(quotation, owner?.IsDeleted ?? false, ct);
-        return MapToDto(quotation, owner?.FullName, owner?.IsDeleted ?? false, canEdit);
+        return MapToDto(quotation, owner?.FullName, owner?.IsDeleted ?? false, canEdit, confirmedByName);
     }
 
     private async Task<bool> ComputeCanEditAsync(Quotation q, bool isOwnerDeleted, CancellationToken ct)
@@ -364,7 +388,15 @@ public class QuotationService : IQuotationService
         if (action != QuotationAction.Cancel)
             await EnsureCanModifyAsync(quotation, ct);
 
+        if (action == QuotationAction.Cancel
+            && quotation.Status == QuotationStatus.Confirmed
+            && !_currentUser.HasPermission(Permissions.Quotations.CancelConfirmed))
+        {
+            throw new ForbiddenException("Bạn không có quyền hủy báo giá đã xác nhận.");
+        }
+
         quotation.Status = next;
+        ApplyStatusTimestamps(quotation, next);
         await _db.SaveChangesAsync(ct);
         return await GetAsync(quotation.Id, ct);
     }
@@ -676,7 +708,7 @@ public class QuotationService : IQuotationService
     private static string EscapeLike(string input) =>
         input.Replace("\\", "\\\\").Replace("%", "\\%").Replace("_", "\\_");
 
-    private static QuotationDto MapToDto(Quotation q, string? ownerFullName = null, bool isOwnerDeleted = false, bool canEdit = true) => new()
+    private static QuotationDto MapToDto(Quotation q, string? ownerFullName = null, bool isOwnerDeleted = false, bool canEdit = true, string? confirmedByName = null) => new()
     {
         Id = q.Id,
         Code = q.Code,
@@ -706,6 +738,10 @@ public class QuotationService : IQuotationService
         TotalCost = q.TotalCost,
         GrossProfit = q.GrossProfit,
         Status = q.Status,
+        ConfirmedAt = q.ConfirmedAt,
+        ConfirmedByUserId = q.ConfirmedByUserId,
+        ConfirmedByName = confirmedByName,
+        CancelledAt = q.CancelledAt,
         InternalNote = q.InternalNote,
         CreatedAt = q.CreatedAt,
         CreatedBy = q.CreatedBy,

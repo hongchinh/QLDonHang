@@ -82,7 +82,7 @@ public static class DbSeeder
             (Permissions.Quotations.Update, Permissions.SalesModule, "Cập nhật báo giá"),
             (Permissions.Quotations.Delete, Permissions.SalesModule, "Xóa báo giá"),
             (Permissions.Quotations.Print, Permissions.SalesModule, "In báo giá"),
-            (Permissions.Quotations.ConvertToOrder, Permissions.SalesModule, "Chuyển báo giá thành đơn hàng"),
+            (Permissions.Quotations.CancelConfirmed, Permissions.SalesModule, "Huỷ báo giá đã xác nhận"),
             (Permissions.Quotations.ViewCost, Permissions.SalesModule, "Xem giá vốn/lợi nhuận báo giá"),
             (Permissions.Quotations.ViewAll, Permissions.SalesModule, "Xem mọi báo giá (bypass owner)"),
             (Permissions.Quotations.TransferOwn, Permissions.SalesModule, "Chuyển báo giá của mình cho user khác"),
@@ -90,15 +90,6 @@ public static class DbSeeder
             (Permissions.Quotations.CloneOrphan, Permissions.SalesModule, "Clone báo giá của user đã nghỉ"),
             (Permissions.Quotations.BypassLock, Permissions.SalesModule, "Bypass khoá trạng thái báo giá"),
             (Permissions.UserSettings.Manage, Permissions.SystemModule, "Cấu hình thiết lập của user khác"),
-
-            (Permissions.Orders.View, Permissions.SalesModule, "Xem đơn hàng"),
-            (Permissions.Orders.Create, Permissions.SalesModule, "Tạo đơn hàng"),
-            (Permissions.Orders.Update, Permissions.SalesModule, "Cập nhật đơn hàng"),
-            (Permissions.Orders.Delete, Permissions.SalesModule, "Xóa đơn hàng"),
-            (Permissions.Orders.Print, Permissions.SalesModule, "In đơn hàng"),
-            (Permissions.Orders.Deliver, Permissions.SalesModule, "Cập nhật giao hàng"),
-            (Permissions.Orders.Pay, Permissions.SalesModule, "Cập nhật thanh toán"),
-            (Permissions.Orders.ViewCost, Permissions.SalesModule, "Xem giá vốn/lợi nhuận đơn hàng"),
 
             (Permissions.Reports.Revenue, Permissions.ReportModule, "Báo cáo doanh thu"),
             (Permissions.Reports.Profit, Permissions.ReportModule, "Báo cáo lợi nhuận"),
@@ -127,21 +118,18 @@ public static class DbSeeder
                 Permissions.Customers.View, Permissions.Customers.Create, Permissions.Customers.Update,
                 Permissions.Products.View,
                 Permissions.Quotations.View, Permissions.Quotations.Create, Permissions.Quotations.Update,
-                Permissions.Quotations.Print, Permissions.Quotations.ConvertToOrder,
+                Permissions.Quotations.Print,
                 Permissions.Quotations.TransferOwn,
-                Permissions.Orders.View, Permissions.Orders.Create, Permissions.Orders.Update, Permissions.Orders.Print,
             }),
             (RoleCodes.Accountant, "Kế toán", new[]
             {
                 Permissions.Customers.View, Permissions.Products.View,
-                Permissions.Quotations.View, Permissions.Orders.View,
-                Permissions.Orders.Pay,
+                Permissions.Quotations.View,
                 Permissions.Reports.Revenue, Permissions.Reports.Debt,
             }),
             (RoleCodes.Warehouse, "Kho / giao hàng", new[]
             {
                 Permissions.Customers.View, Permissions.Products.View,
-                Permissions.Orders.View, Permissions.Orders.Deliver, Permissions.Orders.Print,
             }),
             (RoleCodes.Manager, "Quản lý", allPermissions.Select(p => p.Code).ToArray()),
         };

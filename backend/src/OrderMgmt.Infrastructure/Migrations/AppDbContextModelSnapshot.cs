@@ -882,11 +882,23 @@ namespace OrderMgmt.Infrastructure.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("id");
 
+                    b.Property<DateTime?>("CancelledAt")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("cancelled_at");
+
                     b.Property<string>("Code")
                         .IsRequired()
                         .HasMaxLength(50)
                         .HasColumnType("character varying(50)")
                         .HasColumnName("code");
+
+                    b.Property<DateTime?>("ConfirmedAt")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("confirmed_at");
+
+                    b.Property<Guid?>("ConfirmedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("confirmed_by_user_id");
 
                     b.Property<string>("ContactPerson")
                         .HasMaxLength(255)
@@ -1038,6 +1050,9 @@ namespace OrderMgmt.Infrastructure.Migrations
 
                     b.HasIndex("OwnerUserId", "IsDeleted", "QuotationDate")
                         .HasDatabaseName("ix_quotations_owner_status_date");
+
+                    b.HasIndex("OwnerUserId", "IsDeleted", "Status", "ConfirmedAt")
+                        .HasDatabaseName("ix_quotations_owner_status_confirmed_at");
 
                     b.ToTable("quotations", (string)null);
                 });
