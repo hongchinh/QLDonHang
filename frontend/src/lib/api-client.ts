@@ -28,8 +28,14 @@ interface RetriableConfig extends InternalAxiosRequestConfig {
   _retried?: boolean;
 }
 
+// VITE_API_BASE_URL is the canonical name (Railway / standard convention).
+// VITE_API_BASE is the legacy name; kept for backwards compatibility.
+// Falls back to '/api' so the Vite dev proxy keeps working in `npm run dev`.
+const apiBaseUrl =
+  import.meta.env.VITE_API_BASE_URL ?? import.meta.env.VITE_API_BASE ?? '/api';
+
 const api: AxiosInstance = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE ?? '/api',
+  baseURL: apiBaseUrl,
   timeout: 30_000,
   // Required so the browser sends the HttpOnly refresh cookie on /auth/* calls.
   withCredentials: true,

@@ -1,0 +1,14 @@
+**/bin/
+**/obj/
+**/.vs/
+**/.vscode/
+**/.idea/
+**/*.user
+**/*.suo
+**/*.Backup.tmp
+**/*.lscache
+**/logs/
+tests/
+artifacts/
+Dockerfile
+.dockerignore

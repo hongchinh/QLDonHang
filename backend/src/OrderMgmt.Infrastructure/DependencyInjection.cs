@@ -21,11 +21,15 @@ public static class DependencyInjection
             // Read at resolution time so WebApplicationFactory overrides (in-memory config added
             // after AddInfrastructure is called) actually take effect.
             var cfg = sp.GetRequiredService<IConfiguration>();
-            var cs = cfg.GetConnectionString("Default");
+            // Prefer "DefaultConnection" (Railway / standard ASP.NET naming),
+            // fall back to "Default" so existing dev configs keep working.
+            var cs = cfg.GetConnectionString("DefaultConnection")
+                     ?? cfg.GetConnectionString("Default");
             if (string.IsNullOrWhiteSpace(cs))
                 throw new InvalidOperationException(
-                    "Missing connection string 'Default'. Configure via environment variable " +
-                    "ConnectionStrings__Default, user-secrets, or appsettings.{Environment}.json.");
+                    "Missing connection string. Configure via environment variable " +
+                    "ConnectionStrings__DefaultConnection (preferred) or ConnectionStrings__Default, " +
+                    "user-secrets, or appsettings.{Environment}.json.");
             options.UseNpgsql(cs, npg => npg.MigrationsHistoryTable("__ef_migrations"));
             options.UseSnakeCaseNamingConvention();
         });

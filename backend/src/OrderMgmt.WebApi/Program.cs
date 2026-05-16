@@ -111,9 +111,20 @@ builder.Services.AddRateLimiter(o =>
     });
 });
 
-// CORS
+// CORS — accept origins from "Cors:Origins" (array) and/or "Frontend:Url" (single URL,
+// used by Railway/PaaS where the frontend URL is injected as a single env var).
+var corsOrigins = (builder.Configuration.GetSection("Cors:Origins").Get<string[]>() ?? Array.Empty<string>())
+    .Concat(new[] { builder.Configuration["Frontend:Url"] })
+    .Where(o => !string.IsNullOrWhiteSpace(o))
+    .Select(o => o!.TrimEnd('/'))
+    .Distinct()
+    .ToArray();
+if (corsOrigins.Length == 0)
+{
+    corsOrigins = new[] { "http://localhost:5173" };
+}
 builder.Services.AddCors(o => o.AddDefaultPolicy(p => p
-    .WithOrigins(builder.Configuration.GetSection("Cors:Origins").Get<string[]>() ?? new[] { "http://localhost:5173" })
+    .WithOrigins(corsOrigins)
     .AllowAnyHeader()
     .AllowAnyMethod()
     .AllowCredentials()));
