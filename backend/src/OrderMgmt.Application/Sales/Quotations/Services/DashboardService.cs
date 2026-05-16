@@ -272,58 +272,99 @@ public class DashboardService : IDashboardService
         var fetchPerSource = Math.Max(limit, 30);
         var scope = ApplyScope(null);
 
-        var created = await scope
+        var createdRows = await scope
             .OrderByDescending(q => q.CreatedAt)
             .Take(fetchPerSource)
-            .Select(q => new ActivityItemDto
+            .Select(q => new
             {
-                At = q.CreatedAt.UtcDateTime,
-                Type = "created",
-                QuotationId = q.Id,
-                Code = q.Code,
-                CustomerName = q.CustomerName,
-                ActorName = _db.Users.IgnoreQueryFilters()
-                    .Where(u => u.Id == q.CreatedBy)
-                    .Select(u => u.FullName)
-                    .FirstOrDefault(),
-                Amount = q.Total,
+                q.Id,
+                q.Code,
+                q.CustomerName,
+                At = q.CreatedAt,
+                ActorId = q.CreatedBy,
+                q.Total,
             })
             .ToListAsync(ct);
 
-        var confirmed = await scope
+        var confirmedRows = await scope
             .Where(q => q.ConfirmedAt != null)
             .OrderByDescending(q => q.ConfirmedAt)
             .Take(fetchPerSource)
-            .Select(q => new ActivityItemDto
+            .Select(q => new
             {
+                q.Id,
+                q.Code,
+                q.CustomerName,
                 At = q.ConfirmedAt!.Value,
-                Type = "confirmed",
-                QuotationId = q.Id,
-                Code = q.Code,
-                CustomerName = q.CustomerName,
-                ActorName = _db.Users.IgnoreQueryFilters()
-                    .Where(u => u.Id == q.ConfirmedByUserId)
-                    .Select(u => u.FullName)
-                    .FirstOrDefault(),
-                Amount = q.Total,
+                ActorId = q.ConfirmedByUserId,
+                q.Total,
             })
             .ToListAsync(ct);
 
-        var cancelled = await scope
+        var cancelledRows = await scope
             .Where(q => q.CancelledAt != null)
             .OrderByDescending(q => q.CancelledAt)
             .Take(fetchPerSource)
-            .Select(q => new ActivityItemDto
+            .Select(q => new
             {
+                q.Id,
+                q.Code,
+                q.CustomerName,
                 At = q.CancelledAt!.Value,
-                Type = "cancelled",
-                QuotationId = q.Id,
-                Code = q.Code,
-                CustomerName = q.CustomerName,
-                ActorName = null,
-                Amount = q.Total,
+                q.Total,
             })
             .ToListAsync(ct);
+
+        var actorIds = createdRows.Select(r => r.ActorId)
+            .Concat(confirmedRows.Select(r => r.ActorId))
+            .Where(id => id.HasValue)
+            .Select(id => id!.Value)
+            .Distinct()
+            .ToList();
+
+        var nameMap = actorIds.Count == 0
+            ? new Dictionary<Guid, string>()
+            : await _db.Users.IgnoreQueryFilters()
+                .AsNoTracking()
+                .Where(u => actorIds.Contains(u.Id))
+                .Select(u => new { u.Id, u.FullName })
+                .ToDictionaryAsync(u => u.Id, u => u.FullName, ct);
+
+        string? LookupName(Guid? id) =>
+            id.HasValue && nameMap.TryGetValue(id.Value, out var n) ? n : null;
+
+        var created = createdRows.Select(r => new ActivityItemDto
+        {
+            At = r.At.UtcDateTime,
+            Type = "created",
+            QuotationId = r.Id,
+            Code = r.Code,
+            CustomerName = r.CustomerName,
+            ActorName = LookupName(r.ActorId),
+            Amount = r.Total,
+        });
+
+        var confirmed = confirmedRows.Select(r => new ActivityItemDto
+        {
+            At = r.At,
+            Type = "confirmed",
+            QuotationId = r.Id,
+            Code = r.Code,
+            CustomerName = r.CustomerName,
+            ActorName = LookupName(r.ActorId),
+            Amount = r.Total,
+        });
+
+        var cancelled = cancelledRows.Select(r => new ActivityItemDto
+        {
+            At = r.At,
+            Type = "cancelled",
+            QuotationId = r.Id,
+            Code = r.Code,
+            CustomerName = r.CustomerName,
+            ActorName = null,
+            Amount = r.Total,
+        });
 
         return created.Concat(confirmed).Concat(cancelled)
             .OrderByDescending(a => a.At)

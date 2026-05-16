@@ -95,4 +95,46 @@ public class DashboardEndpointsTests : DashboardTestBase
         var body = await resp.Content.ReadFromJsonAsync<ApiResponse<DashboardSummaryDto>>(TestJson.Options);
         body!.Data!.Funnel.Confirmed.Should().Be(1);
     }
+
+    [Fact]
+    public async Task RecentActivity_EmptyDb_Returns200WithEmptyList()
+    {
+        var resp = await _client.GetAsync("/api/dashboard/recent-activity?limit=8");
+        resp.StatusCode.Should().Be(HttpStatusCode.OK);
+        var body = await resp.Content.ReadFromJsonAsync<ApiResponse<List<ActivityItemDto>>>(TestJson.Options);
+        body!.Data.Should().NotBeNull();
+        body.Data!.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task RecentActivity_MergesAllSources_OrdersByTimeDesc_RespectsLimit()
+    {
+        await CreateTestUserAsync("dash_ra", "Sales@123", RoleCodes.Sales);
+        var sale = await GetUserIdAsync("dash_ra");
+        var today = DateOnly.FromDateTime(DateTime.UtcNow);
+
+        // Created (no terminal event) — only contributes a "created" entry.
+        await SeedQuotationAsync("BG-RA-C", sale, QuotationStatus.Draft, today, 100m);
+        // Confirmed — contributes both "created" and "confirmed" entries.
+        await SeedQuotationAsync("BG-RA-F", sale, QuotationStatus.Confirmed, today, 200m,
+            confirmedAt: DateTime.UtcNow.AddMinutes(-5));
+        // Cancelled (newest event) — contributes "created" and "cancelled".
+        await SeedQuotationAsync("BG-RA-X", sale, QuotationStatus.Cancelled, today, 300m,
+            cancelledAt: DateTime.UtcNow);
+
+        var resp = await _client.GetAsync("/api/dashboard/recent-activity?limit=8");
+        resp.StatusCode.Should().Be(HttpStatusCode.OK);
+        var body = await resp.Content.ReadFromJsonAsync<ApiResponse<List<ActivityItemDto>>>(TestJson.Options);
+        var items = body!.Data!;
+
+        items.Should().NotBeEmpty();
+        items.Select(i => i.Type).Should().Contain(new[] { "created", "confirmed", "cancelled" });
+        items.Should().BeInDescendingOrder(i => i.At);
+        items.Count.Should().BeLessThanOrEqualTo(8);
+
+        var cancelledRow = items.FirstOrDefault(i => i.Type == "cancelled");
+        cancelledRow.Should().NotBeNull();
+        cancelledRow!.Code.Should().Be("BG-RA-X");
+        cancelledRow.Amount.Should().Be(300m);
+    }
 }
