@@ -60,7 +60,8 @@
       "Bash(gatsby *)",
       "Bash(next *)",
       "Bash(create-react-app *)",
-      "Bash(react-native *)"
+      "Bash(react-native *)",
+      "Bash(grep -E \"^@$\")"
     ]
   }
 }

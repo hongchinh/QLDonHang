@@ -1,10 +1,12 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
 using OrderMgmt.Application.Common.Interfaces;
+using OrderMgmt.Domain.Branding;
 using OrderMgmt.Domain.Common;
 using OrderMgmt.Domain.Entities.Catalog;
 using OrderMgmt.Domain.Entities.Identity;
 using OrderMgmt.Domain.Entities.Sales;
+using OrderMgmt.Domain.Notifications;
 using OrderMgmt.Infrastructure.Persistence.Conventions;
 
 namespace OrderMgmt.Infrastructure.Persistence;
@@ -40,6 +42,10 @@ public class AppDbContext : DbContext, IAppDbContext
     public DbSet<Quotation> Quotations => Set<Quotation>();
     public DbSet<QuotationLine> QuotationLines => Set<QuotationLine>();
     public DbSet<QuotationOwnerHistory> QuotationOwnerHistory => Set<QuotationOwnerHistory>();
+
+    public DbSet<SystemBranding> SystemBranding => Set<SystemBranding>();
+
+    public DbSet<Notification> Notifications => Set<Notification>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

@@ -1,8 +1,10 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
+using OrderMgmt.Domain.Branding;
 using OrderMgmt.Domain.Entities.Catalog;
 using OrderMgmt.Domain.Entities.Identity;
 using OrderMgmt.Domain.Entities.Sales;
+using OrderMgmt.Domain.Notifications;
 
 namespace OrderMgmt.Application.Common.Interfaces;
 
@@ -25,6 +27,10 @@ public interface IAppDbContext
     DbSet<Quotation> Quotations { get; }
     DbSet<QuotationLine> QuotationLines { get; }
     DbSet<QuotationOwnerHistory> QuotationOwnerHistory { get; }
+
+    DbSet<SystemBranding> SystemBranding { get; }
+
+    DbSet<Notification> Notifications { get; }
 
     EntityEntry<TEntity> Entry<TEntity>(TEntity entity) where TEntity : class;
 

@@ -1,10 +1,13 @@
 import { useRef, useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from '@/lib/use-toast';
 import { getErrorMessage } from '@/lib/api-client';
 import { useDeleteTemplate, useMySettings, useUploadTemplate } from '@/features/me-settings/hooks';
 import { meSettingsApi } from '@/features/me-settings/api';
+import { useAuthStore } from '@/stores/auth-store';
+import { BrandingTab } from '@/features/branding/branding-tab';
 
 const MAX_BYTES = 5 * 1024 * 1024;
 
@@ -13,7 +16,7 @@ const LOCK_LABELS: Record<string, string> = {
   Confirmed: 'Đã xác nhận',
 };
 
-export function MyQuotationSettingsPage() {
+function QuotationSettingsTabContent() {
   const { data: settings, isLoading } = useMySettings();
   const upload = useUploadTemplate();
   const remove = useDeleteTemplate();
@@ -73,13 +76,6 @@ export function MyQuotationSettingsPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold">Cài đặt báo giá của tôi</h1>
-        <p className="text-sm text-muted-foreground">
-          Quản lý template Excel và xem cấu hình khoá trạng thái do quản trị viên thiết lập.
-        </p>
-      </div>
-
       <Card>
         <CardHeader>
           <CardTitle>Template Excel</CardTitle>
@@ -142,6 +138,38 @@ export function MyQuotationSettingsPage() {
           )}
         </CardContent>
       </Card>
+    </div>
+  );
+}
+
+export function MyQuotationSettingsPage() {
+  const canManageBranding = useAuthStore((s) => s.hasPermission('user_settings.manage'));
+
+  return (
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-2xl font-bold">Cài đặt của tôi</h1>
+        <p className="text-sm text-muted-foreground">
+          Quản lý template Excel, cấu hình khoá trạng thái{canManageBranding ? ' và logo công ty' : ''}.
+        </p>
+      </div>
+
+      {canManageBranding ? (
+        <Tabs defaultValue="quotation" className="space-y-4">
+          <TabsList>
+            <TabsTrigger value="quotation">Cài đặt báo giá</TabsTrigger>
+            <TabsTrigger value="branding">Logo công ty</TabsTrigger>
+          </TabsList>
+          <TabsContent value="quotation">
+            <QuotationSettingsTabContent />
+          </TabsContent>
+          <TabsContent value="branding">
+            <BrandingTab />
+          </TabsContent>
+        </Tabs>
+      ) : (
+        <QuotationSettingsTabContent />
+      )}
     </div>
   );
 }

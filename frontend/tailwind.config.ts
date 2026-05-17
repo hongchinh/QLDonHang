@@ -45,6 +45,13 @@ export default {
           DEFAULT: 'hsl(var(--popover))',
           foreground: 'hsl(var(--popover-foreground))',
         },
+        header: {
+          bg: 'hsl(var(--header-bg))',
+          fg: 'hsl(var(--header-fg))',
+          active: 'hsl(var(--header-active))',
+          'brand-bg': 'hsl(var(--header-brand-bg))',
+          danger: 'hsl(var(--header-danger))',
+        },
       },
       borderRadius: {
         lg: 'var(--radius)',

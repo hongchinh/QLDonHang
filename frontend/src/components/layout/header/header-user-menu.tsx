@@ -1,0 +1,74 @@
+import { useNavigate } from 'react-router-dom';
+import { ChevronDown } from 'lucide-react';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import type { CurrentUser } from '@/stores/auth-store';
+
+interface HeaderUserMenuProps {
+  user: CurrentUser | null;
+  onLogout: () => void;
+}
+
+export function HeaderUserMenu({ user, onLogout }: HeaderUserMenuProps) {
+  const navigate = useNavigate();
+
+  if (!user) return null;
+
+  const initials = getInitials(user.fullName);
+
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <button
+          type="button"
+          aria-label="Mở menu người dùng"
+          className="flex items-center gap-2 rounded-md px-2 py-1 text-header-fg hover:bg-header-active focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70"
+        >
+          <Avatar className="h-8 w-8">
+            <AvatarImage src={undefined} alt={user.fullName} />
+            <AvatarFallback className="bg-white/15 text-sm font-semibold text-header-fg">
+              {initials}
+            </AvatarFallback>
+          </Avatar>
+          <span className="hidden max-w-[160px] truncate text-sm font-medium lg:inline">
+            {user.fullName}
+          </span>
+          <ChevronDown className="hidden h-4 w-4 lg:inline" />
+        </button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="w-64">
+        <DropdownMenuLabel>
+          <div className="font-semibold leading-tight">{user.fullName}</div>
+          <div className="text-xs font-normal text-muted-foreground">{user.username}</div>
+        </DropdownMenuLabel>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem onSelect={() => navigate('/settings/my-quotation-settings')}>
+          Cài đặt của tôi
+        </DropdownMenuItem>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem
+          onSelect={onLogout}
+          className="text-[hsl(var(--header-danger))] focus:text-[hsl(var(--header-danger))]"
+        >
+          Đăng xuất
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
+
+function getInitials(fullName: string): string {
+  const parts = fullName.trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return '?';
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+  const first = parts[0][0];
+  const last = parts[parts.length - 1][0];
+  return (first + last).toUpperCase();
+}

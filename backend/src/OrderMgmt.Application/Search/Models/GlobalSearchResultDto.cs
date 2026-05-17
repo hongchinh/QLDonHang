@@ -1,0 +1,9 @@
+using OrderMgmt.Application.Catalog.Customers.Models;
+
+namespace OrderMgmt.Application.Search.Models;
+
+public sealed class GlobalSearchResultDto
+{
+    public List<CustomerSearchItemDto> Customers { get; set; } = new();
+    public List<QuotationSearchItemDto> Quotations { get; set; } = new();
+}
