@@ -29,16 +29,22 @@ RUN dotnet publish src/OrderMgmt.WebApi/OrderMgmt.WebApi.csproj \
 FROM mcr.microsoft.com/dotnet/aspnet:9.0 AS runtime
 WORKDIR /app
 
-# LibreOffice is only required if QuotationExport PDF rendering is used.
-# Skip it to keep the image small — set QuotationExport__LibreOfficePath only
-# if you mount/install a renderer at runtime.
+# LibreOffice (headless) is required by QuotationExport PDF rendering.
+RUN apt-get update \
+ && apt-get install -y --no-install-recommends \
+        libreoffice-calc \
+        libreoffice-core \
+        fonts-dejavu \
+        fonts-liberation \
+ && rm -rf /var/lib/apt/lists/*
 
 COPY --from=build /app/publish ./
 
 ENV ASPNETCORE_ENVIRONMENT=Production \
     DOTNET_RUNNING_IN_CONTAINER=true \
     DOTNET_GCServer=1 \
-    PORT=8080
+    PORT=8080 \
+    QuotationExport__LibreOfficePath=/usr/bin/soffice
 
 # Railway injects $PORT at runtime. ASP.NET Core listens on ASPNETCORE_URLS,
 # so we expand $PORT into the URL at container start.

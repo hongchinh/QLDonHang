@@ -181,7 +181,7 @@ function SidebarContent({ dashboardItem, groups, user, onLogout, onClose }: Side
   return (
     <>
       <div className="flex h-16 items-center justify-between border-b px-6 font-semibold">
-        <Link to="/" className="text-primary">QLDonHang</Link>
+        <Link to="/" className="text-primary"></Link>
         {onClose && (
           <Button variant="ghost" size="icon" aria-label="Đóng menu" onClick={onClose}>
             <X className="h-5 w-5" />

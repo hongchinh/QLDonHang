@@ -96,9 +96,6 @@ export function LoginPage() {
             <Button type="submit" className="w-full" disabled={login.isPending}>
               {login.isPending ? 'Đang đăng nhập...' : 'Đăng nhập'}
             </Button>
-            <p className="text-xs text-muted-foreground">
-              Tài khoản mặc định: <strong>admin</strong> / <strong>Admin@123</strong>
-            </p>
           </form>
         </CardContent>
       </Card>
