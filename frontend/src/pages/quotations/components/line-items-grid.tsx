@@ -9,6 +9,8 @@ import type {
 } from '@/features/quotations/schema';
 import { ProductTypeaheadCell } from './product-typeahead-cell';
 import { computeLineCost, computeLineTotal, deriveQuantityFromDimensions } from '@/pages/quotations/utils/compute-line';
+import { formatMoneyForDisplay, parseMoneyInput } from '@/pages/quotations/utils/money-input';
+import { useAuthStore } from '@/stores/auth-store';
 import './line-items-grid.css';
 
 const fmt = new Intl.NumberFormat('vi-VN');
@@ -52,6 +54,7 @@ function focusLineCellAfterRender(field: LineFocusField, rowIndex: number): void
 
 function createEmptyLine(sortOrder: number): QuotationLineFormValues {
   return {
+    _uiKey: crypto.randomUUID(),
     sortOrder,
     productName: '',
     unitName: '',
@@ -93,6 +96,7 @@ export const LineItemsGrid = forwardRef<LineItemsGridHandle, Props>(function Lin
   const [activeRowIndex, setActiveRowIndex] = useState<number | null>(null);
   const [editingMoneyCellId, setEditingMoneyCellId] = useState<string | null>(null);
   const [clearAllOpen, setClearAllOpen] = useState(false);
+  const canViewCost = useAuthStore((s) => s.hasPermission('quotations.view_cost'));
 
   useImperativeHandle(ref, () => ({
     ensureFirstLineAndFocusProductCode() {
@@ -223,7 +227,7 @@ export const LineItemsGrid = forwardRef<LineItemsGridHandle, Props>(function Lin
               <th>D × R × Dày × Tấm</th>
               <th>SL</th>
               <th>Đơn giá</th>
-              <th>Giá vốn</th>
+              {canViewCost && <th>Giá vốn</th>}
               <th>Thành tiền</th>
               <th></th>
             </tr>
@@ -238,7 +242,7 @@ export const LineItemsGrid = forwardRef<LineItemsGridHandle, Props>(function Lin
               const thicknessDisabled = isLineFocusFieldDisabled(line, 'thickness');
               const sheetCountDisabled = isLineFocusFieldDisabled(line, 'sheet-count');
               return (
-                <tr key={field.id} onFocus={() => setActiveRowIndex(idx)}>
+                <tr key={line._uiKey ?? field.id} onFocus={() => setActiveRowIndex(idx)}>
                   <td className="row-no">{idx + 1}</td>
                   <td>
                     <ProductTypeaheadCell
@@ -359,29 +363,31 @@ export const LineItemsGrid = forwardRef<LineItemsGridHandle, Props>(function Lin
                       type="text"
                       inputMode="decimal"
                       aria-label="Đơn giá"
-                      value={moneyInput(line.unitPrice, editingMoneyCellId === getLineCellId('unit-price', idx))}
+                      value={editingMoneyCellId === getLineCellId('unit-price', idx) ? (line.unitPrice ?? '') : formatMoneyForDisplay(line.unitPrice)}
                       onFocus={() => setEditingMoneyCellId(getLineCellId('unit-price', idx))}
                       onBlur={() => setEditingMoneyCellId(null)}
-                      onChange={(e) => setLineField(idx, 'unitPrice', (parseMoney(e.target.value) ?? 0) as never)}
+                      onChange={(e) => setLineField(idx, 'unitPrice', (parseMoneyInput(e.target.value) ?? 0) as never)}
                     />
                   </td>
-                  <td className="cell-number">
-                    <input
-                      id={getLineCellId('unit-cost', idx)}
-                      className="cell-input cell-number"
-                      type="text"
-                      inputMode="decimal"
-                      aria-label="Giá vốn"
-                      value={moneyInput(line.unitCost, editingMoneyCellId === getLineCellId('unit-cost', idx))}
-                      onFocus={() => setEditingMoneyCellId(getLineCellId('unit-cost', idx))}
-                      onBlur={() => setEditingMoneyCellId(null)}
-                      onChange={(e) => setLineField(idx, 'unitCost', parseMoney(e.target.value) as never)}
-                    />
-                  </td>
+                  {canViewCost && (
+                    <td className="cell-number">
+                      <input
+                        id={getLineCellId('unit-cost', idx)}
+                        className="cell-input cell-number"
+                        type="text"
+                        inputMode="decimal"
+                        aria-label="Giá vốn"
+                        value={editingMoneyCellId === getLineCellId('unit-cost', idx) ? (line.unitCost ?? '') : formatMoneyForDisplay(line.unitCost)}
+                        onFocus={() => setEditingMoneyCellId(getLineCellId('unit-cost', idx))}
+                        onBlur={() => setEditingMoneyCellId(null)}
+                        onChange={(e) => setLineField(idx, 'unitCost', parseMoneyInput(e.target.value) as never)}
+                      />
+                    </td>
+                  )}
                   <td className="cell-number">
                     <div className="cell-total-stack">
                       <div className="cell-total-main tabular-nums">{fmt.format(lineTotal)}</div>
-                      {lineCost != null && (
+                      {canViewCost && lineCost != null && (
                         <div className="cell-total-meta tabular-nums">LN: {fmt.format(lineTotal - lineCost)}</div>
                       )}
                     </div>
@@ -403,7 +409,7 @@ export const LineItemsGrid = forwardRef<LineItemsGridHandle, Props>(function Lin
             })}
             {fields.length === 0 && (
               <tr>
-                <td colSpan={10} className="empty-placeholder">
+                <td colSpan={canViewCost ? 10 : 9} className="empty-placeholder">
                   Chưa có dòng nào.{' '}
                   <button type="button" className="empty-placeholder-link" onClick={addLine}>
                     Bấm để thêm dòng đầu tiên
@@ -484,25 +490,7 @@ function parseNum(v: string): number | undefined {
   return Number.isFinite(n) ? n : undefined;
 }
 
-function parseMoney(v: string): number | undefined {
-  const trimmed = v.trim();
-  if (trimmed === '') return undefined;
-  const normalized = trimmed.includes(',')
-    ? trimmed.replace(/\./g, '').replace(',', '.')
-    : /^-?\d{1,3}(\.\d{3})+$/.test(trimmed)
-    ? trimmed.replace(/\./g, '')
-    : trimmed;
-  const n = Number(normalized);
-  return Number.isFinite(n) ? n : undefined;
-}
-
 function numInput(v: unknown): string | number {
   if (v === undefined || v === null) return '';
   return v as number | string;
-}
-
-function moneyInput(v: unknown, editing: boolean): string | number {
-  if (editing) return numInput(v);
-  const n = toNum(v);
-  return n === undefined ? '' : fmt.format(n);
 }

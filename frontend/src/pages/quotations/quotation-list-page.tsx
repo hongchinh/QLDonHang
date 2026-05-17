@@ -1,32 +1,34 @@
 import { useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import {
   flexRender,
   getCoreRowModel,
   useReactTable,
   type ColumnDef,
 } from '@tanstack/react-table';
-import { Plus, Pencil, Printer, Ban, Search, Copy } from 'lucide-react';
+import { Plus, Pencil, Printer, Ban, Search, Copy, MoreHorizontal, Send, CheckCircle2 } from 'lucide-react';
 import {
   useQuotations,
   useTransitionQuotation,
   useCloneQuotation,
+  useQuotationOwners,
 } from '@/features/quotations/hooks';
 import { useAuthStore } from '@/stores/auth-store';
 import { quotationsApi } from '@/features/quotations/api';
 import type {
+  QuotationAction,
   QuotationListItem,
   QuotationStatus,
 } from '@/features/quotations/types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { MultiSelect } from '@/components/ui/multi-select';
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Card, CardContent } from '@/components/ui/card';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
@@ -36,11 +38,22 @@ import { useSearchParamNumber, useSearchParamString } from '@/lib/use-search-par
 import { toast } from '@/lib/use-toast';
 import { getErrorMessage } from '@/lib/api-client';
 import { StatusPill } from './components/status-pill';
+import { ListFooter } from './components/list-footer';
+import { parseOwnerIds } from './utils/owner-ids';
 
-const PAGE_SIZE = 20;
-const ALL = '__all__';
+const PAGE_SIZE_OPTIONS = [10, 20, 50, 100] as const;
+const DEFAULT_PAGE_SIZE = 20;
 
 const currency = new Intl.NumberFormat('vi-VN');
+
+const STATUS_OPTIONS: ReadonlyArray<{ value: QuotationStatus; label: string }> = [
+  { value: 'Draft', label: 'Nháp' },
+  { value: 'Sent', label: 'Đã gửi' },
+  { value: 'Confirmed', label: 'Đã xác nhận' },
+  { value: 'Cancelled', label: 'Đã hủy' },
+];
+const VALID_STATUSES: ReadonlySet<QuotationStatus> = new Set(STATUS_OPTIONS.map((o) => o.value));
+const DEFAULT_ACTIVE_STATUSES: ReadonlyArray<QuotationStatus> = ['Draft', 'Sent', 'Confirmed'];
 
 function formatDate(iso?: string) {
   if (!iso) return '';
@@ -62,26 +75,63 @@ async function downloadPdf(id: string, code: string) {
 }
 
 export function QuotationListPage() {
+  const navigate = useNavigate();
   const [search, setSearch] = useSearchParamString('q');
   const [page, setPage] = useSearchParamNumber('page', 1);
-  const [statusFilter, setStatusFilter] = useSearchParamString('status');
+  const [sizeParam, setSizeParam] = useSearchParamNumber('size', DEFAULT_PAGE_SIZE);
+  const [statusParam, setStatusParam] = useSearchParamString('status');
   const [fromDate, setFromDate] = useSearchParamString('from');
   const [toDate, setToDate] = useSearchParamString('to');
+  const [ownerIdsParam, setOwnerIdsParam] = useSearchParamString('ownerUserIds');
   const debouncedSearch = useDebouncedValue(search, 300);
+  const hasViewAll = useAuthStore((s) => s.hasPermission('quotations.view_all'));
 
-  const [pendingCancel, setPendingCancel] = useState<QuotationListItem | null>(null);
+  const pageSize = (PAGE_SIZE_OPTIONS as readonly number[]).includes(sizeParam)
+    ? sizeParam
+    : DEFAULT_PAGE_SIZE;
+
+  const statuses = useMemo<QuotationStatus[]>(
+    () =>
+      statusParam
+        ? statusParam
+            .split(',')
+            .filter((s): s is QuotationStatus => VALID_STATUSES.has(s as QuotationStatus))
+        : [...DEFAULT_ACTIVE_STATUSES],
+    [statusParam],
+  );
+
+  const ownerIds = useMemo<string[]>(
+    () => (hasViewAll ? parseOwnerIds(ownerIdsParam) : []),
+    [hasViewAll, ownerIdsParam],
+  );
+
+  const [pendingTransition, setPendingTransition] = useState<{
+    item: QuotationListItem;
+    action: QuotationAction;
+  } | null>(null);
 
   const { data, isLoading, isError, error } = useQuotations({
     page,
-    pageSize: PAGE_SIZE,
+    pageSize,
     search: debouncedSearch || undefined,
-    status: (statusFilter as QuotationStatus) || undefined,
+    statuses: statuses.length > 0 ? statuses : undefined,
+    ownerUserIds: ownerIds.length > 0 ? ownerIds : undefined,
     from: fromDate || undefined,
     to: toDate || undefined,
   });
   const transition = useTransitionQuotation();
   const clone = useCloneQuotation();
-  const hasViewAll = useAuthStore((s) => s.hasPermission('quotations.view_all'));
+
+  const ownersQuery = useQuotationOwners({ enabled: hasViewAll });
+  const ownerOptions = useMemo(() => {
+    const list = ownersQuery.data ?? [];
+    return list.map((o) => ({
+      value: o.id,
+      label: o.isDeleted ? `${o.fullName} (đã nghỉ)` : o.fullName,
+    }));
+  }, [ownersQuery.data]);
+
+  const allTotals = data?.aggregates ?? { subtotal: 0, discount: 0, freight: 0, total: 0 };
 
   const columns = useMemo<ColumnDef<QuotationListItem>[]>(
     () => [
@@ -93,6 +143,27 @@ export function QuotationListPage() {
       },
       { header: 'Khách hàng', accessorKey: 'customerName' },
       { header: 'SĐT', accessorKey: 'contactPhone' },
+      {
+        header: 'Tổng tiền hàng',
+        accessorKey: 'subtotal',
+        cell: ({ row }) => (
+          <span className="tabular-nums">{currency.format(row.original.subtotal)}</span>
+        ),
+      },
+      {
+        header: 'Chiết khấu',
+        accessorKey: 'discount',
+        cell: ({ row }) => (
+          <span className="tabular-nums">{currency.format(row.original.discount)}</span>
+        ),
+      },
+      {
+        header: 'Vận chuyển',
+        accessorKey: 'freight',
+        cell: ({ row }) => (
+          <span className="tabular-nums">{currency.format(row.original.freight)}</span>
+        ),
+      },
       {
         header: 'Tổng tiền',
         accessorKey: 'total',
@@ -127,6 +198,8 @@ export function QuotationListPage() {
         header: '',
         cell: ({ row }) => {
           const q = row.original;
+          const canSend = q.status === 'Draft';
+          const canConfirm = q.status === 'Sent';
           const canCancel = q.status !== 'Cancelled';
           return (
             <div className="flex justify-end gap-1">
@@ -135,57 +208,74 @@ export function QuotationListPage() {
                   <Link to={`/quotations/${q.id}`}><Pencil className="h-4 w-4" /></Link>
                 </Button>
               </Can>
-              {q.canClone && (
-                <Can permission="quotations.create">
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    aria-label="Clone"
-                    onClick={() => {
-                      clone.mutate(q.id, {
-                        onSuccess: (cloned) =>
-                          toast({ variant: 'success', title: 'Đã clone báo giá', description: cloned.code }),
-                        onError: (err) =>
-                          toast({ variant: 'destructive', title: 'Không thể clone', description: getErrorMessage(err) }),
-                      });
-                    }}
-                  >
-                    <Copy className="h-4 w-4" />
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="icon" aria-label="Thao tác khác">
+                    <MoreHorizontal className="h-4 w-4" />
                   </Button>
-                </Can>
-              )}
-              <Can permission="quotations.print">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  aria-label="In PDF"
-                  onClick={() => {
-                    downloadPdf(q.id, q.code).catch((err) =>
-                      toast({ variant: 'destructive', title: 'Không tải được PDF', description: getErrorMessage(err) }),
-                    );
-                  }}
-                >
-                  <Printer className="h-4 w-4" />
-                </Button>
-              </Can>
-              {canCancel && (
-                <Can permission="quotations.update">
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    aria-label="Hủy"
-                    onClick={() => setPendingCancel(q)}
-                  >
-                    <Ban className="h-4 w-4" />
-                  </Button>
-                </Can>
-              )}
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <Can permission="quotations.update">
+                    <DropdownMenuItem
+                      disabled={!canSend}
+                      title={canSend ? undefined : 'Chỉ gửi được báo giá đang ở trạng thái Nháp'}
+                      onClick={() => setPendingTransition({ item: q, action: 'Send' })}
+                    >
+                      <Send className="mr-2 h-4 w-4" /> Gửi
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      disabled={!canConfirm}
+                      title={canConfirm ? undefined : 'Chỉ xác nhận được báo giá đã gửi'}
+                      onClick={() => setPendingTransition({ item: q, action: 'Confirm' })}
+                    >
+                      <CheckCircle2 className="mr-2 h-4 w-4" /> Xác nhận
+                    </DropdownMenuItem>
+                  </Can>
+                  <Can permission="quotations.create">
+                    <DropdownMenuItem
+                      onClick={() => {
+                        clone.mutate(q.id, {
+                          onSuccess: (cloned) => {
+                            toast({ variant: 'success', title: 'Đã clone báo giá', description: cloned.code });
+                            navigate(`/quotations/${cloned.id}`);
+                          },
+                          onError: (err) =>
+                            toast({ variant: 'destructive', title: 'Không thể clone', description: getErrorMessage(err) }),
+                        });
+                      }}
+                    >
+                      <Copy className="mr-2 h-4 w-4" /> Clone
+                    </DropdownMenuItem>
+                  </Can>
+                  <Can permission="quotations.print">
+                    <DropdownMenuItem
+                      onClick={() => {
+                        downloadPdf(q.id, q.code).catch((err) =>
+                          toast({ variant: 'destructive', title: 'Không tải được PDF', description: getErrorMessage(err) }),
+                        );
+                      }}
+                    >
+                      <Printer className="mr-2 h-4 w-4" /> In PDF
+                    </DropdownMenuItem>
+                  </Can>
+                  <Can permission="quotations.update">
+                    <DropdownMenuItem
+                      className="text-destructive focus:text-destructive"
+                      disabled={!canCancel}
+                      title={canCancel ? undefined : 'Báo giá đã hủy'}
+                      onClick={() => setPendingTransition({ item: q, action: 'Cancel' })}
+                    >
+                      <Ban className="mr-2 h-4 w-4" /> Hủy
+                    </DropdownMenuItem>
+                  </Can>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
           );
         },
       },
     ],
-    [hasViewAll, clone],
+    [hasViewAll, clone, navigate],
   );
 
   const table = useReactTable({
@@ -194,25 +284,29 @@ export function QuotationListPage() {
     getCoreRowModel: getCoreRowModel(),
   });
 
-  const onConfirmCancel = () => {
-    if (!pendingCancel) return;
-    const target = pendingCancel;
+  const onConfirmTransition = () => {
+    if (!pendingTransition) return;
+    const { item, action } = pendingTransition;
     transition.mutate(
-      { id: target.id, action: 'Cancel' },
+      { id: item.id, action },
       {
         onSuccess: () => {
-          toast({ variant: 'success', title: 'Đã hủy báo giá', description: target.code });
-          setPendingCancel(null);
+          toast({ variant: 'success', title: successToastTitle(action), description: item.code });
+          setPendingTransition(null);
         },
         onError: (err) => {
-          toast({ variant: 'destructive', title: 'Không thể hủy', description: getErrorMessage(err) });
+          toast({
+            variant: 'destructive',
+            title: errorToastTitle(action),
+            description: getErrorMessage(err),
+          });
         },
       },
     );
   };
 
   return (
-    <div className="space-y-4">
+    <div className="flex h-full min-h-0 flex-col gap-4">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold">Báo giá</h1>
@@ -227,9 +321,9 @@ export function QuotationListPage() {
         </Can>
       </div>
 
-      <Card>
-        <CardContent className="p-4">
-          <div className="mb-4 flex flex-wrap items-center gap-2">
+      <Card className="flex flex-1 min-h-0 flex-col">
+        <CardContent className="flex flex-1 min-h-0 flex-col gap-3 p-4">
+          <div className="flex flex-wrap items-center gap-2">
             <div className="relative max-w-sm flex-1">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
@@ -240,21 +334,31 @@ export function QuotationListPage() {
               />
             </div>
 
-            <Select
-              value={statusFilter || ALL}
-              onValueChange={(v) => { setStatusFilter(v === ALL ? '' : v); if (page !== 1) setPage(1); }}
-            >
-              <SelectTrigger className="w-40" aria-label="Trạng thái">
-                <SelectValue placeholder="Trạng thái" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value={ALL}>Tất cả</SelectItem>
-                <SelectItem value="Draft">Nháp</SelectItem>
-                <SelectItem value="Sent">Đã gửi</SelectItem>
-                <SelectItem value="Confirmed">Đã xác nhận</SelectItem>
-                <SelectItem value="Cancelled">Đã hủy</SelectItem>
-              </SelectContent>
-            </Select>
+            <MultiSelect<QuotationStatus>
+              options={STATUS_OPTIONS}
+              value={statuses}
+              onChange={(next) => {
+                setStatusParam(next.join(','));
+                if (page !== 1) setPage(1);
+              }}
+              placeholder="Trạng thái"
+              triggerClassName="w-44"
+              ariaLabel="Trạng thái"
+            />
+
+            {hasViewAll && (
+              <MultiSelect<string>
+                options={ownerOptions}
+                value={ownerIds}
+                onChange={(next) => {
+                  setOwnerIdsParam(next.join(','));
+                  if (page !== 1) setPage(1);
+                }}
+                placeholder="Chủ sở hữu"
+                triggerClassName="w-56"
+                ariaLabel="Chủ sở hữu"
+              />
+            )}
 
             <Input
               type="date"
@@ -273,86 +377,138 @@ export function QuotationListPage() {
           </div>
 
           {isError && (
-            <div className="mb-3 rounded-md border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive">
+            <div className="rounded-md border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive">
               {getErrorMessage(error)}
             </div>
           )}
 
-          <Table>
-            <TableHeader>
-              {table.getHeaderGroups().map((hg) => (
-                <TableRow key={hg.id}>
-                  {hg.headers.map((h) => (
-                    <TableHead key={h.id}>{flexRender(h.column.columnDef.header, h.getContext())}</TableHead>
-                  ))}
-                </TableRow>
-              ))}
-            </TableHeader>
-            <TableBody>
-              {isLoading ? (
-                <TableRow>
-                  <TableCell colSpan={columns.length} className="h-24 text-center text-muted-foreground">
-                    Đang tải...
-                  </TableCell>
-                </TableRow>
-              ) : table.getRowModel().rows.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={columns.length} className="h-24 text-center text-muted-foreground">
-                    Chưa có báo giá nào.
-                  </TableCell>
-                </TableRow>
-              ) : (
-                table.getRowModel().rows.map((row) => (
-                  <TableRow key={row.id}>
-                    {row.getVisibleCells().map((c) => (
-                      <TableCell key={c.id}>{flexRender(c.column.columnDef.cell, c.getContext())}</TableCell>
+          <div className="flex-1 min-h-0 rounded-md border overflow-hidden">
+            <Table containerClassName="h-full">
+              <TableHeader className="sticky top-0 z-10">
+                {table.getHeaderGroups().map((hg) => (
+                  <TableRow key={hg.id}>
+                    {hg.headers.map((h) => (
+                      <TableHead key={h.id}>{flexRender(h.column.columnDef.header, h.getContext())}</TableHead>
                     ))}
                   </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
+                ))}
+              </TableHeader>
+              <TableBody>
+                {isLoading ? (
+                  <TableRow>
+                    <TableCell colSpan={columns.length} className="h-24 text-center text-muted-foreground">
+                      Đang tải...
+                    </TableCell>
+                  </TableRow>
+                ) : table.getRowModel().rows.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={columns.length} className="h-24 text-center text-muted-foreground">
+                      Chưa có báo giá nào.
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  table.getRowModel().rows.map((row) => (
+                    <TableRow key={row.id}>
+                      {row.getVisibleCells().map((c) => (
+                        <TableCell key={c.id}>{flexRender(c.column.columnDef.cell, c.getContext())}</TableCell>
+                      ))}
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
+          </div>
 
-          {data && data.totalPages > 1 && (
-            <div className="mt-4 flex items-center justify-between text-sm">
-              <div className="text-muted-foreground">
-                Trang {data.page} / {data.totalPages} • Tổng {data.totalItems}
-              </div>
-              <div className="flex gap-2">
-                <Button variant="outline" size="sm" disabled={!data.hasPreviousPage} onClick={() => setPage(page - 1)}>
-                  Trước
-                </Button>
-                <Button variant="outline" size="sm" disabled={!data.hasNextPage} onClick={() => setPage(page + 1)}>
-                  Sau
-                </Button>
-              </div>
-            </div>
-          )}
+          <ListFooter
+            totalItems={data?.totalItems ?? 0}
+            aggregates={allTotals}
+            page={page}
+            totalPages={data?.totalPages ?? 0}
+            pageSize={pageSize}
+            pageSizeOptions={PAGE_SIZE_OPTIONS}
+            hasPrev={data?.hasPreviousPage ?? false}
+            hasNext={data?.hasNextPage ?? false}
+            onPageChange={setPage}
+            onPageSizeChange={(next) => {
+              setSizeParam(next);
+              if (page !== 1) setPage(1);
+            }}
+            loading={isLoading}
+            errored={isError}
+          />
         </CardContent>
       </Card>
 
       <ConfirmDialog
-        open={!!pendingCancel}
-        onOpenChange={(open) => !open && setPendingCancel(null)}
-        title="Hủy báo giá?"
-        description={
-          pendingCancel ? (
-            pendingCancel.status === 'Confirmed' ? (
-              <>
-                Báo giá <strong>{pendingCancel.code}</strong> đã được xác nhận — hủy sẽ trừ doanh thu của sale. Cần quyền <code>quotations.cancel_confirmed</code>. Tiếp tục?
-              </>
-            ) : (
-              <>
-                Bạn chắc chắn muốn hủy báo giá <strong>{pendingCancel.code}</strong>? Báo giá đã hủy không thể chỉnh sửa lại.
-              </>
-            )
-          ) : null
-        }
-        destructive
-        confirmLabel="Hủy báo giá"
+        open={!!pendingTransition}
+        onOpenChange={(open) => !open && setPendingTransition(null)}
+        title={pendingTransition ? dialogContent(pendingTransition).title : ''}
+        description={pendingTransition ? dialogContent(pendingTransition).description : null}
+        destructive={pendingTransition?.action === 'Cancel'}
+        confirmLabel={pendingTransition ? dialogContent(pendingTransition).confirmLabel : undefined}
         loading={transition.isPending}
-        onConfirm={onConfirmCancel}
+        onConfirm={onConfirmTransition}
       />
     </div>
   );
+}
+
+function dialogContent(p: { item: QuotationListItem; action: QuotationAction }): {
+  title: string;
+  confirmLabel: string;
+  description: React.ReactNode;
+} {
+  switch (p.action) {
+    case 'Send':
+      return {
+        title: 'Gửi báo giá?',
+        confirmLabel: 'Gửi',
+        description: (
+          <>
+            Gửi báo giá <strong>{p.item.code}</strong> cho khách hàng. Sau khi gửi, báo giá chuyển sang trạng thái "Đã gửi".
+          </>
+        ),
+      };
+    case 'Confirm':
+      return {
+        title: 'Xác nhận báo giá?',
+        confirmLabel: 'Xác nhận',
+        description: (
+          <>
+            Xác nhận báo giá <strong>{p.item.code}</strong>. Doanh thu sẽ được ghi nhận cho sale phụ trách.
+          </>
+        ),
+      };
+    case 'Cancel':
+      return {
+        title: 'Hủy báo giá?',
+        confirmLabel: 'Hủy báo giá',
+        description:
+          p.item.status === 'Confirmed' ? (
+            <>
+              Báo giá <strong>{p.item.code}</strong> đã được xác nhận — hủy sẽ trừ doanh thu của sale. Cần quyền <code>quotations.cancel_confirmed</code>. Tiếp tục?
+            </>
+          ) : (
+            <>
+              Bạn chắc chắn muốn hủy báo giá <strong>{p.item.code}</strong>? Báo giá đã hủy không thể chỉnh sửa lại.
+            </>
+          ),
+      };
+  }
+}
+
+function successToastTitle(action: QuotationAction): string {
+  switch (action) {
+    case 'Send': return 'Đã gửi báo giá';
+    case 'Confirm': return 'Đã xác nhận báo giá';
+    case 'Cancel': return 'Đã hủy báo giá';
+  }
+}
+
+function errorToastTitle(action: QuotationAction): string {
+  switch (action) {
+    case 'Send': return 'Không thể gửi';
+    case 'Confirm': return 'Không thể xác nhận';
+    case 'Cancel': return 'Không thể hủy';
+  }
 }

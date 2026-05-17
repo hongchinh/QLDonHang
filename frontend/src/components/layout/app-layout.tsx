@@ -8,6 +8,7 @@ import {
   BarChart3,
   UserCog,
   Users2,
+  ShieldCheck,
   LogOut,
   Menu,
   X,
@@ -53,6 +54,7 @@ const navGroups: NavGroup[] = [
     items: [
       { to: '/settings/my-quotation-settings', label: 'Cài đặt của tôi', icon: UserCog },
       { to: '/admin/users', label: 'Quản lý người dùng', icon: Users2, permission: 'user_settings.manage' },
+      { to: '/admin/roles', label: 'Phân quyền', icon: ShieldCheck, permission: 'roles.view' },
     ],
   },
 ];

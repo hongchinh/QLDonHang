@@ -45,6 +45,7 @@ public static class DependencyInjection
         services.AddScoped<IUserQuotationSettingsService, UserQuotationSettingsService>();
         services.AddScoped<IQuotationBulkTransferService, QuotationBulkTransferService>();
         services.AddScoped<IAdminUserService, AdminUserService>();
+        services.AddScoped<IAdminRoleService, AdminRoleService>();
         services.AddScoped<ISalesRevenueReportService, SalesRevenueReportService>();
 
         return services;

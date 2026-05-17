@@ -49,6 +49,16 @@ builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<ICurrentUser, CurrentUser>();
 builder.Services.Configure<AuthCookieOptions>(builder.Configuration.GetSection(AuthCookieOptions.SectionName));
 
+// Fail fast if cross-site cookie config is inconsistent. SameSite=None requires Secure=true,
+// otherwise Chrome/Edge silently drop the cookie and F5 quietly logs the user out.
+var cookieCfg = builder.Configuration.GetSection(AuthCookieOptions.SectionName).Get<AuthCookieOptions>() ?? new AuthCookieOptions();
+if (cookieCfg.GetSameSiteMode() == SameSiteMode.None && cookieCfg.Secure == false)
+{
+    throw new InvalidOperationException(
+        "AuthCookie:SameSite=None requires AuthCookie:Secure=true. " +
+        "On Railway/production set env vars AuthCookie__SameSite=None and AuthCookie__Secure=true.");
+}
+
 // JWT auth — fail fast if configuration is missing/weak (eager guard).
 builder.Configuration.GetSection(JwtOptions.SectionName).Get<JwtOptions>()?.Validate();
 
@@ -77,7 +87,14 @@ builder.Services.AddOptions<JwtBearerOptions>(JwtBearerDefaults.AuthenticationSc
         };
     });
 
-builder.Services.AddAuthorization();
+// Defense-in-depth: any endpoint that forgets [HasPermission] / [Authorize] still
+// requires an authenticated caller. Anonymous endpoints must opt out with [AllowAnonymous].
+builder.Services.AddAuthorization(o =>
+{
+    o.FallbackPolicy = new AuthorizationPolicyBuilder()
+        .RequireAuthenticatedUser()
+        .Build();
+});
 builder.Services.AddSingleton<IAuthorizationPolicyProvider, PermissionPolicyProvider>();
 builder.Services.AddScoped<IAuthorizationHandler, PermissionAuthorizationHandler>();
 
@@ -193,26 +210,29 @@ app.UseAuthorization();
 app.UseRateLimiter();
 
 app.MapControllers();
+// AllowAnonymous: the global FallbackPolicy requires auth by default. Root + health
+// probes need to be reachable without a token.
 app.MapGet("/", () => app.Environment.IsDevelopment()
     ? Results.Redirect("/swagger")
-    : Results.Ok(new { service = "OrderMgmt API", status = "ok" }));
+    : Results.Ok(new { service = "OrderMgmt API", status = "ok" }))
+    .AllowAnonymous();
 // Liveness: process is up. No external dependencies.
 app.MapHealthChecks("/health/live", new Microsoft.AspNetCore.Diagnostics.HealthChecks.HealthCheckOptions
 {
     Predicate = _ => false,
-});
+}).AllowAnonymous();
 
 // Readiness: process can serve traffic (DB reachable).
 app.MapHealthChecks("/health/ready", new Microsoft.AspNetCore.Diagnostics.HealthChecks.HealthCheckOptions
 {
     Predicate = c => c.Tags.Contains("ready"),
-});
+}).AllowAnonymous();
 
 // Back-compat: keep /health pointing at liveness.
 app.MapHealthChecks("/health", new Microsoft.AspNetCore.Diagnostics.HealthChecks.HealthCheckOptions
 {
     Predicate = _ => false,
-});
+}).AllowAnonymous();
 
 // Auto-migrate is intended for dev/single-instance only. In production, run migrations
 // from CI/CD with `dotnet ef database update`. The advisory lock inside DbSeeder makes

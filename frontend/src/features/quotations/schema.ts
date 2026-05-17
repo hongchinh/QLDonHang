@@ -2,6 +2,14 @@ import { z } from 'zod';
 import { optionalNumber, optionalString } from '@/lib/zod-helpers';
 
 const quotationLineSchema = z.object({
+  // Client-only stable key for React reconciliation. useFieldArray regenerates
+  // field.id on every nested setValue (RHF v7 fires _subjects.array.next on any
+  // leaf change within an array, which causes the keyName ref to be remapped
+  // with fresh UUIDs). Keying <tr> on field.id therefore unmounts the row
+  // every keystroke and steals focus. _uiKey is generated once at creation
+  // (server id for existing lines, fresh uuid for new ones), preserved in form
+  // state, and stripped before submitting.
+  _uiKey: z.string().optional(),
   id: z.string().uuid().optional(),
   sortOrder: z.number().int().nonnegative(),
   productId: z.string().uuid().optional(),

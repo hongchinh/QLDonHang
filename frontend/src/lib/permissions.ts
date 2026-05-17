@@ -1,3 +1,6 @@
+// Keep this list in lock-step with backend Permissions.cs. Drift here only affects
+// compile-time validation of `<Can permission="...">`; runtime auth always uses the
+// backend's claims.
 export const PERMISSIONS = [
   'customers.view',
   'customers.create',
@@ -12,7 +15,8 @@ export const PERMISSIONS = [
   'quotations.update',
   'quotations.delete',
   'quotations.print',
-  'quotations.approve',
+  'quotations.cancel_confirmed',
+  'quotations.view_cost',
   'quotations.view_all',
   'quotations.transfer_own',
   'quotations.transfer_any',
@@ -22,8 +26,13 @@ export const PERMISSIONS = [
   'users.create',
   'users.update',
   'users.delete',
+  'roles.view',
+  'roles.manage',
   'user_settings.manage',
   'reports.revenue',
+  'reports.profit',
+  'reports.debt',
+  'reports.delivery',
 ] as const;
 
 export type Permission = (typeof PERMISSIONS)[number];

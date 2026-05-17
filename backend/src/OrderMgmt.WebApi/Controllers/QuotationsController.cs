@@ -1,4 +1,5 @@
 using FluentValidation;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using OrderMgmt.Application.Common.Models;
 using OrderMgmt.Application.Sales.Quotations.Interfaces;
@@ -29,12 +30,19 @@ public class QuotationsController : ApiControllerBase
 
     [HttpGet]
     [HasPermission(Permissions.Quotations.View)]
-    public async Task<ActionResult<ApiResponse<PagedResult<QuotationListItemDto>>>> List(
+    public async Task<ActionResult<ApiResponse<QuotationListResult>>> List(
         [FromQuery] QuotationListRequest request, CancellationToken ct)
     {
         await _listValidator.ValidateAndThrowAsync(request, ct);
         return Success(await _quotations.ListAsync(request, ct));
     }
+
+    [HttpGet("owners")]
+    [HasPermission(Permissions.Quotations.ViewAll)]
+    [ProducesResponseType(typeof(ApiResponse<IReadOnlyList<QuotationOwnerOptionDto>>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<ApiResponse<IReadOnlyList<QuotationOwnerOptionDto>>>> ListOwners(
+        [FromQuery] bool includeDeleted, CancellationToken ct)
+        => Success(await _quotations.ListOwnersAsync(includeDeleted, ct));
 
     [HttpGet("{id:guid}")]
     [HasPermission(Permissions.Quotations.View)]
@@ -100,7 +108,11 @@ public class QuotationsController : ApiControllerBase
     public async Task<ActionResult<ApiResponse<QuotationDto>>> Clone(Guid id, CancellationToken ct)
         => Success(await _quotations.CloneAsync(id, ct));
 
+    // Service distinguishes TransferOwn (self) vs TransferAny (others); [Authorize] gates
+    // anonymous callers at the HTTP layer and the service rejects callers missing the
+    // specific permission with 403.
     [HttpPatch("{id:guid}/owner")]
+    [Authorize]
     [ProducesResponseType(typeof(ApiResponse<QuotationDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status403Forbidden)]

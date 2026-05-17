@@ -2,7 +2,10 @@ namespace OrderMgmt.Application.Identity.Models;
 
 public class RefreshTokenRequest
 {
-    public string RefreshToken { get; set; } = default!;
+    // Nullable so browser clients can POST an empty body and rely on the
+    // HttpOnly cookie. [ApiController] would otherwise mark a non-nullable
+    // reference type as implicitly [Required] and reject `{}` with 400.
+    public string? RefreshToken { get; set; }
 }
 
 public class TokenPairResponse

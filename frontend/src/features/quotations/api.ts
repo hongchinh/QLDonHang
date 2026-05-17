@@ -1,17 +1,28 @@
 import api, { apiDelete, apiGet, apiPatch, apiPost, apiPut } from '@/lib/api-client';
 import type {
-  PagedResult,
   Quotation,
   QuotationAction,
-  QuotationListItem,
   QuotationListParams,
+  QuotationListResult,
+  QuotationOwnerOption,
   TransferOwnerRequest,
   UpsertQuotationRequest,
 } from './types';
 
 export const quotationsApi = {
-  list: (params: QuotationListParams) =>
-    apiGet<PagedResult<QuotationListItem>>('/quotations', params),
+  list: (params: QuotationListParams) => {
+    const { statuses, ownerUserIds, ...rest } = params;
+    const serialized: Record<string, unknown> = { ...rest };
+    if (statuses && statuses.length > 0) {
+      serialized.status = statuses.join(',');
+    }
+    if (ownerUserIds && ownerUserIds.length > 0) {
+      serialized.ownerUserIds = ownerUserIds.join(',');
+    }
+    return apiGet<QuotationListResult>('/quotations', serialized);
+  },
+  listOwners: (includeDeleted = true) =>
+    apiGet<QuotationOwnerOption[]>('/quotations/owners', { includeDeleted }),
   get: (id: string) => apiGet<Quotation>(`/quotations/${id}`),
   create: (data: UpsertQuotationRequest) => apiPost<Quotation>('/quotations', data),
   update: (id: string, data: UpsertQuotationRequest) =>

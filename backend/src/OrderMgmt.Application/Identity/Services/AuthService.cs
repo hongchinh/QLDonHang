@@ -77,10 +77,10 @@ public class AuthService : IAuthService
 
     public Task<TokenPairResponse> RefreshAsync(
         RefreshTokenRequest request, string? ip, string? userAgent, CancellationToken ct = default)
-        => _refreshTokens.RotateAsync(request.RefreshToken, ip, userAgent, ct);
+        => _refreshTokens.RotateAsync(request.RefreshToken!, ip, userAgent, ct);
 
     public Task LogoutAsync(RefreshTokenRequest request, CancellationToken ct = default)
-        => _refreshTokens.RevokeAsync(request.RefreshToken, "LOGOUT", ct);
+        => _refreshTokens.RevokeAsync(request.RefreshToken!, "LOGOUT", ct);
 
     public CurrentUserDto GetCurrent()
     {

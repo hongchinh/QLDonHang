@@ -83,3 +83,13 @@ export function useCloneQuotation() {
     onSuccess: () => qc.invalidateQueries({ queryKey: quotationKeys.lists() }),
   });
 }
+
+export function useQuotationOwners(opts: { includeDeleted?: boolean; enabled: boolean }) {
+  const includeDeleted = opts.includeDeleted ?? true;
+  return useQuery({
+    queryKey: quotationKeys.owners(includeDeleted),
+    queryFn: () => quotationsApi.listOwners(includeDeleted),
+    enabled: opts.enabled,
+    staleTime: 5 * 60_000,
+  });
+}

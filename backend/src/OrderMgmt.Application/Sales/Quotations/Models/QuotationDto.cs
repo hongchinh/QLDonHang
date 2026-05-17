@@ -39,8 +39,11 @@ public class QuotationDto
     public decimal TaxRate { get; set; }
     public decimal TaxAmount { get; set; }
     public decimal Total { get; set; }
-    public decimal TotalCost { get; set; }
-    public decimal GrossProfit { get; set; }
+
+    // Cost / profit fields are redacted to null when the caller lacks
+    // `quotations.view_cost`. Treat null as "not authorized to see", not "zero".
+    public decimal? TotalCost { get; set; }
+    public decimal? GrossProfit { get; set; }
 
     public QuotationStatus Status { get; set; }
     public DateTime? ConfirmedAt { get; set; }
@@ -93,6 +96,9 @@ public class QuotationListItemDto
     public DateOnly QuotationDate { get; set; }
     public string CustomerName { get; set; } = default!;
     public string? ContactPhone { get; set; }
+    public decimal Subtotal { get; set; }
+    public decimal Discount { get; set; }
+    public decimal Freight { get; set; }
     public decimal Total { get; set; }
     public QuotationStatus Status { get; set; }
     public DateTime? ConfirmedAt { get; set; }
@@ -102,6 +108,19 @@ public class QuotationListItemDto
     public bool CanClone { get; set; }
     public string? CreatedByName { get; set; }
     public DateTimeOffset CreatedAt { get; set; }
+}
+
+public class QuotationListAggregates
+{
+    public decimal Subtotal { get; set; }
+    public decimal Discount { get; set; }
+    public decimal Freight { get; set; }
+    public decimal Total { get; set; }
+}
+
+public class QuotationListResult : PagedResult<QuotationListItemDto>
+{
+    public QuotationListAggregates Aggregates { get; init; } = new();
 }
 
 public class UpsertQuotationRequest
@@ -149,10 +168,14 @@ public class UpsertQuotationLineRequest
 
 public class QuotationListRequest : PageRequest
 {
-    public QuotationStatus? Status { get; set; }
+    // Comma-separated list of QuotationStatus values, e.g. "Draft,Sent".
+    // Backward compatible: single value "Draft" still works (split yields a 1-element list).
+    public string? Status { get; set; }
     public Guid? CustomerId { get; set; }
     public DateOnly? From { get; set; }
     public DateOnly? To { get; set; }
+    // CSV "guid1,guid2"; honored only when caller has quotations.view_all (silently ignored otherwise).
+    public string? OwnerUserIds { get; set; }
 }
 
 public class TransitionQuotationRequest
@@ -164,4 +187,12 @@ public class TransferOwnerRequest
 {
     public Guid NewOwnerUserId { get; set; }
     public string? Reason { get; set; }
+}
+
+public class QuotationOwnerOptionDto
+{
+    public Guid Id { get; set; }
+    public string FullName { get; set; } = default!;
+    public bool IsDeleted { get; set; }
+    public int QuotationCount { get; set; }
 }

@@ -21,6 +21,7 @@ import { UserSettingsPage } from '@/pages/admin/user-settings-page';
 import { UsersListPage } from '@/pages/admin/users-list-page';
 import { BulkTransferPage } from '@/pages/admin/bulk-transfer-page';
 import { AdminDashboardPage } from '@/pages/admin/admin-dashboard-page';
+import { RolesMatrixPage } from '@/pages/admin/roles-matrix-page';
 import { RevenuePage } from '@/pages/reports/revenue-page';
 import { SalesPerformancePage } from '@/pages/reports/sales-performance-page';
 import { SalesRevenuePage } from '@/pages/reports/sales-revenue-page';
@@ -143,6 +144,14 @@ export function App() {
                   element={
                     <ProtectedRoute permission="quotations.transfer_any">
                       <BulkTransferPage />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="admin/roles"
+                  element={
+                    <ProtectedRoute permission="roles.view">
+                      <RolesMatrixPage />
                     </ProtectedRoute>
                   }
                 />

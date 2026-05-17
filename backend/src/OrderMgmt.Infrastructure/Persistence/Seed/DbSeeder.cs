@@ -125,6 +125,7 @@ public static class DbSeeder
             {
                 Permissions.Customers.View, Permissions.Products.View,
                 Permissions.Quotations.View,
+                Permissions.Quotations.ViewAll,
                 Permissions.Reports.Revenue, Permissions.Reports.Debt,
             }),
             (RoleCodes.Warehouse, "Kho / giao hàng", new[]
@@ -141,17 +142,43 @@ public static class DbSeeder
             {
                 role = new Role { Code = code, Name = name, IsSystem = true };
                 db.Roles.Add(role);
+                AssignPermissions(role, permCodes, allPermissions);
+                continue;
             }
 
-            foreach (var pcode in permCodes)
+            if (code == RoleCodes.Admin)
             {
-                var perm = allPermissions.FirstOrDefault(p => p.Code == pcode);
-                if (perm is null) continue;
-                if (role.RolePermissions.Any(rp => rp.PermissionId == perm.Id)) continue;
-                role.RolePermissions.Add(new RolePermission { Role = role, Permission = perm });
+                // ADMIN: always re-apply full permissions so new permission codes added in later
+                // releases are auto-granted. Mutations on ADMIN are server-rejected, so admin
+                // edits cannot be silently undone here.
+                AssignPermissions(role, permCodes, allPermissions);
+                continue;
             }
+
+            // Defensive fallback: if a non-Admin system role lost all its permissions (manual DB
+            // edit / failed migration), restore the defaults. In the normal flow admins edit via
+            // the UI and the role always retains ≥1 permission, so this branch is dormant.
+            if (role.RolePermissions.Count == 0)
+            {
+                AssignPermissions(role, permCodes, allPermissions);
+                continue;
+            }
+
+            // Existing non-Admin system role with permissions → leave untouched so admin
+            // customisations made via the UI survive restarts.
         }
         await db.SaveChangesAsync(ct);
+    }
+
+    private static void AssignPermissions(Role role, string[] permCodes, List<Permission> allPermissions)
+    {
+        foreach (var pcode in permCodes)
+        {
+            var perm = allPermissions.FirstOrDefault(p => p.Code == pcode);
+            if (perm is null) continue;
+            if (role.RolePermissions.Any(rp => rp.PermissionId == perm.Id)) continue;
+            role.RolePermissions.Add(new RolePermission { Role = role, Permission = perm });
+        }
     }
 
     private static async Task SeedAdminUserAsync(

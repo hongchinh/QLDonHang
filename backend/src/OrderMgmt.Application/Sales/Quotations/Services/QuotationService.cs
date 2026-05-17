@@ -3,6 +3,7 @@ using Microsoft.Extensions.Options;
 using OrderMgmt.Application.Common.Interfaces;
 using OrderMgmt.Application.Common.Models;
 using OrderMgmt.Application.Common.Options;
+using OrderMgmt.Application.Sales.Quotations.Helpers;
 using OrderMgmt.Application.Sales.Quotations.Interfaces;
 using OrderMgmt.Application.Sales.Quotations.Models;
 using OrderMgmt.Domain.Common;
@@ -62,6 +63,8 @@ public class QuotationService : IQuotationService
         return query.Where(x => x.OwnerUserId == uid);
     }
 
+    private bool CanViewCost() => _currentUser.HasPermission(Permissions.Quotations.ViewCost);
+
     private void EnsureCanAccess(Quotation quotation)
     {
         if (!_features.CurrentValue.QuotationOwnerScope) return;
@@ -119,20 +122,31 @@ public class QuotationService : IQuotationService
         return Rank(a).CompareTo(Rank(b));
     }
 
-    public async Task<PagedResult<QuotationListItemDto>> ListAsync(QuotationListRequest request, CancellationToken ct = default)
+    public async Task<QuotationListResult> ListAsync(QuotationListRequest request, CancellationToken ct = default)
     {
         var query = ApplyOwnerScope(_db.Quotations
             .AsNoTracking()
             .Where(q => !q.IsDeleted));
 
-        if (request.Status.HasValue)
-            query = query.Where(q => q.Status == request.Status.Value);
+        var statuses = QuotationStatusListParser.Parse(request.Status);
+        if (statuses.Count > 0)
+            query = query.Where(q => statuses.Contains(q.Status));
         if (request.CustomerId.HasValue)
             query = query.Where(q => q.CustomerId == request.CustomerId.Value);
         if (request.From.HasValue)
             query = query.Where(q => q.QuotationDate >= request.From.Value);
         if (request.To.HasValue)
             query = query.Where(q => q.QuotationDate <= request.To.Value);
+
+        // Honor only for view_all callers; for non-privileged callers ApplyOwnerScope has already
+        // restricted to self, and stacking this filter would yield an empty list on forged URLs.
+        if (_currentUser.HasPermission(Permissions.Quotations.ViewAll)
+            && !string.IsNullOrWhiteSpace(request.OwnerUserIds))
+        {
+            var ownerIds = OwnerIdListParser.Parse(request.OwnerUserIds);
+            if (ownerIds.Count > 0)
+                query = query.Where(q => ownerIds.Contains(q.OwnerUserId));
+        }
 
         if (!string.IsNullOrWhiteSpace(request.Search))
         {
@@ -141,6 +155,22 @@ public class QuotationService : IQuotationService
                 EF.Functions.ILike(q.Code, pattern)
                 || EF.Functions.ILike(q.CustomerName, pattern));
         }
+
+        // Loại trừ Cancelled khi user không filter status explicit (financial convention).
+        var aggregateQuery = statuses.Count == 0
+            ? query.Where(q => q.Status != QuotationStatus.Cancelled)
+            : query;
+
+        var aggregates = await aggregateQuery
+            .GroupBy(_ => 1)
+            .Select(g => new QuotationListAggregates
+            {
+                Subtotal = g.Sum(q => q.Subtotal),
+                Discount = g.Sum(q => q.Discount),
+                Freight  = g.Sum(q => q.Freight),
+                Total    = g.Sum(q => q.Total),
+            })
+            .FirstOrDefaultAsync(ct) ?? new QuotationListAggregates();
 
         query = (request.SortBy?.ToLowerInvariant(), request.SortDirection?.ToLowerInvariant()) switch
         {
@@ -165,6 +195,9 @@ public class QuotationService : IQuotationService
                 QuotationDate = q.QuotationDate,
                 CustomerName = q.CustomerName,
                 ContactPhone = q.ContactPhone,
+                Subtotal = q.Subtotal,
+                Discount = q.Discount,
+                Freight = q.Freight,
                 Total = q.Total,
                 Status = q.Status,
                 ConfirmedAt = q.ConfirmedAt,
@@ -177,10 +210,7 @@ public class QuotationService : IQuotationService
                     .Where(u => u.Id == q.OwnerUserId)
                     .Select(u => (bool?)u.IsDeleted)
                     .FirstOrDefault() ?? false,
-                CanClone = _db.Users.IgnoreQueryFilters()
-                    .Where(u => u.Id == q.OwnerUserId)
-                    .Select(u => (bool?)u.IsDeleted)
-                    .FirstOrDefault() ?? false,
+                CanClone = true,
                 CreatedByName = q.CreatedBy.HasValue
                     ? _db.Users.IgnoreQueryFilters()
                         .Where(u => u.Id == q.CreatedBy)
@@ -191,13 +221,50 @@ public class QuotationService : IQuotationService
             })
             .ToListAsync(ct);
 
-        return new PagedResult<QuotationListItemDto>
+        return new QuotationListResult
         {
             Items = items,
             Page = request.Page,
             PageSize = request.PageSize,
             TotalItems = totalItems,
+            Aggregates = aggregates,
         };
+    }
+
+    public async Task<IReadOnlyList<QuotationOwnerOptionDto>> ListOwnersAsync(bool includeDeleted, CancellationToken ct = default)
+    {
+        var ownerStats = await _db.Quotations
+            .AsNoTracking()
+            .Where(q => !q.IsDeleted)
+            .GroupBy(q => q.OwnerUserId)
+            .Select(g => new { OwnerUserId = g.Key, QuotationCount = g.Count() })
+            .ToListAsync(ct);
+
+        if (ownerStats.Count == 0) return Array.Empty<QuotationOwnerOptionDto>();
+
+        var ownerIds = ownerStats.Select(s => s.OwnerUserId).ToList();
+        var usersQuery = _db.Users.IgnoreQueryFilters()
+            .AsNoTracking()
+            .Where(u => ownerIds.Contains(u.Id));
+        if (!includeDeleted)
+            usersQuery = usersQuery.Where(u => !u.IsDeleted);
+
+        var users = await usersQuery
+            .Select(u => new { u.Id, u.FullName, u.IsDeleted })
+            .ToListAsync(ct);
+
+        var vietnameseComparer = StringComparer.Create(new System.Globalization.CultureInfo("vi-VN"), ignoreCase: true);
+        return users
+            .Join(ownerStats, u => u.Id, s => s.OwnerUserId, (u, s) => new QuotationOwnerOptionDto
+            {
+                Id = u.Id,
+                FullName = u.FullName,
+                IsDeleted = u.IsDeleted,
+                QuotationCount = s.QuotationCount,
+            })
+            .OrderBy(o => o.IsDeleted)
+            .ThenBy(o => o.FullName, vietnameseComparer)
+            .ToList();
     }
 
     public async Task<QuotationDto> GetAsync(Guid id, CancellationToken ct = default)
@@ -227,7 +294,7 @@ public class QuotationService : IQuotationService
         }
 
         var canEdit = await ComputeCanEditAsync(quotation, owner?.IsDeleted ?? false, ct);
-        return MapToDto(quotation, owner?.FullName, owner?.IsDeleted ?? false, canEdit, confirmedByName);
+        return MapToDto(quotation, owner?.FullName, owner?.IsDeleted ?? false, canEdit, confirmedByName, CanViewCost());
     }
 
     private async Task<bool> ComputeCanEditAsync(Quotation q, bool isOwnerDeleted, CancellationToken ct)
@@ -348,6 +415,12 @@ public class QuotationService : IQuotationService
             ?? throw new NotFoundException(nameof(Quotation), id);
 
         EnsureCanAccess(quotation);
+        // Delete must respect the same lock-at and orphan-owner rules as Update. Without
+        // this check a user could bypass their own lock-at threshold by deleting instead
+        // of editing — a privilege escalation route. Cancelled quotations are also blocked,
+        // matching the "cancelled = read-only" rule; use a dedicated admin purge if cleanup
+        // of cancelled rows is needed.
+        await EnsureCanModifyAsync(quotation, ct);
 
         quotation.IsDeleted = true;
         quotation.DeletedAt = _clock.UtcNow;
@@ -556,7 +629,7 @@ public class QuotationService : IQuotationService
             .Where(u => u.Id == refreshed.OwnerUserId)
             .Select(u => new { u.FullName, u.IsDeleted })
             .FirstOrDefaultAsync(ct);
-        return MapToDto(refreshed, ownerAfter?.FullName, ownerAfter?.IsDeleted ?? false);
+        return MapToDto(refreshed, ownerAfter?.FullName, ownerAfter?.IsDeleted ?? false, canViewCost: CanViewCost());
     }
 
     private async Task<Customer> EnsureCustomerAsync(Guid customerId, CancellationToken ct)
@@ -584,12 +657,17 @@ public class QuotationService : IQuotationService
                 .Where(p => productIds.Contains(p.Id) && !p.IsDeleted)
                 .ToDictionaryAsync(p => p.Id, ct);
 
+        // When the caller cannot see cost, their request payload also carries no cost
+        // (DTO redacted it to null on read). Preserve the stored UnitCost instead of
+        // letting the round-trip wipe it out.
+        var canWriteCost = CanViewCost();
+
         if (isNew)
         {
             foreach (var line in requestedLines)
             {
                 var entity = new QuotationLine();
-                ApplyLine(entity, line, products);
+                ApplyLine(entity, line, products, canWriteCost);
                 quotation.Lines.Add(entity);
             }
             return;
@@ -602,13 +680,13 @@ public class QuotationService : IQuotationService
         {
             if (line.Id.HasValue && existing.TryGetValue(line.Id.Value, out var entity))
             {
-                ApplyLine(entity, line, products);
+                ApplyLine(entity, line, products, canWriteCost);
                 keptIds.Add(entity.Id);
             }
             else
             {
                 var newLine = new QuotationLine();
-                ApplyLine(newLine, line, products);
+                ApplyLine(newLine, line, products, canWriteCost);
                 quotation.Lines.Add(newLine);
                 // BaseEntity initializes Id with Guid.NewGuid() in its constructor, so EF's
                 // entity-state heuristic (non-default PK ⇒ Modified) would emit an UPDATE
@@ -626,7 +704,11 @@ public class QuotationService : IQuotationService
         }
     }
 
-    private static void ApplyLine(QuotationLine entity, UpsertQuotationLineRequest req, Dictionary<Guid, Product> products)
+    private static void ApplyLine(
+        QuotationLine entity,
+        UpsertQuotationLineRequest req,
+        Dictionary<Guid, Product> products,
+        bool canWriteCost)
     {
         entity.SortOrder = req.SortOrder;
         entity.ProductId = req.ProductId;
@@ -656,7 +738,8 @@ public class QuotationService : IQuotationService
 
         entity.Quantity = req.Quantity;
         entity.UnitPrice = req.UnitPrice;
-        entity.UnitCost = req.UnitCost;
+        if (canWriteCost)
+            entity.UnitCost = req.UnitCost;
         entity.Note = req.Note;
     }
 
@@ -708,7 +791,13 @@ public class QuotationService : IQuotationService
     private static string EscapeLike(string input) =>
         input.Replace("\\", "\\\\").Replace("%", "\\%").Replace("_", "\\_");
 
-    private static QuotationDto MapToDto(Quotation q, string? ownerFullName = null, bool isOwnerDeleted = false, bool canEdit = true, string? confirmedByName = null) => new()
+    private static QuotationDto MapToDto(
+        Quotation q,
+        string? ownerFullName = null,
+        bool isOwnerDeleted = false,
+        bool canEdit = true,
+        string? confirmedByName = null,
+        bool canViewCost = false) => new()
     {
         Id = q.Id,
         Code = q.Code,
@@ -717,7 +806,7 @@ public class QuotationService : IQuotationService
         OwnerFullName = ownerFullName,
         IsOwnerDeleted = isOwnerDeleted,
         CanEdit = canEdit && q.Status != QuotationStatus.Cancelled && !isOwnerDeleted,
-        CanClone = isOwnerDeleted,
+        CanClone = true,
         CustomerId = q.CustomerId,
         CustomerName = q.CustomerName,
         CustomerTaxCode = q.CustomerTaxCode,
@@ -735,8 +824,8 @@ public class QuotationService : IQuotationService
         TaxRate = q.TaxRate,
         TaxAmount = q.TaxAmount,
         Total = q.Total,
-        TotalCost = q.TotalCost,
-        GrossProfit = q.GrossProfit,
+        TotalCost = canViewCost ? q.TotalCost : null,
+        GrossProfit = canViewCost ? q.GrossProfit : null,
         Status = q.Status,
         ConfirmedAt = q.ConfirmedAt,
         ConfirmedByUserId = q.ConfirmedByUserId,
@@ -765,9 +854,9 @@ public class QuotationService : IQuotationService
                 Quantity = l.Quantity,
                 UnitPrice = l.UnitPrice,
                 LineTotal = l.LineTotal,
-                UnitCost = l.UnitCost,
-                LineCost = l.LineCost,
-                LineProfit = l.LineProfit,
+                UnitCost = canViewCost ? l.UnitCost : null,
+                LineCost = canViewCost ? l.LineCost : null,
+                LineProfit = canViewCost ? l.LineProfit : null,
                 Note = l.Note,
             })
             .ToList(),

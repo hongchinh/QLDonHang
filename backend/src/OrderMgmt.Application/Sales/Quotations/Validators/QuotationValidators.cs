@@ -1,5 +1,6 @@
 using FluentValidation;
 using OrderMgmt.Application.Common.Validators;
+using OrderMgmt.Application.Sales.Quotations.Helpers;
 using OrderMgmt.Application.Sales.Quotations.Models;
 
 namespace OrderMgmt.Application.Sales.Quotations.Validators;
@@ -53,6 +54,18 @@ public class UpsertQuotationRequestValidator : AbstractValidator<UpsertQuotation
 
 public class QuotationListRequestValidator : PageRequestValidator<QuotationListRequest>
 {
+    public QuotationListRequestValidator()
+    {
+        RuleFor(x => x.Status)
+            .Must(QuotationStatusListParser.IsValid)
+            .WithMessage("Trạng thái không hợp lệ. Giá trị cho phép: Draft, Sent, Confirmed, Cancelled.")
+            .When(x => !string.IsNullOrWhiteSpace(x.Status));
+
+        RuleFor(x => x.OwnerUserIds)
+            .Must(OwnerIdListParser.IsValid)
+            .WithMessage("Danh sách chủ sở hữu chứa giá trị không phải Guid hợp lệ.")
+            .When(x => !string.IsNullOrWhiteSpace(x.OwnerUserIds));
+    }
 }
 
 public class TransitionQuotationRequestValidator : AbstractValidator<TransitionQuotationRequest>

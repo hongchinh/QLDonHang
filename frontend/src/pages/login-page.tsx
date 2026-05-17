@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { getErrorMessage } from '@/lib/api-client';
+import { canAccessRoute } from '@/lib/route-permissions';
 import { toast } from '@/lib/use-toast';
 
 const schema = z.object({
@@ -17,6 +18,15 @@ const schema = z.object({
 });
 
 type FormValues = z.infer<typeof schema>;
+
+function pickPostLoginTarget(
+  from: string | undefined,
+  perms: readonly string[],
+  roles: readonly string[],
+): string {
+  if (!from || from.startsWith('/login') || from.startsWith('/403')) return '/';
+  return canAccessRoute(from, perms, roles) ? from : '/';
+}
 
 export function LoginPage() {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated());
@@ -30,15 +40,25 @@ export function LoginPage() {
   });
 
   if (isAuthenticated) {
-    const target = location.state?.from?.pathname ?? '/';
+    const currentUser = useAuthStore.getState().user;
+    const target = pickPostLoginTarget(
+      location.state?.from?.pathname,
+      currentUser?.permissions ?? [],
+      currentUser?.roles ?? [],
+    );
     return <Navigate to={target} replace />;
   }
 
   const onSubmit = (values: FormValues) => {
     login.mutate(values, {
-      onSuccess: () => {
+      onSuccess: (data) => {
         toast({ variant: 'success', title: 'Đăng nhập thành công' });
-        navigate(location.state?.from?.pathname ?? '/', { replace: true });
+        const target = pickPostLoginTarget(
+          location.state?.from?.pathname,
+          data.user.permissions,
+          data.user.roles,
+        );
+        navigate(target, { replace: true });
       },
       onError: (err) => {
         toast({

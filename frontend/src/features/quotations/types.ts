@@ -53,8 +53,9 @@ export interface Quotation {
   taxRate: number;
   taxAmount: number;
   total: number;
-  totalCost: number;
-  grossProfit: number;
+  // Cost/profit are nullable: server redacts them when caller lacks `quotations.view_cost`.
+  totalCost?: number;
+  grossProfit?: number;
   status: QuotationStatus;
   confirmedAt?: string;
   confirmedByUserId?: string;
@@ -72,6 +73,9 @@ export interface QuotationListItem {
   quotationDate: string;
   customerName: string;
   contactPhone?: string;
+  subtotal: number;
+  discount: number;
+  freight: number;
   total: number;
   status: QuotationStatus;
   confirmedAt?: string;
@@ -81,6 +85,24 @@ export interface QuotationListItem {
   canClone: boolean;
   createdByName?: string;
   createdAt: string;
+}
+
+export interface QuotationListAggregates {
+  subtotal: number;
+  discount: number;
+  freight: number;
+  total: number;
+}
+
+export interface QuotationOwnerOption {
+  id: string;
+  fullName: string;
+  isDeleted: boolean;
+  quotationCount: number;
+}
+
+export interface QuotationListResult extends PagedResult<QuotationListItem> {
+  aggregates: QuotationListAggregates;
 }
 
 export interface TransferOwnerRequest {
@@ -128,12 +150,13 @@ export interface QuotationListParams {
   page?: number;
   pageSize?: number;
   search?: string;
-  status?: QuotationStatus;
+  statuses?: QuotationStatus[];
   customerId?: string;
   from?: string;
   to?: string;
   sortBy?: string;
   sortDirection?: 'asc' | 'desc';
+  ownerUserIds?: string[];
 }
 
 export type { PagedResult };

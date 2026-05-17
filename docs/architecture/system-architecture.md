@@ -71,6 +71,18 @@ GET /api/auth/me  (Authorize)
 - `PermissionAuthorizationHandler` checks `permission` claim in JWT.
 - Role checks (`User.IsInRole`) available via `ClaimTypes.Role`.
 
+### Role × Permission management
+
+- UI `/admin/roles` (gated by `roles.view`) cho phép user có `roles.manage` quản lý ma trận Role × Permission qua `AdminRolesController`. Mặc định cả hai permission được seed cho ADMIN + MANAGER.
+- 7 endpoint: `GET /api/admin/permissions`, `GET/POST/PUT/DELETE /api/admin/roles[...]`, `PUT /api/admin/roles/{id}/permissions`.
+- **ADMIN role** bị server từ chối mọi mutation lên `RolePermissions` (`ForbiddenException`) — luôn full quyền.
+- **System role khác** (SALES/ACCOUNTANT/WAREHOUSE/MANAGER, `IsSystem=true`): admin có thể thêm/bớt permission; chặn rename/delete.
+- **Custom role** (`IsSystem=false`): full CRUD; xoá bị chặn (`ConflictException`) nếu còn user gán.
+- **Hard-delete `RolePermission`**: `RolePermission` là pure join entity, không phải `ISoftDeletable` → khi xoá role, `AdminRoleService.DeleteAsync` hard-delete các `RolePermission` rows trước, rồi soft-delete role.
+- **DbSeeder behavior** (`SeedRolesAsync`): ADMIN re-apply full permissions mỗi startup (tự nhận permission mới deploy); các system role khác chỉ seed khi `RolePermissions` rỗng (fallback an toàn) — không ghi đè customisation của admin sau deploy.
+- **Live update**: thay đổi permission được áp dụng cho user đang đăng nhập sau khi access token làm mới (~60 phút) hoặc gọi `/api/auth/refresh` — `RefreshTokenService.RotateAsync` re-load `RolePermissions` từ DB và cấp access token mới với claim mới.
+- **Audit**: mỗi mutation log structured (`role code`, `user id`, `added/removed codes`) qua `ILogger<AdminRoleService>`.
+
 ## Standard API response
 
 Mọi controller trả `ApiResponse<T>` (success) hoặc `ApiResponse` với `error` (fail). `GlobalExceptionMiddleware` chuyển exception → HTTP status:

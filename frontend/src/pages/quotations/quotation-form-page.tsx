@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useForm, useWatch, type Resolver } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, Send, CheckCircle2, Ban, Printer, FileSpreadsheet } from 'lucide-react';
+import { ArrowLeft, Send, CheckCircle2, Ban, Printer, FileSpreadsheet, Copy } from 'lucide-react';
 import {
   useCloneQuotation,
   useCreateQuotation,
@@ -32,6 +32,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
+import { Can } from '@/components/auth/can';
 import { getErrorMessage } from '@/lib/api-client';
 import { toast } from '@/lib/use-toast';
 import { StatusPill } from './components/status-pill';
@@ -69,13 +71,13 @@ export function QuotationFormPage() {
       onSubmit={async (parsed) => {
         try {
           if (isEdit && id) {
-            const result = await update.mutateAsync({ id, data: toPayload(parsed) });
+            await update.mutateAsync({ id, data: toPayload(parsed) });
             toast({ variant: 'success', title: 'Đã cập nhật báo giá' });
-            navigate(`/quotations/${result.id}`);
+            navigate('/quotations');
           } else {
             const result = await create.mutateAsync(toPayload(parsed));
             toast({ variant: 'success', title: 'Đã tạo báo giá', description: result.code });
-            navigate(`/quotations/${result.id}`);
+            navigate('/quotations');
           }
         } catch (err) {
           toast({ variant: 'destructive', title: 'Không thể lưu', description: getErrorMessage(err) });
@@ -158,7 +160,15 @@ function QuotationFormInner({
     defaultValues: toFormDefaults(initial),
   });
 
-  const watched = useWatch({ control: form.control }) as QuotationFormValues;
+  // Narrow watches so this component only re-renders when fields used in render
+  // actually change. (Previously useWatch({ control }) without `name` triggered
+  // a re-render of the whole form on every keystroke anywhere.)
+  const watchedLines = useWatch({ control: form.control, name: 'lines' }) as
+    | QuotationLineFormValues[]
+    | undefined;
+  const watchedTaxRate = useWatch({ control: form.control, name: 'taxRate' }) as number | undefined;
+  const watchedDiscount = useWatch({ control: form.control, name: 'discount' }) as number | undefined;
+  const watchedFreight = useWatch({ control: form.control, name: 'freight' }) as number | undefined;
   const status: QuotationStatus = initial?.status ?? 'Draft';
 
   const [selectedCustomerView, setSelectedCustomerView] = useState<{ id: string; code: string; name: string } | null>(
@@ -172,6 +182,7 @@ function QuotationFormInner({
         : null,
   );
   const [quickAddOpen, setQuickAddOpen] = useState(false);
+  const [confirmCloneOpen, setConfirmCloneOpen] = useState(false);
   const lineItemsGridRef = useRef<LineItemsGridHandle>(null);
 
   const GENERAL_INFO_FIELD_ORDER = [
@@ -254,11 +265,31 @@ function QuotationFormInner({
     setSelectedCustomerView(null);
   }
 
-  const lineLikes: LineLike[] = (watched.lines ?? []).map(toLineLike);
+  function doClone() {
+    if (!initial) return;
+    clone.mutate(initial.id, {
+      onSuccess: (cloned) => {
+        toast({ variant: 'success', title: 'Đã clone báo giá', description: cloned.code });
+        navigateInner(`/quotations/${cloned.id}`);
+      },
+      onError: (err) =>
+        toast({ variant: 'destructive', title: 'Không thể clone', description: getErrorMessage(err) }),
+    });
+  }
+
+  function handleCloneClick() {
+    if (form.formState.isDirty) {
+      setConfirmCloneOpen(true);
+    } else {
+      doClone();
+    }
+  }
+
+  const lineLikes: LineLike[] = (watchedLines ?? []).map(toLineLike);
   const header: HeaderLike = {
-    taxRate: Number(watched.taxRate ?? 0) || 0,
-    discount: Number(watched.discount ?? 0) || 0,
-    freight: Number(watched.freight ?? 0) || 0,
+    taxRate: Number(watchedTaxRate ?? 0) || 0,
+    discount: Number(watchedDiscount ?? 0) || 0,
+    freight: Number(watchedFreight ?? 0) || 0,
   };
 
   const onHeaderChange = (patch: Partial<HeaderLike>) => {
@@ -307,6 +338,16 @@ function QuotationFormInner({
                 <Ban className="mr-2 h-4 w-4" />Hủy
               </Button>
             )}
+            <Can permission="quotations.create">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleCloneClick}
+                disabled={submitting || clone.isPending || !initial}
+              >
+                <Copy className="mr-2 h-4 w-4" />Clone
+              </Button>
+            </Can>
             <Button variant="outline" size="sm" onClick={onDownloadExcel} disabled={submitting}>
               <FileSpreadsheet className="mr-2 h-4 w-4" />Excel
             </Button>
@@ -475,6 +516,19 @@ function QuotationFormInner({
           })
         }
       />
+
+      <ConfirmDialog
+        open={confirmCloneOpen}
+        onOpenChange={setConfirmCloneOpen}
+        title="Có thay đổi chưa lưu"
+        description="Bạn có thay đổi chưa lưu — bản clone sẽ không bao gồm các thay đổi này. Tiếp tục?"
+        confirmLabel="Clone"
+        loading={clone.isPending}
+        onConfirm={() => {
+          setConfirmCloneOpen(false);
+          doClone();
+        }}
+      />
     </div>
   );
 }
@@ -499,6 +553,7 @@ function toFormDefaults(q?: Quotation): QuotationFormValues {
     freight: (q?.freight ?? 0) as number,
     internalNote: q?.internalNote ?? '',
     lines: (q?.lines ?? []).map((l, idx) => ({
+      _uiKey: l.id ?? crypto.randomUUID(),
       id: l.id,
       sortOrder: l.sortOrder ?? idx,
       productId: l.productId,

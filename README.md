@@ -292,6 +292,7 @@ Trong service Frontend → tab **Variables**, thêm:
 - Backend chỉ allow origin có trong `Frontend__Url`. Kiểm tra biến này = URL frontend chính xác (không có dấu `/` cuối, đúng scheme `https://`).
 - Nếu app gọi qua nhiều domain (preview, custom), thêm vào `Cors__Origins__0`, `Cors__Origins__1`, … (ASP.NET binding format cho array).
 - Cookie auth khác domain: phải có `AuthCookie__SameSite=None` + `AuthCookie__Secure=true`, browser sẽ từ chối cookie nếu không đủ điều kiện.
+- **Triệu chứng**: login OK nhưng F5 (refresh trang) tự logout → cookie `qldh.refresh` không attach vào `POST /auth/refresh` cross-site. Backend đã fail-fast tại startup nếu `SameSite=None` mà thiếu `Secure=true`.
 
 **Database connection / migration**
 - `relation "..." does not exist` → migrate chưa chạy. Bật `Database__AutoMigrateAndSeed=true` rồi Redeploy.

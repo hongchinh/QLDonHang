@@ -6,4 +6,6 @@ export const quotationKeys = {
   list: (params: QuotationListParams) => [...quotationKeys.lists(), params] as const,
   details: () => [...quotationKeys.all, 'detail'] as const,
   detail: (id: string) => [...quotationKeys.details(), id] as const,
+  owners: (includeDeleted: boolean) =>
+    [...quotationKeys.all, 'owners', { includeDeleted }] as const,
 };
