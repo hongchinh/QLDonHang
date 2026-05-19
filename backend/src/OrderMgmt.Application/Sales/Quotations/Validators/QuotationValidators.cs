@@ -2,6 +2,7 @@ using FluentValidation;
 using OrderMgmt.Application.Common.Validators;
 using OrderMgmt.Application.Sales.Quotations.Helpers;
 using OrderMgmt.Application.Sales.Quotations.Models;
+using OrderMgmt.Domain.Enums;
 
 namespace OrderMgmt.Application.Sales.Quotations.Validators;
 
@@ -23,6 +24,27 @@ public class UpsertQuotationLineRequestValidator : AbstractValidator<UpsertQuota
         RuleFor(x => x.Density).GreaterThanOrEqualTo(0).When(x => x.Density.HasValue);
         RuleFor(x => x.SheetCount).GreaterThanOrEqualTo(0).When(x => x.SheetCount.HasValue);
         RuleFor(x => x.Note).MaximumLength(1000);
+
+        When(x => x.PricingMode == PricingMode.PerLinearMeter, () =>
+        {
+            RuleFor(x => x.Length).NotNull().GreaterThan(0);
+            RuleFor(x => x.SheetCount).NotNull().GreaterThan(0);
+        });
+
+        When(x => x.PricingMode == PricingMode.PerSquareMeter, () =>
+        {
+            RuleFor(x => x.Length).NotNull().GreaterThan(0);
+            RuleFor(x => x.Width).NotNull().GreaterThan(0);
+            RuleFor(x => x.SheetCount).NotNull().GreaterThan(0);
+        });
+
+        When(x => x.PricingMode == PricingMode.PerCubicMeter, () =>
+        {
+            RuleFor(x => x.Length).NotNull().GreaterThan(0);
+            RuleFor(x => x.Width).NotNull().GreaterThan(0);
+            RuleFor(x => x.Thickness).NotNull().GreaterThan(0);
+            RuleFor(x => x.SheetCount).NotNull().GreaterThan(0);
+        });
     }
 }
 

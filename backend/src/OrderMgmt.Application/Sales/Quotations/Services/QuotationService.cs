@@ -845,11 +845,11 @@ public class QuotationService : IQuotationService
 
         foreach (var line in q.Lines.Where(l => !l.IsDeleted))
         {
-            var pricingFactor = PricingFactor(line);
-            line.LineTotal = Math.Round(line.Quantity * pricingFactor * line.UnitPrice, 2, MidpointRounding.AwayFromZero);
+            line.Quantity = EffectiveQuantity(line);
+            line.LineTotal = Math.Round(line.Quantity * line.UnitPrice, 0, MidpointRounding.AwayFromZero);
             if (line.UnitCost.HasValue)
             {
-                line.LineCost = Math.Round(line.Quantity * pricingFactor * line.UnitCost.Value, 2, MidpointRounding.AwayFromZero);
+                line.LineCost = Math.Round(line.Quantity * line.UnitCost.Value, 0, MidpointRounding.AwayFromZero);
                 line.LineProfit = line.LineTotal - line.LineCost.Value;
             }
             else
@@ -869,18 +869,19 @@ public class QuotationService : IQuotationService
         q.GrossProfit = subtotal - totalCost - q.Discount;
     }
 
-    private static decimal PricingFactor(QuotationLine line)
+    private static decimal EffectiveQuantity(QuotationLine line)
     {
         var length = line.Length ?? 0m;
         var width = line.Width ?? 0m;
         var thickness = line.Thickness ?? 0m;
+        var sheetCount = line.SheetCount ?? 0m;
 
         return line.PricingMode switch
         {
-            PricingMode.PerLinearMeter => length / 1000m,
-            PricingMode.PerSquareMeter => length * width / 1_000_000m,
-            PricingMode.PerCubicMeter => length * width * thickness / 1_000_000_000m,
-            _ => 1m,
+            PricingMode.PerLinearMeter => length * sheetCount / 1000m,
+            PricingMode.PerSquareMeter => length * width * sheetCount / 1_000_000m,
+            PricingMode.PerCubicMeter => length * width * thickness * sheetCount / 1_000_000_000m,
+            _ => line.Quantity,
         };
     }
 

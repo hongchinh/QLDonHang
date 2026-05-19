@@ -8,7 +8,7 @@ import type {
   QuotationLineFormValues,
 } from '@/features/quotations/schema';
 import { ProductTypeaheadCell } from './product-typeahead-cell';
-import { computeLineCost, computeLineTotal } from '@/pages/quotations/utils/compute-line';
+import { computeLineCost, computeLineQuantity, computeLineTotal } from '@/pages/quotations/utils/compute-line';
 import { formatMoneyForDisplay, parseMoneyInput } from '@/pages/quotations/utils/money-input';
 import { useAuthStore } from '@/stores/auth-store';
 import './line-items-grid.css';
@@ -69,11 +69,11 @@ function isLineFocusFieldDisabled(line: QuotationLineFormValues, field: LineFocu
     case 'PerUnit':
       return field === 'length' || field === 'width' || field === 'thickness' || field === 'sheet-count';
     case 'PerLinearMeter':
-      return field === 'width' || field === 'thickness' || field === 'sheet-count';
+      return field === 'width' || field === 'thickness' || field === 'quantity';
     case 'PerSquareMeter':
-      return field === 'thickness' || field === 'sheet-count';
+      return field === 'thickness' || field === 'quantity';
     case 'PerCubicMeter':
-      return field === 'sheet-count';
+      return field === 'quantity';
     default:
       return false;
   }
@@ -263,8 +263,10 @@ export const LineItemsGrid = forwardRef<LineItemsGridHandle, Props>(function Lin
           <tbody>
             {fields.map((field, idx) => {
               const line = rows[idx] ?? (field as unknown as QuotationLineFormValues);
-              const lineTotal = computeLineTotal(toLineLike(line));
-              const lineCost = computeLineCost(toLineLike(line));
+              const lineLike = toLineLike(line);
+              const effectiveQuantity = computeLineQuantity(lineLike);
+              const lineTotal = computeLineTotal(lineLike);
+              const lineCost = computeLineCost(lineLike);
               const lineProfit = lineCost != null ? lineTotal - lineCost : undefined;
               const lengthDisabled = isLineFocusFieldDisabled(line, 'length');
               const widthDisabled = isLineFocusFieldDisabled(line, 'width');
@@ -377,7 +379,8 @@ export const LineItemsGrid = forwardRef<LineItemsGridHandle, Props>(function Lin
                       type="number"
                       step="any"
                       aria-label="Số lượng"
-                      value={numInput(line.quantity)}
+                      disabled={isLineFocusFieldDisabled(line, 'quantity')}
+                      value={numInput(line.pricingMode === 'PerUnit' ? line.quantity : effectiveQuantity)}
                       onChange={(e) => setLineField(idx, 'quantity', (parseNum(e.target.value) ?? 0) as never)}
                     />
                   </td>

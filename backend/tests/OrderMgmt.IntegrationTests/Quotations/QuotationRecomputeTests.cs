@@ -1,3 +1,4 @@
+using System.Net;
 using System.Net.Http.Json;
 using FluentAssertions;
 using OrderMgmt.Application.Common.Models;
@@ -21,23 +22,32 @@ public class QuotationRecomputeTests : QuotationTestBase
     }
 
     [Fact]
-    public async Task PerSquareMeter_line_total_uses_quantity_dimensions_and_unit_price()
+    public async Task PerSquareMeter_line_total_uses_dimensions_sheet_count_and_unit_price()
     {
-        var dto = await CreateAsync(PricingMode.PerSquareMeter, quantity: 2, unitPrice: 50_000, length: 2000, width: 1000);
+        var dto = await CreateAsync(PricingMode.PerSquareMeter, quantity: 1, unitPrice: 50_000, length: 2000, width: 1000, sheetCount: 2);
         dto.Lines[0].LineTotal.Should().Be(200_000m);
     }
 
     [Fact]
-    public async Task PerLinearMeter_line_total_uses_quantity_length_and_unit_price()
+    public async Task PerLinearMeter_line_total_uses_length_sheet_count_and_unit_price()
     {
-        var dto = await CreateAsync(PricingMode.PerLinearMeter, quantity: 4, unitPrice: 25_000, length: 2500);
+        var dto = await CreateAsync(PricingMode.PerLinearMeter, quantity: 1, unitPrice: 25_000, length: 2500, sheetCount: 4);
         dto.Lines[0].LineTotal.Should().Be(250_000m);
     }
 
     [Fact]
-    public async Task PerCubicMeter_line_total_uses_quantity_dimensions_and_unit_price()
+    public async Task PerLinearMeter_line_total_uses_full_precision_quantity_and_rounds_amount_to_integer()
     {
-        var dto = await CreateAsync(PricingMode.PerCubicMeter, quantity: 1, unitPrice: 1_000_000, length: 1000, width: 1000, thickness: 500);
+        var dto = await CreateAsync(PricingMode.PerLinearMeter, quantity: 1, unitPrice: 1_000, length: 333, sheetCount: 1);
+
+        dto.Lines[0].Quantity.Should().Be(0.333m);
+        dto.Lines[0].LineTotal.Should().Be(333m);
+    }
+
+    [Fact]
+    public async Task PerCubicMeter_line_total_uses_dimensions_sheet_count_and_unit_price()
+    {
+        var dto = await CreateAsync(PricingMode.PerCubicMeter, quantity: 1, unitPrice: 1_000_000, length: 1000, width: 1000, thickness: 500, sheetCount: 1);
         dto.Lines[0].LineTotal.Should().Be(500_000m);
     }
 
@@ -134,13 +144,37 @@ public class QuotationRecomputeTests : QuotationTestBase
         dto.GrossProfit.Should().Be(10_000m); // 60k - 40k - 10k discount
     }
 
+    [Fact]
+    public async Task PerSquareMeter_requires_positive_required_dimensions_and_sheet_count()
+    {
+        var req = BuildRequest();
+        req.Lines = new[]
+        {
+            new UpsertQuotationLineRequest
+            {
+                SortOrder = 0,
+                ProductId = _productId,
+                ProductName = "X", UnitName = "Táº¥m",
+                PricingMode = PricingMode.PerSquareMeter,
+                Length = 2000,
+                Quantity = 1,
+                UnitPrice = 50_000,
+            },
+        };
+
+        var resp = await _client.PostAsJsonAsync("/api/quotations", req);
+
+        resp.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+    }
+
     private async Task<QuotationDto> CreateAsync(
         PricingMode mode,
         decimal quantity,
         decimal unitPrice,
         decimal? length = null,
         decimal? width = null,
-        decimal? thickness = null)
+        decimal? thickness = null,
+        decimal? sheetCount = null)
     {
         var req = BuildRequest();
         req.TaxRate = 0;
@@ -155,6 +189,7 @@ public class QuotationRecomputeTests : QuotationTestBase
                 Length = length,
                 Width = width,
                 Thickness = thickness,
+                SheetCount = sheetCount,
                 Quantity = quantity, UnitPrice = unitPrice,
             },
         };

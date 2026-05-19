@@ -26,29 +26,30 @@ export function round0(value: number): number {
   return Math.round(value + Number.EPSILON);
 }
 
-export function computePricingFactor(line: LineLike): number {
+export function computeLineQuantity(line: LineLike): number {
   const L = line.length ?? 0;
   const W = line.width ?? 0;
   const T = line.thickness ?? 0;
+  const sheets = line.sheetCount ?? 0;
   switch (line.pricingMode) {
     case 'PerSquareMeter':
-      return (L * W) / 1_000_000;
+      return (L * W * sheets) / 1_000_000;
     case 'PerLinearMeter':
-      return L / 1000;
+      return (L * sheets) / 1000;
     case 'PerCubicMeter':
-      return (L * W * T) / 1_000_000_000;
+      return (L * W * T * sheets) / 1_000_000_000;
     case 'PerUnit':
     default:
-      return 1;
+      return line.quantity;
   }
 }
 
 export function computeLineTotal(line: LineLike): number {
-  return round2(line.quantity * computePricingFactor(line) * line.unitPrice);
+  return round0(computeLineQuantity(line) * line.unitPrice);
 }
 
 export function computeLineCost(line: LineLike): number | undefined {
-  return line.unitCost != null ? round2(line.quantity * computePricingFactor(line) * line.unitCost) : undefined;
+  return line.unitCost != null ? round0(computeLineQuantity(line) * line.unitCost) : undefined;
 }
 
 export interface Totals {

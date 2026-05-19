@@ -56,6 +56,7 @@ import { toast } from '@/lib/use-toast';
 import { StatusPill } from './components/status-pill';
 import { LineItemsGrid, type LineItemsGridHandle } from './components/line-items-grid';
 import { TotalsPanel } from './components/totals-panel';
+import { computeLineQuantity } from './utils/compute-line';
 import type { HeaderLike, LineLike } from './utils/compute-line';
 
 type QuotationSubmitIntent = 'save-exit' | 'save-stay' | 'save-print';
@@ -890,25 +891,28 @@ function toPayload(parsed: QuotationFormParsed): UpsertQuotationRequest {
     discount: parsed.discount,
     freight: parsed.freight,
     internalNote: parsed.internalNote,
-    lines: parsed.lines.map<UpsertQuotationLineRequest>((l, idx) => ({
-      id: l.id,
-      sortOrder: l.sortOrder ?? idx,
-      productId: l.productId,
-      productCode: l.productCode,
-      productName: l.productName,
-      specification: l.specification,
-      unitName: l.unitName,
-      pricingMode: l.pricingMode,
-      length: l.length,
-      width: l.width,
-      thickness: l.thickness,
-      density: l.density,
-      sheetCount: l.sheetCount,
-      quantity: l.quantity,
-      unitPrice: l.unitPrice,
-      unitCost: l.unitCost,
-      note: l.note,
-    })),
+    lines: parsed.lines.map<UpsertQuotationLineRequest>((l, idx) => {
+      const lineLike = toLineLike(l);
+      return {
+        id: l.id,
+        sortOrder: l.sortOrder ?? idx,
+        productId: l.productId,
+        productCode: l.productCode,
+        productName: l.productName,
+        specification: l.specification,
+        unitName: l.unitName,
+        pricingMode: l.pricingMode,
+        length: l.length,
+        width: l.width,
+        thickness: l.thickness,
+        density: l.density,
+        sheetCount: l.sheetCount,
+        quantity: computeLineQuantity(lineLike),
+        unitPrice: l.unitPrice,
+        unitCost: l.unitCost,
+        note: l.note,
+      };
+    }),
   };
 }
 
