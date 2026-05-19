@@ -1,0 +1,495 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Quotation Form Icon Color Options</title>
+  <style>
+    :root {
+      --bg: #f6f8fb;
+      --panel: #ffffff;
+      --border: #d8e0ea;
+      --text: #172033;
+      --muted: #667085;
+      --blue: #2563eb;
+      --cyan: #0891b2;
+      --green: #16a34a;
+      --emerald: #059669;
+      --red: #dc2626;
+      --purple: #7c3aed;
+      --indigo: #4f46e5;
+      --slate: #475569;
+      --amber: #d97706;
+      --shadow: 0 8px 24px rgba(16, 24, 40, 0.1);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: Arial, Helvetica, sans-serif;
+      font-size: 14px;
+    }
+
+    .app-header {
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      height: 52px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 24px;
+      background: #102a43;
+      color: #fff;
+    }
+
+    main {
+      max-width: 1240px;
+      margin: 0 auto;
+      padding: 24px;
+    }
+
+    .intro,
+    .option {
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: var(--panel);
+      box-shadow: 0 1px 2px rgba(16, 24, 40, 0.04);
+    }
+
+    .intro {
+      padding: 16px;
+      margin-bottom: 18px;
+    }
+
+    h1,
+    h2,
+    h3,
+    p {
+      margin: 0;
+    }
+
+    h1 { font-size: 22px; margin-bottom: 6px; }
+    h2 { font-size: 18px; margin-bottom: 6px; }
+    p { color: var(--muted); line-height: 1.45; }
+
+    .option {
+      margin: 22px 0;
+      overflow: hidden;
+    }
+
+    .option-head {
+      padding: 16px;
+      background: #edf2f8;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .mock {
+      padding: 16px;
+      background: #f8fafc;
+    }
+
+    .bar {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 12px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.96);
+      box-shadow: var(--shadow);
+    }
+
+    .bar + .bar { margin-top: 12px; }
+
+    .title {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 220px;
+    }
+
+    .title h3 {
+      font-size: 18px;
+      white-space: nowrap;
+    }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      min-height: 24px;
+      padding: 3px 9px;
+      border-radius: 999px;
+      background: #fff7ed;
+      color: #c2410c;
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .actions {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+      gap: 8px;
+    }
+
+    .btn {
+      min-height: 34px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 7px;
+      padding: 7px 11px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      background: white;
+      color: var(--text);
+      font-weight: 600;
+      white-space: nowrap;
+      cursor: default;
+    }
+
+    .btn.primary {
+      border-color: var(--blue);
+      background: var(--blue);
+      color: white;
+    }
+
+    .icon {
+      width: 17px;
+      height: 17px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+      line-height: 1;
+    }
+
+    .muted { color: var(--slate); }
+    .save { color: var(--blue); }
+    .send { color: var(--cyan); }
+    .confirm { color: var(--green); }
+    .cancel { color: var(--red); }
+    .clone { color: var(--purple); }
+    .excel { color: var(--emerald); }
+    .print { color: var(--indigo); }
+    .warn { color: var(--amber); }
+
+    .soft .btn.save-btn {
+      background: #eff6ff;
+      border-color: #bfdbfe;
+      color: #1d4ed8;
+    }
+
+    .soft .btn.send-btn {
+      background: #ecfeff;
+      border-color: #a5f3fc;
+      color: #0e7490;
+    }
+
+    .soft .btn.confirm-btn {
+      background: #f0fdf4;
+      border-color: #bbf7d0;
+      color: #15803d;
+    }
+
+    .soft .btn.cancel-btn {
+      background: #fef2f2;
+      border-color: #fecaca;
+      color: #b91c1c;
+    }
+
+    .soft .btn.clone-btn {
+      background: #f5f3ff;
+      border-color: #ddd6fe;
+      color: #6d28d9;
+    }
+
+    .soft .btn.excel-btn {
+      background: #ecfdf5;
+      border-color: #a7f3d0;
+      color: #047857;
+    }
+
+    .soft .btn.print-btn {
+      background: #eef2ff;
+      border-color: #c7d2fe;
+      color: #4338ca;
+    }
+
+    .chip-icon {
+      width: 24px;
+      height: 24px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 999px;
+      background: #f1f5f9;
+    }
+
+    .chip-icon.save { background: #dbeafe; color: var(--blue); }
+    .chip-icon.send { background: #cffafe; color: var(--cyan); }
+    .chip-icon.confirm { background: #dcfce7; color: var(--green); }
+    .chip-icon.cancel { background: #fee2e2; color: var(--red); }
+    .chip-icon.clone { background: #ede9fe; color: var(--purple); }
+    .chip-icon.excel { background: #d1fae5; color: var(--emerald); }
+    .chip-icon.print { background: #e0e7ff; color: var(--indigo); }
+    .chip-icon.muted { background: #f1f5f9; color: var(--slate); }
+
+    .priority .btn .icon {
+      color: var(--slate);
+    }
+
+    .priority .btn.primary .icon,
+    .priority .btn.save-btn .icon {
+      color: inherit;
+    }
+
+    .priority .btn.send-btn .icon {
+      color: var(--cyan);
+    }
+
+    .priority .btn.confirm-btn .icon {
+      color: var(--green);
+    }
+
+    .priority .btn.cancel-btn .icon,
+    .priority .btn.delete-btn .icon {
+      color: var(--red);
+    }
+
+    .sample-grid {
+      margin-top: 14px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      overflow: hidden;
+      background: white;
+    }
+
+    .grid-title {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 12px 14px;
+      border-bottom: 1px solid var(--border);
+      font-weight: 700;
+    }
+
+    .grid-title span:last-child {
+      color: var(--muted);
+      font-weight: 600;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+
+    th {
+      background: #1769aa;
+      color: white;
+      padding: 8px;
+      text-align: left;
+    }
+
+    td {
+      padding: 8px;
+      border-top: 1px solid #e4e7ec;
+    }
+
+    .toolbar {
+      display: flex;
+      gap: 8px;
+      padding: 10px;
+      border-top: 1px solid var(--border);
+      background: #f8fafc;
+    }
+
+    @media (max-width: 760px) {
+      main { padding: 14px; }
+      .bar { align-items: flex-start; }
+      .actions { justify-content: flex-start; }
+      .title { min-width: 0; }
+      .title h3 { font-size: 16px; }
+    }
+  </style>
+</head>
+<body>
+  <header class="app-header">
+    <strong>QLDonHang</strong>
+    <span>Icon color mockups</span>
+  </header>
+
+  <main>
+    <section class="intro">
+      <h1>4 hướng màu icon cho Quotation Form</h1>
+      <p>Các mockup giữ layout sticky action bar một hàng. Khác biệt chính nằm ở mức độ dùng màu cho icon và button.</p>
+    </section>
+
+    <section class="option">
+      <div class="option-head">
+        <h2>Phương án 1: Semantic icon colors</h2>
+        <p>Giữ button trung tính, chỉ tô màu icon theo ý nghĩa hành động. Gọn, trẻ vừa đủ, ít rủi ro nhất.</p>
+      </div>
+      <div class="mock semantic">
+        <div class="bar">
+          <div class="title">
+            <button class="btn"><span class="icon muted">←</span></button>
+            <h3>Chỉnh sửa báo giá</h3>
+            <span class="pill">Nháp</span>
+          </div>
+          <div class="actions">
+            <button class="btn">Hủy</button>
+            <button class="btn primary"><span class="icon">✓</span>Cập nhật</button>
+            <button class="btn"><span class="icon send">➤</span>Gửi</button>
+            <button class="btn"><span class="icon cancel">⊘</span>Hủy BG</button>
+            <button class="btn"><span class="icon clone">⧉</span>Clone</button>
+            <button class="btn"><span class="icon excel">▣</span>Excel</button>
+            <button class="btn"><span class="icon print">⎙</span>In</button>
+          </div>
+        </div>
+        <div class="bar">
+          <div class="title">
+            <button class="btn"><span class="icon muted">←</span></button>
+            <h3>Thêm báo giá</h3>
+          </div>
+          <div class="actions">
+            <button class="btn">Hủy</button>
+            <button class="btn"><span class="icon print">⎙</span>Lưu và in</button>
+            <button class="btn"><span class="icon save">↗</span>Lưu và thoát</button>
+            <button class="btn primary"><span class="icon">✓</span>Lưu tạm</button>
+          </div>
+        </div>
+        <div class="sample-grid">
+          <div class="grid-title">
+            <span>Chi tiết hàng hóa</span>
+            <span>Tổng thành tiền bán: 48.500.000 ₫</span>
+          </div>
+          <table><thead><tr><th>Mã hàng</th><th>Tên hàng</th><th>SL</th><th>Thành tiền</th></tr></thead><tbody><tr><td>SP001</td><td>Tấm nhựa PVC</td><td>12</td><td>10.200.000</td></tr></tbody></table>
+          <div class="toolbar">
+            <button class="btn"><span class="icon send">＋</span>Thêm dòng</button>
+            <button class="btn"><span class="icon cancel">🗑</span>Xóa tất cả dòng</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="option">
+      <div class="option-head">
+        <h2>Phương án 2: Soft-tinted buttons</h2>
+        <p>Mỗi nhóm hành động có nền màu nhạt và viền nhạt. Nhìn nổi hơn, nhưng action bar có nhiều màu hơn.</p>
+      </div>
+      <div class="mock soft">
+        <div class="bar">
+          <div class="title">
+            <button class="btn"><span class="icon muted">←</span></button>
+            <h3>Chỉnh sửa báo giá</h3>
+            <span class="pill">Nháp</span>
+          </div>
+          <div class="actions">
+            <button class="btn">Hủy</button>
+            <button class="btn save-btn"><span class="icon">✓</span>Cập nhật</button>
+            <button class="btn send-btn"><span class="icon">➤</span>Gửi</button>
+            <button class="btn cancel-btn"><span class="icon">⊘</span>Hủy BG</button>
+            <button class="btn clone-btn"><span class="icon">⧉</span>Clone</button>
+            <button class="btn excel-btn"><span class="icon">▣</span>Excel</button>
+            <button class="btn print-btn"><span class="icon">⎙</span>In</button>
+          </div>
+        </div>
+        <div class="bar">
+          <div class="title">
+            <button class="btn"><span class="icon muted">←</span></button>
+            <h3>Thêm báo giá</h3>
+          </div>
+          <div class="actions">
+            <button class="btn">Hủy</button>
+            <button class="btn print-btn"><span class="icon">⎙</span>Lưu và in</button>
+            <button class="btn save-btn"><span class="icon">↗</span>Lưu và thoát</button>
+            <button class="btn save-btn"><span class="icon">✓</span>Lưu tạm</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="option">
+      <div class="option-head">
+        <h2>Phương án 3: Icon chips</h2>
+        <p>Icon nằm trong chip màu nhỏ. Trẻ trung và rõ ý nghĩa, nhưng nút rộng hơn nên dễ wrap hơn trên màn hình hẹp.</p>
+      </div>
+      <div class="mock chip">
+        <div class="bar">
+          <div class="title">
+            <button class="btn"><span class="chip-icon muted">←</span></button>
+            <h3>Chỉnh sửa báo giá</h3>
+            <span class="pill">Nháp</span>
+          </div>
+          <div class="actions">
+            <button class="btn">Hủy</button>
+            <button class="btn"><span class="chip-icon save">✓</span>Cập nhật</button>
+            <button class="btn"><span class="chip-icon send">➤</span>Gửi</button>
+            <button class="btn"><span class="chip-icon cancel">⊘</span>Hủy BG</button>
+            <button class="btn"><span class="chip-icon clone">⧉</span>Clone</button>
+            <button class="btn"><span class="chip-icon excel">▣</span>Excel</button>
+            <button class="btn"><span class="chip-icon print">⎙</span>In</button>
+          </div>
+        </div>
+        <div class="bar">
+          <div class="title">
+            <button class="btn"><span class="chip-icon muted">←</span></button>
+            <h3>Thêm báo giá</h3>
+          </div>
+          <div class="actions">
+            <button class="btn">Hủy</button>
+            <button class="btn"><span class="chip-icon print">⎙</span>Lưu và in</button>
+            <button class="btn"><span class="chip-icon save">↗</span>Lưu và thoát</button>
+            <button class="btn"><span class="chip-icon save">✓</span>Lưu tạm</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="option">
+      <div class="option-head">
+        <h2>Phương án 4: Priority-based colors</h2>
+        <p>Chỉ tô màu hành động chính và nguy hiểm. Sạch nhất, ít nhiễu, nhưng độ “trẻ trung” thấp hơn.</p>
+      </div>
+      <div class="mock priority">
+        <div class="bar">
+          <div class="title">
+            <button class="btn"><span class="icon">←</span></button>
+            <h3>Chỉnh sửa báo giá</h3>
+            <span class="pill">Nháp</span>
+          </div>
+          <div class="actions">
+            <button class="btn">Hủy</button>
+            <button class="btn primary save-btn"><span class="icon">✓</span>Cập nhật</button>
+            <button class="btn send-btn"><span class="icon">➤</span>Gửi</button>
+            <button class="btn cancel-btn"><span class="icon">⊘</span>Hủy BG</button>
+            <button class="btn"><span class="icon">⧉</span>Clone</button>
+            <button class="btn"><span class="icon">▣</span>Excel</button>
+            <button class="btn"><span class="icon">⎙</span>In</button>
+          </div>
+        </div>
+        <div class="bar">
+          <div class="title">
+            <button class="btn"><span class="icon">←</span></button>
+            <h3>Thêm báo giá</h3>
+          </div>
+          <div class="actions">
+            <button class="btn">Hủy</button>
+            <button class="btn"><span class="icon">⎙</span>Lưu và in</button>
+            <button class="btn"><span class="icon">↗</span>Lưu và thoát</button>
+            <button class="btn primary save-btn"><span class="icon">✓</span>Lưu tạm</button>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+</body>
+</html>

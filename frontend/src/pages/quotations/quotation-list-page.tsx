@@ -242,13 +242,13 @@ export function QuotationListPage() {
             <div className="flex justify-end gap-1">
               <Can permission="quotations.update">
                 <Button asChild variant="ghost" size="icon" aria-label="Sửa">
-                  <Link to={`/quotations/${q.id}`}><Pencil className="h-4 w-4" /></Link>
+                  <Link to={`/quotations/${q.id}`}><Pencil className="h-4 w-4 text-blue-600" /></Link>
                 </Button>
               </Can>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" size="icon" aria-label="Thao tác khác">
-                    <MoreHorizontal className="h-4 w-4" />
+                    <MoreHorizontal className="h-4 w-4 text-slate-500" />
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
@@ -258,14 +258,14 @@ export function QuotationListPage() {
                       title={canSend ? undefined : 'Chỉ gửi được báo giá đang ở trạng thái Nháp'}
                       onClick={() => setPendingTransition({ item: q, action: 'Send' })}
                     >
-                      <Send className="mr-2 h-4 w-4" /> Gửi
+                      <Send className="mr-2 h-4 w-4 text-cyan-600" /> Gửi
                     </DropdownMenuItem>
                     <DropdownMenuItem
                       disabled={!canConfirm}
                       title={canConfirm ? undefined : 'Chỉ xác nhận được báo giá đã gửi'}
                       onClick={() => setPendingTransition({ item: q, action: 'Confirm' })}
                     >
-                      <CheckCircle2 className="mr-2 h-4 w-4" /> Xác nhận
+                      <CheckCircle2 className="mr-2 h-4 w-4 text-emerald-600" /> Xác nhận
                     </DropdownMenuItem>
                   </Can>
                   <Can permission="quotations.create">
@@ -281,7 +281,7 @@ export function QuotationListPage() {
                         });
                       }}
                     >
-                      <Copy className="mr-2 h-4 w-4" /> Clone
+                      <Copy className="mr-2 h-4 w-4 text-violet-600" /> Clone
                     </DropdownMenuItem>
                   </Can>
                   <Can permission="quotations.print">
@@ -292,7 +292,7 @@ export function QuotationListPage() {
                         );
                       }}
                     >
-                      <Printer className="mr-2 h-4 w-4" /> In PDF
+                      <Printer className="mr-2 h-4 w-4 text-indigo-600" /> In PDF
                     </DropdownMenuItem>
                   </Can>
                   <Can permission="quotations.update">
@@ -302,7 +302,7 @@ export function QuotationListPage() {
                       title={canCancel ? undefined : 'Báo giá đã hủy'}
                       onClick={() => setPendingTransition({ item: q, action: 'Cancel' })}
                     >
-                      <Ban className="mr-2 h-4 w-4" /> Hủy
+                      <Ban className="mr-2 h-4 w-4 text-red-600" /> Hủy
                     </DropdownMenuItem>
                   </Can>
                 </DropdownMenuContent>
@@ -352,7 +352,7 @@ export function QuotationListPage() {
         <Can permission="quotations.create">
           <Button asChild>
             <Link to="/quotations/new">
-              <Plus className="mr-2 h-4 w-4" /> Thêm báo giá
+              <Plus className="mr-2 h-4 w-4 text-cyan-600" /> Thêm báo giá
             </Link>
           </Button>
         </Can>
@@ -362,7 +362,7 @@ export function QuotationListPage() {
         <CardContent className="flex flex-1 min-h-0 flex-col gap-3 p-4">
           <div className="flex flex-wrap items-center gap-2">
             <div className="relative max-w-sm flex-1">
-              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
               <Input
                 placeholder="Tìm theo số / tên khách..."
                 value={search}
@@ -427,7 +427,7 @@ export function QuotationListPage() {
                 aria-live="polite"
               >
                 <div className="flex items-center gap-2 rounded-md border bg-background px-3 py-2 text-sm text-muted-foreground shadow-sm">
-                  <Loader2 className="h-4 w-4 animate-spin" />
+                  <Loader2 className="h-4 w-4 animate-spin text-blue-600" />
                   Đang tải...
                 </div>
               </div>

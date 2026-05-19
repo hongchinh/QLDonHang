@@ -437,7 +437,7 @@ export const LineItemsGrid = forwardRef<LineItemsGridHandle, Props>(function Lin
                         if (activeRowIndex === idx) setActiveRowIndex(null);
                       }}
                     >
-                      <Trash2 className="h-4 w-4" style={{ display: 'inline-block', verticalAlign: 'middle' }} />
+                      <Trash2 className="h-4 w-4 text-red-600" style={{ display: 'inline-block', verticalAlign: 'middle' }} />
                     </button>
                   </td>
                 </tr>
@@ -469,11 +469,11 @@ export const LineItemsGrid = forwardRef<LineItemsGridHandle, Props>(function Lin
 
       <div className="line-items-toolbar">
         <button type="button" className="lib-btn" onClick={addLine}>
-          <Plus className="h-4 w-4" />
+          <Plus className="h-4 w-4 text-cyan-600" />
           Thêm dòng
         </button>
         <button type="button" className="lib-btn lib-btn-danger" onClick={handleClearAll} disabled={fields.length === 0}>
-          <Trash2 className="h-4 w-4" />
+          <Trash2 className="h-4 w-4 text-red-600" />
           Xóa tất cả dòng
         </button>
       </div>

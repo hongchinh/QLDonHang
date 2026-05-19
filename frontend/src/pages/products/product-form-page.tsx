@@ -126,7 +126,7 @@ function ProductFormInner({
     <div className="space-y-4">
       <div className="flex items-center gap-2">
         <Button variant="ghost" size="icon" asChild aria-label="Quay lại">
-          <Link to="/products"><ArrowLeft className="h-4 w-4" /></Link>
+          <Link to="/products"><ArrowLeft className="h-4 w-4 text-slate-500" /></Link>
         </Button>
         <h1 className="text-2xl font-bold">{isEdit ? 'Chỉnh sửa hàng hóa' : 'Thêm hàng hóa'}</h1>
       </div>

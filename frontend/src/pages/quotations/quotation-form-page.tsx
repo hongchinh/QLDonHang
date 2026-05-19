@@ -343,7 +343,7 @@ function QuotationFormInner({
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex min-w-0 items-center gap-2">
           <Button variant="ghost" size="icon" asChild aria-label="Quay lại">
-            <Link to="/quotations"><ArrowLeft className="h-4 w-4" /></Link>
+            <Link to="/quotations"><ArrowLeft className="h-4 w-4 text-slate-500" /></Link>
           </Button>
           <h1 className="truncate text-xl font-bold">{isEdit ? 'Chỉnh sửa báo giá' : 'Thêm báo giá'}</h1>
           {isEdit && <StatusPill status={status} />}
@@ -373,7 +373,7 @@ function QuotationFormInner({
                   disabled={isSubmitBusy}
                   aria-busy={pendingSubmitIntent === 'save-print'}
                 >
-                  {pendingSubmitIntent === 'save-print' ? <ButtonLoader className="mr-2" /> : <Printer className="mr-2 h-4 w-4" />}
+                  {pendingSubmitIntent === 'save-print' ? <ButtonLoader className="mr-2" /> : <Printer className="mr-2 h-4 w-4 text-indigo-600" />}
                   {pendingSubmitIntent === 'save-print' ? 'Đang xử lý...' : 'Lưu và in'}
                 </Button>
                 <Button
@@ -409,7 +409,7 @@ function QuotationFormInner({
                 disabled={isSubmitBusy}
                 aria-busy={pendingButtonAction === 'send'}
               >
-                {pendingButtonAction === 'send' ? <ButtonLoader className="mr-2" /> : <Send className="mr-2 h-4 w-4" />}
+                {pendingButtonAction === 'send' ? <ButtonLoader className="mr-2" /> : <Send className="mr-2 h-4 w-4 text-cyan-600" />}
                 {pendingButtonAction === 'send' ? 'Đang gửi...' : 'Gửi'}
               </Button>
             )}
@@ -421,7 +421,7 @@ function QuotationFormInner({
                 disabled={isSubmitBusy}
                 aria-busy={pendingButtonAction === 'confirm'}
               >
-                {pendingButtonAction === 'confirm' ? <ButtonLoader className="mr-2" /> : <CheckCircle2 className="mr-2 h-4 w-4" />}
+                {pendingButtonAction === 'confirm' ? <ButtonLoader className="mr-2" /> : <CheckCircle2 className="mr-2 h-4 w-4 text-emerald-600" />}
                 {pendingButtonAction === 'confirm' ? 'Đang xác nhận...' : 'Xác nhận'}
               </Button>
             )}
@@ -441,7 +441,7 @@ function QuotationFormInner({
                 disabled={isSubmitBusy}
                 aria-busy={pendingButtonAction === 'cancel'}
               >
-                {pendingButtonAction === 'cancel' ? <ButtonLoader className="mr-2" /> : <Ban className="mr-2 h-4 w-4" />}
+                {pendingButtonAction === 'cancel' ? <ButtonLoader className="mr-2" /> : <Ban className="mr-2 h-4 w-4 text-red-600" />}
                 {pendingButtonAction === 'cancel' ? 'Đang hủy...' : 'Hủy'}
               </Button>
             )}
@@ -453,7 +453,7 @@ function QuotationFormInner({
                 disabled={isSubmitBusy || !initial}
                 aria-busy={pendingButtonAction === 'clone' || clone.isPending}
               >
-                {pendingButtonAction === 'clone' || clone.isPending ? <ButtonLoader className="mr-2" /> : <Copy className="mr-2 h-4 w-4" />}
+                {pendingButtonAction === 'clone' || clone.isPending ? <ButtonLoader className="mr-2" /> : <Copy className="mr-2 h-4 w-4 text-violet-600" />}
                 {pendingButtonAction === 'clone' || clone.isPending ? 'Đang clone...' : 'Clone'}
               </Button>
             </Can>
@@ -464,7 +464,7 @@ function QuotationFormInner({
               disabled={isSubmitBusy}
               aria-busy={pendingButtonAction === 'excel'}
             >
-              {pendingButtonAction === 'excel' ? <ButtonLoader className="mr-2" /> : <FileSpreadsheet className="mr-2 h-4 w-4" />}
+              {pendingButtonAction === 'excel' ? <ButtonLoader className="mr-2" /> : <FileSpreadsheet className="mr-2 h-4 w-4 text-emerald-700" />}
               {pendingButtonAction === 'excel' ? 'Đang xuất...' : 'Excel'}
             </Button>
             <Button
@@ -474,7 +474,7 @@ function QuotationFormInner({
               disabled={isSubmitBusy}
               aria-busy={pendingButtonAction === 'print'}
             >
-              {pendingButtonAction === 'print' ? <ButtonLoader className="mr-2" /> : <Printer className="mr-2 h-4 w-4" />}
+              {pendingButtonAction === 'print' ? <ButtonLoader className="mr-2" /> : <Printer className="mr-2 h-4 w-4 text-indigo-600" />}
               {pendingButtonAction === 'print' ? 'Đang mở PDF...' : 'In'}
             </Button>
               </>

@@ -73,7 +73,7 @@ export function CustomerFormFields({
       {showHeader && (
         <div className="flex items-center gap-2">
           <Button variant="ghost" size="icon" asChild aria-label="Quay lại">
-            <Link to="/customers"><ArrowLeft className="h-4 w-4" /></Link>
+            <Link to="/customers"><ArrowLeft className="h-4 w-4 text-slate-500" /></Link>
           </Button>
           <h1 className="text-2xl font-bold">{isEdit ? 'Chỉnh sửa khách hàng' : 'Thêm khách hàng'}</h1>
         </div>
