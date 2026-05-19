@@ -339,16 +339,68 @@ function QuotationFormInner({
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
+      <div className="sticky top-0 z-30 -mx-4 border-b bg-background/95 px-4 py-3 shadow-sm backdrop-blur md:-mx-3 md:px-3">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex min-w-0 items-center gap-2">
           <Button variant="ghost" size="icon" asChild aria-label="Quay lại">
             <Link to="/quotations"><ArrowLeft className="h-4 w-4" /></Link>
           </Button>
-          <h1 className="text-2xl font-bold">{isEdit ? 'Chỉnh sửa báo giá' : 'Thêm báo giá'}</h1>
+          <h1 className="truncate text-xl font-bold">{isEdit ? 'Chỉnh sửa báo giá' : 'Thêm báo giá'}</h1>
           {isEdit && <StatusPill status={status} />}
         </div>
-        {isEdit && (
-          <div className="flex gap-2">
+          <div className="flex flex-wrap justify-end gap-2">
+            <Button type="button" variant="outline" size="sm" asChild>
+              <Link to="/quotations">Quay lại danh sách báo giá</Link>
+            </Button>
+            {isEdit ? (
+              <Button
+                type="button"
+                size="sm"
+                onClick={() => submitWithIntent('save-exit')}
+                disabled={isSubmitBusy}
+                aria-busy={pendingSubmitIntent === 'save-exit' || submitting}
+              >
+                {(pendingSubmitIntent === 'save-exit' || submitting) && <ButtonLoader className="mr-2" />}
+                {pendingSubmitIntent === 'save-exit' || submitting ? 'Đang lưu...' : 'Cập nhật'}
+              </Button>
+            ) : (
+              <>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => submitWithIntent('save-print')}
+                  disabled={isSubmitBusy}
+                  aria-busy={pendingSubmitIntent === 'save-print'}
+                >
+                  {pendingSubmitIntent === 'save-print' ? <ButtonLoader className="mr-2" /> : <Printer className="mr-2 h-4 w-4" />}
+                  {pendingSubmitIntent === 'save-print' ? 'Đang xử lý...' : 'Lưu và in'}
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => submitWithIntent('save-exit')}
+                  disabled={isSubmitBusy}
+                  aria-busy={pendingSubmitIntent === 'save-exit'}
+                >
+                  {pendingSubmitIntent === 'save-exit' && <ButtonLoader className="mr-2" />}
+                  {pendingSubmitIntent === 'save-exit' ? 'Đang lưu...' : 'Lưu và thoát'}
+                </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  onClick={() => submitWithIntent('save-stay')}
+                  disabled={isSubmitBusy}
+                  aria-busy={pendingSubmitIntent === 'save-stay'}
+                >
+                  {pendingSubmitIntent === 'save-stay' && <ButtonLoader className="mr-2" />}
+                  {pendingSubmitIntent === 'save-stay' ? 'Đang lưu...' : 'Lưu tạm'}
+                </Button>
+              </>
+            )}
+            {isEdit && (
+              <>
             {status === 'Draft' && (
               <Button
                 variant="outline"
@@ -425,8 +477,10 @@ function QuotationFormInner({
               {pendingButtonAction === 'print' ? <ButtonLoader className="mr-2" /> : <Printer className="mr-2 h-4 w-4" />}
               {pendingButtonAction === 'print' ? 'Đang mở PDF...' : 'In'}
             </Button>
+              </>
+            )}
           </div>
-        )}
+        </div>
       </div>
 
       {isEdit && initial && !initial.canEdit && (
@@ -551,11 +605,10 @@ function QuotationFormInner({
         </div>
 
           <Card>
-            <CardHeader><CardTitle>Chi tiết hàng hóa</CardTitle></CardHeader>
-            <CardContent>
+            <CardContent className="p-0">
               <LineItemsGrid ref={lineItemsGridRef} form={form} />
               {form.formState.errors.lines && (
-                <p className="mt-2 text-sm text-destructive">
+                <p className="px-6 pb-4 pt-2 text-sm text-destructive">
                   {String((form.formState.errors.lines as { message?: string }).message ?? 'Báo giá chưa hợp lệ.')}
                 </p>
               )}
@@ -568,49 +621,6 @@ function QuotationFormInner({
             </div>
           )}
 
-          <div className="flex justify-end gap-2">
-            <Button type="button" variant="outline" asChild>
-              <Link to="/quotations">Hủy</Link>
-            </Button>
-            {isEdit ? (
-              <Button type="submit" disabled={isSubmitBusy} aria-busy={pendingSubmitIntent === 'save-exit' || submitting}>
-                {(pendingSubmitIntent === 'save-exit' || submitting) && <ButtonLoader className="mr-2" />}
-                {pendingSubmitIntent === 'save-exit' || submitting ? 'Đang lưu...' : 'Cập nhật'}
-              </Button>
-            ) : (
-              <>
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => submitWithIntent('save-print')}
-                  disabled={isSubmitBusy}
-                  aria-busy={pendingSubmitIntent === 'save-print'}
-                >
-                  {pendingSubmitIntent === 'save-print' ? <ButtonLoader className="mr-2" /> : <Printer className="mr-2 h-4 w-4" />}
-                  {pendingSubmitIntent === 'save-print' ? 'Đang xử lý...' : 'Lưu và in báo giá'}
-                </Button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => submitWithIntent('save-exit')}
-                  disabled={isSubmitBusy}
-                  aria-busy={pendingSubmitIntent === 'save-exit'}
-                >
-                  {pendingSubmitIntent === 'save-exit' && <ButtonLoader className="mr-2" />}
-                  {pendingSubmitIntent === 'save-exit' ? 'Đang lưu...' : 'Lưu và thoát'}
-                </Button>
-                <Button
-                  type="button"
-                  onClick={() => submitWithIntent('save-stay')}
-                  disabled={isSubmitBusy}
-                  aria-busy={pendingSubmitIntent === 'save-stay'}
-                >
-                  {pendingSubmitIntent === 'save-stay' && <ButtonLoader className="mr-2" />}
-                  {pendingSubmitIntent === 'save-stay' ? 'Đang lưu...' : 'Lưu tạm'}
-                </Button>
-              </>
-            )}
-          </div>
       </form>
 
       <CustomerQuickAddDialog

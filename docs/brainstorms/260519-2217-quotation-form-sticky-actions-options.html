@@ -1,0 +1,599 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Quotation Form Sticky Action Bar Options</title>
+  <style>
+    :root {
+      --bg: #f6f7f9;
+      --panel: #ffffff;
+      --border: #d8dee8;
+      --muted: #667085;
+      --text: #172033;
+      --brand: #1769aa;
+      --brand-strong: #0f4f82;
+      --danger: #b42318;
+      --warn: #b54708;
+      --success: #067647;
+      --shadow: 0 8px 22px rgba(16, 24, 40, 0.12);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: Arial, Helvetica, sans-serif;
+      font-size: 14px;
+    }
+
+    .app-header {
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      height: 52px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 24px;
+      background: #102a43;
+      color: white;
+      box-shadow: 0 1px 0 rgba(255, 255, 255, 0.08);
+    }
+
+    .app-header strong { font-size: 15px; }
+
+    .page {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 24px;
+    }
+
+    .intro {
+      margin-bottom: 18px;
+      padding: 16px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: var(--panel);
+    }
+
+    .intro h1 {
+      margin: 0 0 6px;
+      font-size: 22px;
+    }
+
+    .intro p {
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+
+    .option {
+      margin: 28px 0 48px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: #eef2f7;
+      overflow: clip;
+    }
+
+    .option-title {
+      padding: 16px;
+      background: #e8edf4;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .option-title h2 {
+      margin: 0 0 6px;
+      font-size: 18px;
+    }
+
+    .option-title p {
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.45;
+    }
+
+    .mock-page {
+      min-height: 920px;
+      padding: 16px;
+      background: var(--bg);
+    }
+
+    .sticky-bar {
+      position: sticky;
+      top: 52px;
+      z-index: 20;
+      margin: -16px -16px 16px;
+      padding: 12px 16px;
+      background: rgba(255, 255, 255, 0.96);
+      border-bottom: 1px solid var(--border);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(8px);
+    }
+
+    .bar-line {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .bar-left,
+    .bar-right,
+    .button-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .title-block {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 220px;
+    }
+
+    .title-block h3 {
+      margin: 0;
+      font-size: 18px;
+      white-space: nowrap;
+    }
+
+    .meta {
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .btn {
+      min-height: 34px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      padding: 7px 11px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      background: white;
+      color: var(--text);
+      font-weight: 600;
+      white-space: nowrap;
+      cursor: default;
+    }
+
+    .btn.primary {
+      border-color: var(--brand);
+      background: var(--brand);
+      color: white;
+    }
+
+    .btn.primary:hover { background: var(--brand-strong); }
+    .btn.danger { color: var(--danger); border-color: #f0b8b2; }
+    .btn.icon { width: 34px; padding: 0; font-size: 18px; }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      min-height: 24px;
+      padding: 3px 9px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 700;
+      background: #e6f4ea;
+      color: var(--success);
+      white-space: nowrap;
+    }
+
+    .pill.draft {
+      background: #fff7e6;
+      color: var(--warn);
+    }
+
+    .section-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 320px;
+      gap: 16px;
+      align-items: start;
+    }
+
+    .card {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+
+    .card h4 {
+      margin: 0;
+      padding: 12px 14px;
+      border-bottom: 1px solid var(--border);
+      font-size: 15px;
+    }
+
+    .card-body {
+      padding: 14px;
+    }
+
+    .form-grid {
+      display: grid;
+      grid-template-columns: 120px minmax(0, 1fr) 110px minmax(0, 1fr);
+      gap: 10px;
+      align-items: center;
+    }
+
+    label {
+      color: var(--muted);
+      font-weight: 600;
+    }
+
+    .input {
+      height: 34px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      background: #fff;
+      padding: 8px 10px;
+      color: #344054;
+    }
+
+    .totals {
+      display: grid;
+      gap: 10px;
+    }
+
+    .total-row {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      padding-bottom: 8px;
+      border-bottom: 1px dashed var(--border);
+    }
+
+    .total-row strong { font-size: 16px; }
+
+    .line-card {
+      margin-top: 16px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: white;
+    }
+
+    th,
+    td {
+      border-bottom: 1px solid #e4e7ec;
+      padding: 9px 10px;
+      text-align: left;
+      vertical-align: middle;
+      white-space: nowrap;
+    }
+
+    th {
+      position: sticky;
+      top: 112px;
+      z-index: 10;
+      background: #1769aa;
+      color: white;
+      font-size: 12px;
+    }
+
+    .opt2 th { top: 148px; }
+    .opt3 th { top: 156px; }
+
+    td.money {
+      text-align: right;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .two-line-bar {
+      display: grid;
+      gap: 10px;
+    }
+
+    .bar-subline {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding-top: 10px;
+      border-top: 1px solid #edf1f6;
+    }
+
+    .grouped-bar {
+      display: grid;
+      grid-template-columns: minmax(260px, 1fr) auto;
+      gap: 12px;
+      align-items: center;
+    }
+
+    .action-groups {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .action-group {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding-left: 10px;
+      border-left: 1px solid var(--border);
+    }
+
+    .action-group:first-child {
+      border-left: 0;
+      padding-left: 0;
+    }
+
+    .group-label {
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+
+    @media (max-width: 900px) {
+      .page { padding: 14px; }
+      .section-grid { grid-template-columns: 1fr; }
+      .bar-line,
+      .bar-subline,
+      .grouped-bar {
+        align-items: flex-start;
+        flex-direction: column;
+        display: flex;
+      }
+      .bar-right,
+      .action-groups { justify-content: flex-start; }
+      th,
+      .opt2 th,
+      .opt3 th { top: 190px; }
+      .form-grid { grid-template-columns: 110px minmax(0, 1fr); }
+    }
+  </style>
+</head>
+<body>
+  <header class="app-header">
+    <strong>QLDonHang</strong>
+    <span>Mockup sticky action bar</span>
+  </header>
+
+  <main class="page">
+    <section class="intro">
+      <h1>3 phương án thanh nút cố định cho form báo giá</h1>
+      <p>Mỗi phương án có vùng hàng hóa dài. Hãy scroll bên trong trang để xem thanh action bar bám phía trên khi người dùng xuống cuối báo giá.</p>
+    </section>
+
+    <section class="option opt1">
+      <div class="option-title">
+        <h2>Phương án 1: Một hàng compact</h2>
+        <p>Tất cả nút cùng một hàng với tiêu đề. Gọn nhất, hợp màn hình desktop rộng; khi hẹp sẽ tự wrap.</p>
+      </div>
+      <div class="mock-page">
+        <div class="sticky-bar">
+          <div class="bar-line">
+            <div class="title-block">
+              <button class="btn icon">‹</button>
+              <h3>Chỉnh sửa báo giá</h3>
+              <span class="pill draft">Nháp</span>
+            </div>
+            <div class="bar-right">
+              <button class="btn">Hủy</button>
+              <button class="btn primary">Cập nhật</button>
+              <button class="btn">Gửi</button>
+              <button class="btn danger">Hủy BG</button>
+              <button class="btn">Clone</button>
+              <button class="btn">Excel</button>
+              <button class="btn">In</button>
+            </div>
+          </div>
+        </div>
+        <div class="section-grid">
+          <div class="card">
+            <h4>Thông tin chung</h4>
+            <div class="card-body form-grid">
+              <label>Ngày báo giá</label><div class="input">2026-05-19</div>
+              <label>Ngày giao</label><div class="input">2026-05-20</div>
+              <label>Mã KH</label><div class="input">KH00023</div>
+              <label>Tên KH</label><div class="input">Công ty Minh Phát</div>
+              <label>Địa chỉ giao</label><div class="input">Quận 7, TP.HCM</div>
+              <label>Điện thoại</label><div class="input">0909 000 123</div>
+            </div>
+          </div>
+          <div class="card">
+            <h4>Tổng tiền</h4>
+            <div class="card-body totals">
+              <div class="total-row"><span>Tiền hàng</span><strong>48,500,000</strong></div>
+              <div class="total-row"><span>Tổng nhập</span><strong>35,200,000</strong></div>
+              <div class="total-row"><span>Tổng LN</span><strong>13,300,000</strong></div>
+              <div class="total-row"><span>Tổng</span><strong>48,500,000</strong></div>
+            </div>
+          </div>
+        </div>
+        <div class="card line-card">
+          <h4>Chi tiết hàng hóa</h4>
+          <table>
+            <thead><tr><th>Mã hàng</th><th>Tên hàng</th><th>ĐVT</th><th>SL</th><th>Đơn giá</th><th>Thành tiền</th><th>Lợi nhuận</th></tr></thead>
+            <tbody>
+              <tr><td>SP001</td><td>Tấm nhựa PVC trắng</td><td>Tấm</td><td>12</td><td class="money">850,000</td><td class="money">10,200,000</td><td class="money">2,100,000</td></tr>
+              <tr><td>SP002</td><td>Tấm mica trong 5mm</td><td>Tấm</td><td>8</td><td class="money">1,250,000</td><td class="money">10,000,000</td><td class="money">2,600,000</td></tr>
+              <tr><td>SP003</td><td>Phụ kiện gia công</td><td>Bộ</td><td>20</td><td class="money">160,000</td><td class="money">3,200,000</td><td class="money">800,000</td></tr>
+              <tr><td>SP004</td><td>Keo chuyên dụng</td><td>Thùng</td><td>4</td><td class="money">720,000</td><td class="money">2,880,000</td><td class="money">620,000</td></tr>
+              <tr><td>SP005</td><td>Thanh nhôm định hình</td><td>Cây</td><td>35</td><td class="money">180,000</td><td class="money">6,300,000</td><td class="money">1,450,000</td></tr>
+              <tr><td>SP006</td><td>Ốc vít inox</td><td>Hộp</td><td>10</td><td class="money">95,000</td><td class="money">950,000</td><td class="money">210,000</td></tr>
+              <tr><td>SP007</td><td>Dịch vụ cắt CNC</td><td>Lần</td><td>6</td><td class="money">550,000</td><td class="money">3,300,000</td><td class="money">1,100,000</td></tr>
+              <tr><td>SP008</td><td>Dịch vụ bo cạnh</td><td>Mét</td><td>80</td><td class="money">42,000</td><td class="money">3,360,000</td><td class="money">980,000</td></tr>
+              <tr><td>SP009</td><td>Phí đóng gói</td><td>Gói</td><td>5</td><td class="money">260,000</td><td class="money">1,300,000</td><td class="money">360,000</td></tr>
+              <tr><td>SP010</td><td>Vận chuyển nội thành</td><td>Chuyến</td><td>2</td><td class="money">900,000</td><td class="money">1,800,000</td><td class="money">300,000</td></tr>
+              <tr><td>SP011</td><td>Màng bảo vệ bề mặt</td><td>Cuộn</td><td>3</td><td class="money">680,000</td><td class="money">2,040,000</td><td class="money">540,000</td></tr>
+              <tr><td>SP012</td><td>Gia công lỗ bắt vít</td><td>Lỗ</td><td>120</td><td class="money">18,000</td><td class="money">2,160,000</td><td class="money">720,000</td></tr>
+              <tr><td>SP013</td><td>Tem nhãn sản phẩm</td><td>Bộ</td><td>50</td><td class="money">18,000</td><td class="money">900,000</td><td class="money">260,000</td></tr>
+              <tr><td>SP014</td><td>Kiểm định kích thước</td><td>Lần</td><td>2</td><td class="money">550,000</td><td class="money">1,100,000</td><td class="money">360,000</td></tr>
+              <tr><td>SP015</td><td>Phụ phí giao gấp</td><td>Lần</td><td>1</td><td class="money">1,010,000</td><td class="money">1,010,000</td><td class="money">900,000</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <section class="option opt2">
+      <div class="option-title">
+        <h2>Phương án 2: Hai hàng, tách tiêu đề và hành động</h2>
+        <p>Hàng trên nhận diện báo giá; hàng dưới là toàn bộ nút thao tác. Dễ đọc hơn khi nhiều button hoặc màn hình vừa.</p>
+      </div>
+      <div class="mock-page">
+        <div class="sticky-bar two-line-bar">
+          <div class="bar-line">
+            <div class="title-block">
+              <button class="btn icon">‹</button>
+              <h3>Thêm báo giá</h3>
+              <span class="pill draft">New</span>
+            </div>
+            <span class="meta">Ctrl+S: lưu tạm • Dữ liệu chưa lưu</span>
+          </div>
+          <div class="bar-subline">
+            <div class="button-row">
+              <button class="btn">Hủy</button>
+              <button class="btn">Lưu và in báo giá</button>
+              <button class="btn">Lưu và thoát</button>
+              <button class="btn primary">Lưu tạm</button>
+            </div>
+            <span class="meta">Các nút này thay thế cụm nút cuối form trong mode new</span>
+          </div>
+        </div>
+        <div class="section-grid">
+          <div class="card">
+            <h4>Thông tin chung</h4>
+            <div class="card-body form-grid">
+              <label>Ngày báo giá</label><div class="input">2026-05-19</div>
+              <label>Ngày giao</label><div class="input">2026-05-20</div>
+              <label>Mã KH</label><div class="input">Chọn khách hàng</div>
+              <label>Tên KH</label><div class="input">Nhập tên khách</div>
+              <label>Địa chỉ giao</label><div class="input">...</div>
+              <label>Điện thoại</label><div class="input">...</div>
+            </div>
+          </div>
+          <div class="card">
+            <h4>Tổng tiền</h4>
+            <div class="card-body totals">
+              <div class="total-row"><span>Tiền hàng</span><strong>0</strong></div>
+              <div class="total-row"><span>Tổng nhập</span><strong>0</strong></div>
+              <div class="total-row"><span>Tổng LN</span><strong>0</strong></div>
+              <div class="total-row"><span>Tổng</span><strong>0</strong></div>
+            </div>
+          </div>
+        </div>
+        <div class="card line-card">
+          <h4>Chi tiết hàng hóa</h4>
+          <table>
+            <thead><tr><th>Mã hàng</th><th>Tên hàng</th><th>ĐVT</th><th>SL</th><th>Đơn giá</th><th>Thành tiền</th><th>Ghi chú</th></tr></thead>
+            <tbody>
+              <tr><td>SP001</td><td>Dòng hàng mẫu 01</td><td>Tấm</td><td>1</td><td class="money">100,000</td><td class="money">100,000</td><td></td></tr>
+              <tr><td>SP002</td><td>Dòng hàng mẫu 02</td><td>Tấm</td><td>2</td><td class="money">100,000</td><td class="money">200,000</td><td></td></tr>
+              <tr><td>SP003</td><td>Dòng hàng mẫu 03</td><td>Tấm</td><td>3</td><td class="money">100,000</td><td class="money">300,000</td><td></td></tr>
+              <tr><td>SP004</td><td>Dòng hàng mẫu 04</td><td>Tấm</td><td>4</td><td class="money">100,000</td><td class="money">400,000</td><td></td></tr>
+              <tr><td>SP005</td><td>Dòng hàng mẫu 05</td><td>Tấm</td><td>5</td><td class="money">100,000</td><td class="money">500,000</td><td></td></tr>
+              <tr><td>SP006</td><td>Dòng hàng mẫu 06</td><td>Tấm</td><td>6</td><td class="money">100,000</td><td class="money">600,000</td><td></td></tr>
+              <tr><td>SP007</td><td>Dòng hàng mẫu 07</td><td>Tấm</td><td>7</td><td class="money">100,000</td><td class="money">700,000</td><td></td></tr>
+              <tr><td>SP008</td><td>Dòng hàng mẫu 08</td><td>Tấm</td><td>8</td><td class="money">100,000</td><td class="money">800,000</td><td></td></tr>
+              <tr><td>SP009</td><td>Dòng hàng mẫu 09</td><td>Tấm</td><td>9</td><td class="money">100,000</td><td class="money">900,000</td><td></td></tr>
+              <tr><td>SP010</td><td>Dòng hàng mẫu 10</td><td>Tấm</td><td>10</td><td class="money">100,000</td><td class="money">1,000,000</td><td></td></tr>
+              <tr><td>SP011</td><td>Dòng hàng mẫu 11</td><td>Tấm</td><td>11</td><td class="money">100,000</td><td class="money">1,100,000</td><td></td></tr>
+              <tr><td>SP012</td><td>Dòng hàng mẫu 12</td><td>Tấm</td><td>12</td><td class="money">100,000</td><td class="money">1,200,000</td><td></td></tr>
+              <tr><td>SP013</td><td>Dòng hàng mẫu 13</td><td>Tấm</td><td>13</td><td class="money">100,000</td><td class="money">1,300,000</td><td></td></tr>
+              <tr><td>SP014</td><td>Dòng hàng mẫu 14</td><td>Tấm</td><td>14</td><td class="money">100,000</td><td class="money">1,400,000</td><td></td></tr>
+              <tr><td>SP015</td><td>Dòng hàng mẫu 15</td><td>Tấm</td><td>15</td><td class="money">100,000</td><td class="money">1,500,000</td><td></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <section class="option opt3">
+      <div class="option-title">
+        <h2>Phương án 3: Chia nhóm nghiệp vụ</h2>
+        <p>Phù hợp edit mode nhiều quyền/nhiều trạng thái. Nút được chia thành nhóm Lưu, Trạng thái, Xuất/In để tránh nhìn rối.</p>
+      </div>
+      <div class="mock-page">
+        <div class="sticky-bar grouped-bar">
+          <div class="title-block">
+            <button class="btn icon">‹</button>
+            <div>
+              <h3>BG260519-0007</h3>
+              <div class="meta">Công ty Minh Phát • Chủ sở hữu: Nguyễn An</div>
+            </div>
+            <span class="pill">Đã gửi</span>
+          </div>
+          <div class="action-groups">
+            <div class="action-group">
+              <span class="group-label">Lưu</span>
+              <button class="btn">Hủy</button>
+              <button class="btn primary">Cập nhật</button>
+            </div>
+            <div class="action-group">
+              <span class="group-label">Trạng thái</span>
+              <button class="btn">Xác nhận</button>
+              <button class="btn danger">Hủy BG</button>
+            </div>
+            <div class="action-group">
+              <span class="group-label">Khác</span>
+              <button class="btn">Clone</button>
+              <button class="btn">Excel</button>
+              <button class="btn">In</button>
+            </div>
+          </div>
+        </div>
+        <div class="section-grid">
+          <div class="card">
+            <h4>Thông tin chung</h4>
+            <div class="card-body form-grid">
+              <label>Ngày báo giá</label><div class="input">2026-05-19</div>
+              <label>Ngày giao</label><div class="input">2026-05-20</div>
+              <label>Mã KH</label><div class="input">KH00023</div>
+              <label>Tên KH</label><div class="input">Công ty Minh Phát</div>
+              <label>Ghi chú GH</label><div class="input">Giao giờ hành chính</div>
+              <label>Ghi chú NB</label><div class="input">Khách ưu tiên</div>
+            </div>
+          </div>
+          <div class="card">
+            <h4>Tổng tiền</h4>
+            <div class="card-body totals">
+              <div class="total-row"><span>Tiền hàng</span><strong>48,500,000</strong></div>
+              <div class="total-row"><span>Tổng nhập</span><strong>35,200,000</strong></div>
+              <div class="total-row"><span>Tổng LN</span><strong>13,300,000</strong></div>
+              <div class="total-row"><span>Tổng</span><strong>48,500,000</strong></div>
+            </div>
+          </div>
+        </div>
+        <div class="card line-card">
+          <h4>Chi tiết hàng hóa</h4>
+          <table>
+            <thead><tr><th>Mã hàng</th><th>Tên hàng</th><th>ĐVT</th><th>SL</th><th>Đơn giá</th><th>Thành tiền</th><th>Lợi nhuận</th></tr></thead>
+            <tbody>
+              <tr><td>SP001</td><td>Tấm nhựa PVC trắng</td><td>Tấm</td><td>12</td><td class="money">850,000</td><td class="money">10,200,000</td><td class="money">2,100,000</td></tr>
+              <tr><td>SP002</td><td>Tấm mica trong 5mm</td><td>Tấm</td><td>8</td><td class="money">1,250,000</td><td class="money">10,000,000</td><td class="money">2,600,000</td></tr>
+              <tr><td>SP003</td><td>Phụ kiện gia công</td><td>Bộ</td><td>20</td><td class="money">160,000</td><td class="money">3,200,000</td><td class="money">800,000</td></tr>
+              <tr><td>SP004</td><td>Keo chuyên dụng</td><td>Thùng</td><td>4</td><td class="money">720,000</td><td class="money">2,880,000</td><td class="money">620,000</td></tr>
+              <tr><td>SP005</td><td>Thanh nhôm định hình</td><td>Cây</td><td>35</td><td class="money">180,000</td><td class="money">6,300,000</td><td class="money">1,450,000</td></tr>
+              <tr><td>SP006</td><td>Ốc vít inox</td><td>Hộp</td><td>10</td><td class="money">95,000</td><td class="money">950,000</td><td class="money">210,000</td></tr>
+              <tr><td>SP007</td><td>Dịch vụ cắt CNC</td><td>Lần</td><td>6</td><td class="money">550,000</td><td class="money">3,300,000</td><td class="money">1,100,000</td></tr>
+              <tr><td>SP008</td><td>Dịch vụ bo cạnh</td><td>Mét</td><td>80</td><td class="money">42,000</td><td class="money">3,360,000</td><td class="money">980,000</td></tr>
+              <tr><td>SP009</td><td>Phí đóng gói</td><td>Gói</td><td>5</td><td class="money">260,000</td><td class="money">1,300,000</td><td class="money">360,000</td></tr>
+              <tr><td>SP010</td><td>Vận chuyển nội thành</td><td>Chuyến</td><td>2</td><td class="money">900,000</td><td class="money">1,800,000</td><td class="money">300,000</td></tr>
+              <tr><td>SP011</td><td>Màng bảo vệ bề mặt</td><td>Cuộn</td><td>3</td><td class="money">680,000</td><td class="money">2,040,000</td><td class="money">540,000</td></tr>
+              <tr><td>SP012</td><td>Gia công lỗ bắt vít</td><td>Lỗ</td><td>120</td><td class="money">18,000</td><td class="money">2,160,000</td><td class="money">720,000</td></tr>
+              <tr><td>SP013</td><td>Tem nhãn sản phẩm</td><td>Bộ</td><td>50</td><td class="money">18,000</td><td class="money">900,000</td><td class="money">260,000</td></tr>
+              <tr><td>SP014</td><td>Kiểm định kích thước</td><td>Lần</td><td>2</td><td class="money">550,000</td><td class="money">1,100,000</td><td class="money">360,000</td></tr>
+              <tr><td>SP015</td><td>Phụ phí giao gấp</td><td>Lần</td><td>1</td><td class="money">1,010,000</td><td class="money">1,010,000</td><td class="money">900,000</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+  </main>
+</body>
+</html>

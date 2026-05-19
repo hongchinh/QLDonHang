@@ -216,6 +216,15 @@ export const LineItemsGrid = forwardRef<LineItemsGridHandle, Props>(function Lin
 
   return (
     <div className="space-y-2">
+      <div className="line-items-heading">
+        <h3>Chi tiết hàng hóa</h3>
+        <div className="line-items-totals" aria-label="Tổng chi tiết hàng hóa">
+          <strong>Tổng thành tiền bán: {vnd.format(totals.sales)}</strong>
+          {canViewCost && <strong>Tổng thành tiền nhập: {vnd.format(totals.cost)}</strong>}
+          {canViewCost && <strong>Tổng lợi nhuận: {vnd.format(totals.profit)}</strong>}
+        </div>
+      </div>
+
       {/* eslint-disable-next-line jsx-a11y/no-static-element-interactions -- Grid wrapper owns keyboard shortcuts for editable child inputs. */}
       <div ref={wrapRef} className="accounting-grid-wrap" tabIndex={-1} onKeyDown={handleGridKeyDown}>
         <table className="accounting-grid">
@@ -455,11 +464,6 @@ export const LineItemsGrid = forwardRef<LineItemsGridHandle, Props>(function Lin
           <span><span className="kbd">Ctrl</span>+<span className="kbd">S</span> Lưu</span>
           <span><span className="kbd">Insert</span> Thêm dòng</span>
           <span><span className="kbd">Ctrl</span>+<span className="kbd">Delete</span> Xóa dòng</span>
-        </div>
-        <div className="line-items-totals" aria-label="Tổng chi tiết hàng hóa">
-          <strong>Tổng thành tiền bán: {vnd.format(totals.sales)}</strong>
-          {canViewCost && <strong>Tổng thành tiền nhập: {vnd.format(totals.cost)}</strong>}
-          {canViewCost && <strong>Tổng lợi nhuận: {vnd.format(totals.profit)}</strong>}
         </div>
       </div>
 
