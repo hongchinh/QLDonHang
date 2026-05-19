@@ -1,10 +1,10 @@
-# Phần mềm Quản lý Đơn hàng - Báo giá - Bàn giao - Báo cáo
+# QLDonHang - Phần mềm Quản lý Báo giá
 
-Hệ thống quản lý quy trình bán hàng theo luồng:
+Hệ thống quản lý quy trình báo giá theo luồng:
 
-> Báo giá → Xác nhận → Lập đơn hàng → In chứng từ → Bàn giao / Phiếu xuất kho → Thanh toán → Công nợ → Báo cáo
+> Draft → Sent → Confirmed → Cancelled
 
-> **Scope hiện tại**: Foundation only — toàn bộ khung kiến trúc, auth/RBAC, danh mục khách hàng làm reference. Các module nghiệp vụ còn lại (Hàng hóa, Báo giá, Đơn hàng, Bàn giao, Thanh toán, Báo cáo) đã được khai báo permission/route nhưng cần phát triển tiếp theo pattern reference.
+> **Scope hiện tại**: báo giá là chứng từ trung tâm. Hệ thống đã có auth/RBAC, khách hàng, hàng hóa, báo giá, export Excel/PDF, dashboard, báo cáo doanh thu, quản lý user/role, cấu hình mẫu báo giá theo user, branding, notification và global search.
 
 ---
 
@@ -18,6 +18,7 @@ Hệ thống quản lý quy trình bán hàng theo luồng:
 - FluentValidation, Mapster, Serilog, Swagger
 - BCrypt password hashing
 - Global exception handler → standard API response
+- ClosedXML + LibreOffice cho export Excel/PDF báo giá
 
 **Frontend**
 
@@ -50,8 +51,8 @@ QLDonHang/
 │   ├── package.json
 │   ├── vite.config.ts
 │   └── src/
-│       ├── components/    # ui/ (shadcn-style), layout/
-│       ├── features/      # auth/, customers/  ← business hooks + API
+│       ├── components/    # ui/, layout/, auth helpers, customer autocomplete
+│       ├── features/      # auth, customers, products, quotations, dashboard, reports, admin...
 │       ├── pages/         # route components
 │       ├── routes/        # ProtectedRoute
 │       ├── stores/        # zustand stores
@@ -73,7 +74,13 @@ QLDonHang/
 docker compose up -d postgres
 ```
 
-(Tùy chọn) Mở pgAdmin tại http://localhost:5050 (admin@qldh.local / admin).
+`docker-compose.yml` tạo database `qldonhang` với user `qldh` / `qldh_dev_password`. Cấu hình `appsettings.Development.json` hiện đang trỏ tới `Host=localhost;Port=5432;Database=qldonhang_test;Username=postgres;Password=1`, vì vậy khi dùng database từ docker-compose cần override connection string trước khi chạy backend:
+
+```powershell
+$env:ConnectionStrings__Default="Host=localhost;Port=5432;Database=qldonhang;Username=qldh;Password=qldh_dev_password"
+```
+
+(Tùy chọn) pgAdmin map ở http://localhost:5050 (admin@qldh.local / admin). Backend development cũng dùng port 5050, nên chỉ chạy pgAdmin khi không chạy backend trên port mặc định hoặc đổi một trong hai port.
 
 ### 2) Backend
 
@@ -86,7 +93,7 @@ dotnet run --project src/OrderMgmt.WebApi
 
 - API: http://localhost:5050
 - Swagger: http://localhost:5050/swagger
-- Health: http://localhost:5050/health
+- Health: http://localhost:5050/health/live và http://localhost:5050/health/ready
 
 Khi khởi động, nếu `Database:AutoMigrateAndSeed = true` (mặc định), hệ thống sẽ tự động:
 
@@ -168,11 +175,13 @@ Khi lỗi:
 
 ---
 
-## Thêm một module mới (pattern reference: Customer)
+## Thêm một module mới
 
-**Backend** (mỗi bước là 1 file mới):
+Theo pattern hiện tại, module nghiệp vụ nên đi qua Domain → Application → Infrastructure → WebApi, sau đó thêm frontend feature/page tương ứng.
 
-1. `Domain/Entities/<Module>/Foo.cs` — entity kế thừa `BaseEntity`.
+**Backend**:
+
+1. `Domain/Entities/<Module>/Foo.cs` — entity kế thừa `BaseEntity` nếu là nghiệp vụ soft-delete/audit.
 2. `Infrastructure/Persistence/Configurations/FooConfiguration.cs` — EF mapping + indexes + query filter.
 3. `Application/Common/Interfaces/IAppDbContext.cs` — thêm `DbSet<Foo>`.
 4. `Application/<Module>/Foos/Models/FooDto.cs` — DTO + request types.
@@ -196,11 +205,13 @@ Khi lỗi:
 
 ---
 
-## Tài liệu nghiệp vụ
+## Tài liệu
 
 - [docs/SUMMARY.md](docs/SUMMARY.md) — index tài liệu.
-- [docs/bd/phan-tich-yeu-cau-phan-mem-quan-ly-don-hang.md](docs/bd/phan-tich-yeu-cau-phan-mem-quan-ly-don-hang.md) — toàn bộ phân tích yêu cầu (23 chương).
-- [docs/architecture/](docs/architecture/) — sẽ bổ sung sơ đồ kiến trúc hệ thống.
+- [docs/architecture/system-architecture.md](docs/architecture/system-architecture.md) — kiến trúc hệ thống hiện tại.
+- [docs/codebase/directory-structure.md](docs/codebase/directory-structure.md) — cấu trúc repo và module.
+- [docs/code-standard/conventions.md](docs/code-standard/conventions.md) — conventions backend/frontend.
+- [docs/project-pdr/product-goals.md](docs/project-pdr/product-goals.md) — mục tiêu sản phẩm và phạm vi.
 
 ---
 

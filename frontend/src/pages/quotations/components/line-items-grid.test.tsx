@@ -6,6 +6,7 @@ import type {
   QuotationFormValues,
   QuotationLineFormValues,
 } from '@/features/quotations/schema';
+import { useAuthStore } from '@/stores/auth-store';
 
 vi.mock('./product-typeahead-cell', () => ({
   ProductTypeaheadCell: ({ value, onChange }: { value: string; onChange: (value: string) => void }) => (
@@ -26,6 +27,7 @@ const baseLines: QuotationLineFormValues[] = [
     pricingMode: 'PerUnit',
     quantity: 2,
     unitPrice: 100,
+    unitCost: 60,
   },
   {
     sortOrder: 1,
@@ -35,8 +37,24 @@ const baseLines: QuotationLineFormValues[] = [
     pricingMode: 'PerUnit',
     quantity: 1,
     unitPrice: 50,
+    unitCost: 30,
   },
 ];
+
+function setCostPermission(enabled: boolean) {
+  useAuthStore.setState({
+    accessToken: 'token',
+    expiresAt: '2099-01-01T00:00:00Z',
+    user: {
+      id: '11111111-1111-1111-1111-111111111111',
+      username: 'tester',
+      email: 'tester@example.com',
+      fullName: 'Tester',
+      roles: [],
+      permissions: enabled ? ['quotations.view_cost'] : [],
+    },
+  });
+}
 
 function renderGrid(lines: QuotationLineFormValues[] = baseLines) {
   function Harness() {
@@ -64,12 +82,40 @@ function renderGrid(lines: QuotationLineFormValues[] = baseLines) {
 }
 
 describe('LineItemsGrid', () => {
+  beforeEach(() => {
+    setCostPermission(false);
+  });
+
   it('renders existing rows and subtotal footer', () => {
     renderGrid();
 
     expect(screen.getByDisplayValue('Alpha')).toBeInTheDocument();
     expect(screen.getByDisplayValue('Beta')).toBeInTheDocument();
-    expect(screen.getByText(/Tổng:\s*250\s*₫/)).toBeInTheDocument();
+    expect(screen.getByText(/Tổng thành tiền bán:\s*250\s*₫/)).toBeInTheDocument();
+    expect(screen.queryByText(/Tổng thành tiền nhập:/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/Tổng lợi nhuận:/)).not.toBeInTheDocument();
+  });
+
+  it('renders sales amount header and hides cost columns without cost permission', () => {
+    renderGrid();
+
+    expect(screen.getByRole('columnheader', { name: 'Đơn giá bán' })).toBeInTheDocument();
+    expect(screen.getByRole('columnheader', { name: 'Thành tiền bán' })).toBeInTheDocument();
+    expect(screen.queryByRole('columnheader', { name: 'Đơn giá nhập' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('columnheader', { name: 'Thành tiền nhập' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('columnheader', { name: 'Lợi nhuận' })).not.toBeInTheDocument();
+  });
+
+  it('renders cost and profit columns with cost permission', () => {
+    setCostPermission(true);
+    renderGrid();
+
+    expect(screen.getByRole('columnheader', { name: 'Đơn giá nhập' })).toBeInTheDocument();
+    expect(screen.getByRole('columnheader', { name: 'Thành tiền nhập' })).toBeInTheDocument();
+    expect(screen.getByRole('columnheader', { name: 'Lợi nhuận' })).toBeInTheDocument();
+    expect(screen.getAllByLabelText('Đơn giá nhập')).toHaveLength(2);
+    expect(screen.getByText(/Tổng thành tiền nhập:\s*150\s*₫/)).toBeInTheDocument();
+    expect(screen.getByText(/Tổng lợi nhuận:\s*100\s*₫/)).toBeInTheDocument();
   });
 
   it('adds a row when clicking add line', async () => {

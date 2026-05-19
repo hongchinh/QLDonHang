@@ -15,7 +15,7 @@
 
 .accounting-grid {
   width: 100%;
-  min-width: 1180px;
+  min-width: 1360px;
   border-collapse: collapse;
   table-layout: fixed;
   font-family: inherit;
@@ -227,6 +227,14 @@
 .line-items-footer strong {
   color: hsl(var(--foreground));
   font-size: 13px;
+}
+
+.line-items-footer .line-items-totals {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 12px;
+  text-align: right;
 }
 
 .line-items-footer .keyboard-guide {

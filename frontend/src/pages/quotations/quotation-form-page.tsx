@@ -33,6 +33,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
+import { ButtonLoader } from '@/components/ui/button-loader';
 import { Can } from '@/components/auth/can';
 import { getErrorMessage } from '@/lib/api-client';
 import { toast } from '@/lib/use-toast';
@@ -40,6 +41,9 @@ import { StatusPill } from './components/status-pill';
 import { LineItemsGrid, type LineItemsGridHandle } from './components/line-items-grid';
 import { TotalsPanel } from './components/totals-panel';
 import type { HeaderLike, LineLike } from './utils/compute-line';
+
+type QuotationSubmitIntent = 'save-exit' | 'save-stay' | 'save-print';
+type QuotationButtonAction = 'send' | 'confirm' | 'cancel' | 'clone' | 'print' | 'excel';
 
 export function QuotationFormPage() {
   const { id } = useParams<{ id: string }>();
@@ -68,7 +72,7 @@ export function QuotationFormPage() {
       submitting={submitting}
       submitError={submitError}
       hasSubmitError={hasError}
-      onSubmit={async (parsed) => {
+      onSubmit={async (parsed, intent) => {
         try {
           if (isEdit && id) {
             await update.mutateAsync({ id, data: toPayload(parsed) });
@@ -77,7 +81,18 @@ export function QuotationFormPage() {
           } else {
             const result = await create.mutateAsync(toPayload(parsed));
             toast({ variant: 'success', title: 'Đã tạo báo giá', description: result.code });
-            navigate('/quotations');
+            if (intent === 'save-print') {
+              try {
+                await openQuotationPdfInNewTab(result.id);
+              } catch (err) {
+                toast({ variant: 'destructive', title: 'Không mở được PDF', description: getErrorMessage(err) });
+              }
+              navigate(`/quotations/${result.id}`);
+            } else if (intent === 'save-stay') {
+              navigate(`/quotations/${result.id}`);
+            } else {
+              navigate('/quotations');
+            }
           }
         } catch (err) {
           toast({ variant: 'destructive', title: 'Không thể lưu', description: getErrorMessage(err) });
@@ -93,19 +108,11 @@ export function QuotationFormPage() {
         }
       }}
       onPrint={async () => {
-        if (!id || !isEdit || !quotation) return;
+        if (!id || !isEdit) return;
         try {
-          const blob = await quotationsApi.downloadPdf(id);
-          const url = URL.createObjectURL(blob);
-          const a = document.createElement('a');
-          a.href = url;
-          a.download = `BaoGia_${quotation.code}.pdf`;
-          document.body.appendChild(a);
-          a.click();
-          a.remove();
-          URL.revokeObjectURL(url);
+          await openQuotationPdfInNewTab(id);
         } catch (err) {
-          toast({ variant: 'destructive', title: 'Không tải được PDF', description: getErrorMessage(err) });
+          toast({ variant: 'destructive', title: 'Không mở được PDF', description: getErrorMessage(err) });
         }
       }}
       onDownloadExcel={async () => {
@@ -128,6 +135,13 @@ export function QuotationFormPage() {
   );
 }
 
+async function openQuotationPdfInNewTab(quotationId: string) {
+  const blob = await quotationsApi.downloadPdf(quotationId);
+  const url = URL.createObjectURL(blob);
+  window.open(url, '_blank', 'noopener,noreferrer');
+  window.setTimeout(() => URL.revokeObjectURL(url), 60_000);
+}
+
 interface InnerProps {
   isEdit: boolean;
   initial?: Quotation;
@@ -135,10 +149,10 @@ interface InnerProps {
   submitting: boolean;
   submitError: string;
   hasSubmitError: boolean;
-  onSubmit: (parsed: QuotationFormParsed) => void;
-  onTransition: (action: QuotationAction) => void;
-  onPrint: () => void;
-  onDownloadExcel: () => void;
+  onSubmit: (parsed: QuotationFormParsed, intent: QuotationSubmitIntent) => Promise<void>;
+  onTransition: (action: QuotationAction) => Promise<void>;
+  onPrint: () => Promise<void>;
+  onDownloadExcel: () => Promise<void>;
 }
 
 function QuotationFormInner({
@@ -183,7 +197,10 @@ function QuotationFormInner({
   );
   const [quickAddOpen, setQuickAddOpen] = useState(false);
   const [confirmCloneOpen, setConfirmCloneOpen] = useState(false);
+  const [pendingSubmitIntent, setPendingSubmitIntent] = useState<QuotationSubmitIntent | null>(null);
+  const [pendingButtonAction, setPendingButtonAction] = useState<QuotationButtonAction | null>(null);
   const lineItemsGridRef = useRef<LineItemsGridHandle>(null);
+  const isSubmitBusy = submitting || clone.isPending || pendingSubmitIntent != null || pendingButtonAction != null;
 
   const GENERAL_INFO_FIELD_ORDER = [
     'quotationDate',
@@ -220,8 +237,25 @@ function QuotationFormInner({
     if (e.defaultPrevented) return;
     if (e.key === 's' && e.ctrlKey && !e.shiftKey && !e.altKey) {
       e.preventDefault();
-      form.handleSubmit(onSubmit)();
+      submitWithIntent(isEdit ? 'save-exit' : 'save-stay');
     }
+  }
+
+  function submitWithIntent(intent: QuotationSubmitIntent) {
+    if (isSubmitBusy) return;
+    setPendingSubmitIntent(intent);
+    void form.handleSubmit(
+      async (parsed) => {
+        try {
+          await onSubmit(parsed, intent);
+        } finally {
+          setPendingSubmitIntent(null);
+        }
+      },
+      () => {
+        setPendingSubmitIntent(null);
+      },
+    )();
   }
 
   useEffect(() => {
@@ -265,24 +299,29 @@ function QuotationFormInner({
     setSelectedCustomerView(null);
   }
 
-  function doClone() {
+  async function doClone() {
     if (!initial) return;
-    clone.mutate(initial.id, {
-      onSuccess: (cloned) => {
-        toast({ variant: 'success', title: 'Đã clone báo giá', description: cloned.code });
-        navigateInner(`/quotations/${cloned.id}`);
-      },
-      onError: (err) =>
-        toast({ variant: 'destructive', title: 'Không thể clone', description: getErrorMessage(err) }),
-    });
+    try {
+      const cloned = await clone.mutateAsync(initial.id);
+      toast({ variant: 'success', title: 'Đã clone báo giá', description: cloned.code });
+      navigateInner(`/quotations/${cloned.id}`);
+    } catch (err) {
+      toast({ variant: 'destructive', title: 'Không thể clone', description: getErrorMessage(err) });
+    }
   }
 
   function handleCloneClick() {
     if (form.formState.isDirty) {
       setConfirmCloneOpen(true);
     } else {
-      doClone();
+      runButtonAction('clone', doClone);
     }
+  }
+
+  function runButtonAction(action: QuotationButtonAction, task: () => Promise<void>) {
+    if (isSubmitBusy) return;
+    setPendingButtonAction(action);
+    void task().finally(() => setPendingButtonAction(null));
   }
 
   const lineLikes: LineLike[] = (watchedLines ?? []).map(toLineLike);
@@ -311,13 +350,27 @@ function QuotationFormInner({
         {isEdit && (
           <div className="flex gap-2">
             {status === 'Draft' && (
-              <Button variant="outline" size="sm" onClick={() => onTransition('Send')} disabled={submitting}>
-                <Send className="mr-2 h-4 w-4" />Gửi
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => runButtonAction('send', () => onTransition('Send'))}
+                disabled={isSubmitBusy}
+                aria-busy={pendingButtonAction === 'send'}
+              >
+                {pendingButtonAction === 'send' ? <ButtonLoader className="mr-2" /> : <Send className="mr-2 h-4 w-4" />}
+                {pendingButtonAction === 'send' ? 'Đang gửi...' : 'Gửi'}
               </Button>
             )}
             {status === 'Sent' && (
-              <Button variant="outline" size="sm" onClick={() => onTransition('Confirm')} disabled={submitting}>
-                <CheckCircle2 className="mr-2 h-4 w-4" />Xác nhận
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => runButtonAction('confirm', () => onTransition('Confirm'))}
+                disabled={isSubmitBusy}
+                aria-busy={pendingButtonAction === 'confirm'}
+              >
+                {pendingButtonAction === 'confirm' ? <ButtonLoader className="mr-2" /> : <CheckCircle2 className="mr-2 h-4 w-4" />}
+                {pendingButtonAction === 'confirm' ? 'Đang xác nhận...' : 'Xác nhận'}
               </Button>
             )}
             {(status === 'Draft' || status === 'Sent' || status === 'Confirmed') && (
@@ -331,11 +384,13 @@ function QuotationFormInner({
                     );
                     if (!ok) return;
                   }
-                  onTransition('Cancel');
+                  runButtonAction('cancel', () => onTransition('Cancel'));
                 }}
-                disabled={submitting}
+                disabled={isSubmitBusy}
+                aria-busy={pendingButtonAction === 'cancel'}
               >
-                <Ban className="mr-2 h-4 w-4" />Hủy
+                {pendingButtonAction === 'cancel' ? <ButtonLoader className="mr-2" /> : <Ban className="mr-2 h-4 w-4" />}
+                {pendingButtonAction === 'cancel' ? 'Đang hủy...' : 'Hủy'}
               </Button>
             )}
             <Can permission="quotations.create">
@@ -343,16 +398,32 @@ function QuotationFormInner({
                 variant="outline"
                 size="sm"
                 onClick={handleCloneClick}
-                disabled={submitting || clone.isPending || !initial}
+                disabled={isSubmitBusy || !initial}
+                aria-busy={pendingButtonAction === 'clone' || clone.isPending}
               >
-                <Copy className="mr-2 h-4 w-4" />Clone
+                {pendingButtonAction === 'clone' || clone.isPending ? <ButtonLoader className="mr-2" /> : <Copy className="mr-2 h-4 w-4" />}
+                {pendingButtonAction === 'clone' || clone.isPending ? 'Đang clone...' : 'Clone'}
               </Button>
             </Can>
-            <Button variant="outline" size="sm" onClick={onDownloadExcel} disabled={submitting}>
-              <FileSpreadsheet className="mr-2 h-4 w-4" />Excel
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => runButtonAction('excel', onDownloadExcel)}
+              disabled={isSubmitBusy}
+              aria-busy={pendingButtonAction === 'excel'}
+            >
+              {pendingButtonAction === 'excel' ? <ButtonLoader className="mr-2" /> : <FileSpreadsheet className="mr-2 h-4 w-4" />}
+              {pendingButtonAction === 'excel' ? 'Đang xuất...' : 'Excel'}
             </Button>
-            <Button variant="outline" size="sm" onClick={onPrint} disabled={submitting}>
-              <Printer className="mr-2 h-4 w-4" />In
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => runButtonAction('print', onPrint)}
+              disabled={isSubmitBusy}
+              aria-busy={pendingButtonAction === 'print'}
+            >
+              {pendingButtonAction === 'print' ? <ButtonLoader className="mr-2" /> : <Printer className="mr-2 h-4 w-4" />}
+              {pendingButtonAction === 'print' ? 'Đang mở PDF...' : 'In'}
             </Button>
           </div>
         )}
@@ -381,14 +452,22 @@ function QuotationFormInner({
               }}
               disabled={clone.isPending}
             >
-              Clone
+              {clone.isPending && <ButtonLoader className="mr-2" />}
+              {clone.isPending ? 'Đang clone...' : 'Clone'}
             </Button>
           )}
         </div>
       )}
 
       {/* eslint-disable-next-line jsx-a11y/no-noninteractive-element-interactions -- Form-level Ctrl+S shortcut delegates to the existing submit handler. */}
-      <form onSubmit={form.handleSubmit(onSubmit)} onKeyDown={handleFormKeyDown} className="space-y-4">
+      <form
+        onSubmit={(e) => {
+          e.preventDefault();
+          submitWithIntent(isEdit ? 'save-exit' : 'save-stay');
+        }}
+        onKeyDown={handleFormKeyDown}
+        className="space-y-4"
+      >
         <div className="grid gap-4 lg:grid-cols-[1fr_320px] items-stretch">
           <Card>
             <CardHeader><CardTitle>Thông tin chung</CardTitle></CardHeader>
@@ -493,9 +572,44 @@ function QuotationFormInner({
             <Button type="button" variant="outline" asChild>
               <Link to="/quotations">Hủy</Link>
             </Button>
-            <Button type="submit" disabled={submitting}>
-              {submitting ? 'Đang lưu...' : isEdit ? 'Cập nhật' : 'Tạo mới'}
-            </Button>
+            {isEdit ? (
+              <Button type="submit" disabled={isSubmitBusy} aria-busy={pendingSubmitIntent === 'save-exit' || submitting}>
+                {(pendingSubmitIntent === 'save-exit' || submitting) && <ButtonLoader className="mr-2" />}
+                {pendingSubmitIntent === 'save-exit' || submitting ? 'Đang lưu...' : 'Cập nhật'}
+              </Button>
+            ) : (
+              <>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => submitWithIntent('save-print')}
+                  disabled={isSubmitBusy}
+                  aria-busy={pendingSubmitIntent === 'save-print'}
+                >
+                  {pendingSubmitIntent === 'save-print' ? <ButtonLoader className="mr-2" /> : <Printer className="mr-2 h-4 w-4" />}
+                  {pendingSubmitIntent === 'save-print' ? 'Đang xử lý...' : 'Lưu và in báo giá'}
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => submitWithIntent('save-exit')}
+                  disabled={isSubmitBusy}
+                  aria-busy={pendingSubmitIntent === 'save-exit'}
+                >
+                  {pendingSubmitIntent === 'save-exit' && <ButtonLoader className="mr-2" />}
+                  {pendingSubmitIntent === 'save-exit' ? 'Đang lưu...' : 'Lưu và thoát'}
+                </Button>
+                <Button
+                  type="button"
+                  onClick={() => submitWithIntent('save-stay')}
+                  disabled={isSubmitBusy}
+                  aria-busy={pendingSubmitIntent === 'save-stay'}
+                >
+                  {pendingSubmitIntent === 'save-stay' && <ButtonLoader className="mr-2" />}
+                  {pendingSubmitIntent === 'save-stay' ? 'Đang lưu...' : 'Lưu tạm'}
+                </Button>
+              </>
+            )}
           </div>
       </form>
 
@@ -526,7 +640,7 @@ function QuotationFormInner({
         loading={clone.isPending}
         onConfirm={() => {
           setConfirmCloneOpen(false);
-          doClone();
+          void doClone();
         }}
       />
     </div>
@@ -569,7 +683,10 @@ function toFormDefaults(q?: Quotation): QuotationFormValues {
       sheetCount: l.sheetCount ?? '',
       quantity: l.quantity,
       unitPrice: l.unitPrice,
+      lineTotal: l.lineTotal,
       unitCost: l.unitCost ?? '',
+      lineCost: l.lineCost ?? '',
+      lineProfit: l.lineProfit ?? '',
       note: l.note ?? '',
     })) as QuotationLineFormValues[],
   };

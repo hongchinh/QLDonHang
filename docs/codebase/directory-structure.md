@@ -1,79 +1,151 @@
 # Directory Structure
 
+## Repository Layout
+
 ```
 QLDonHang/
 ├── backend/
 │   ├── OrderMgmt.sln
-│   ├── Directory.Build.props          # pinned EF/AspNetCore/Npgsql versions
-│   ├── .editorconfig                  # code style + analyzer severities
+│   ├── Directory.Build.props
+│   ├── .editorconfig
 │   ├── src/
-│   │   ├── OrderMgmt.Domain/          # Entities, BaseEntity, DomainException, Permissions/RoleCodes
-│   │   │   ├── Common/                # BaseEntity, IEntity, ISoftDeletable, IAuditableEntity, DomainException, AuthenticationException
-│   │   │   ├── Constants/             # Permissions (per-module codes), RoleCodes (ADMIN/SALES/...)
-│   │   │   ├── Entities/
-│   │   │   │   ├── Catalog/           # Customer, CustomerAddress, Product, ProductGroup, Unit
-│   │   │   │   └── Identity/          # User, Role, Permission, UserRole, RolePermission, RefreshToken
-│   │   │   └── Enums/                 # CustomerStatus, OrderStatus, PaymentStatus, ...
-│   │   ├── OrderMgmt.Application/     # Use-case services, validators, DTOs, ports
-│   │   │   ├── Common/                # IAppDbContext, ICurrentUser, IDateTime, ApiResponse, PagedResult, PageRequestValidator
-│   │   │   ├── Catalog/Customers/     # Service + Models + Validators + Mappings (Mapster IRegister)
-│   │   │   └── Identity/              # IAuthService, AuthService, IRefreshTokenService (port), Validators
-│   │   ├── OrderMgmt.Infrastructure/  # EF Core, JWT, BCrypt, RefreshTokenService, Seed
-│   │   │   ├── Persistence/
-│   │   │   │   ├── AppDbContext.cs    # cascade soft-delete + audit
-│   │   │   │   ├── Configurations/    # EF entity type configurations
-│   │   │   │   ├── Migrations/        # EF migrations (CreatePermissionsTable, AddFilteredUniqueIndexes, AddRefreshTokens)
-│   │   │   │   └── Seed/              # DbSeeder + SeedOptions (advisory-lock guarded)
-│   │   │   ├── Identity/              # JwtTokenGenerator, RefreshTokenService, BcryptPasswordHasher, JwtOptions, RefreshTokenOptions
-│   │   │   └── Services/              # SystemDateTime
-│   │   └── OrderMgmt.WebApi/          # Controllers, middleware, Program
-│   │       ├── Authorization/         # PermissionPolicyProvider, HasPermissionAttribute, RateLimitPolicies
-│   │       ├── Controllers/           # ApiControllerBase, AuthController, CustomersController
-│   │       ├── Middleware/            # GlobalExceptionMiddleware, LoggingContextMiddleware
-│   │       ├── Services/              # CurrentUser (claims-based ICurrentUser)
-│   │       ├── appsettings.json       # production defaults (secrets blank — provide via env)
-│   │       ├── appsettings.Development.json
-│   │       └── Program.cs
-│   └── tests/
-│       └── OrderMgmt.IntegrationTests/   # xUnit + WebApplicationFactory + Testcontainers Postgres
-├── frontend/                            # React + Vite (separate review)
-├── docs/                                 # Documentation (this folder)
-├── docker-compose.yml                    # Postgres 16 + pgAdmin for dev
-├── AGENTS.md                             # Cross-agent protocols
-└── CLAUDE.md                             # Claude-specific protocols
+│   │   ├── OrderMgmt.Domain/
+│   │   ├── OrderMgmt.Application/
+│   │   ├── OrderMgmt.Infrastructure/
+│   │   └── OrderMgmt.WebApi/
+│   ├── tests/OrderMgmt.IntegrationTests/
+│   └── Dockerfile
+├── frontend/
+│   ├── src/
+│   ├── package.json
+│   ├── vite.config.ts
+│   └── Dockerfile
+├── docs/
+├── docker-compose.yml
+├── AGENTS.md
+└── README.md
 ```
 
-## Backend layering rules
+## Backend Projects
 
-- **Domain** depends on nothing.
-- **Application** depends only on Domain; defines ports (`IAppDbContext`, `IDateTime`, `ICurrentUser`, `IJwtTokenGenerator`, `IPasswordHasher`, `IRefreshTokenService`).
-- **Infrastructure** implements those ports (EF Core, BCrypt, JWT, Npgsql).
-- **WebApi** composes everything via DI and exposes HTTP endpoints.
+| Project | Responsibility |
+| ------- | -------------- |
+| `OrderMgmt.Domain` | Entities, enums, permissions, role codes and domain exceptions |
+| `OrderMgmt.Application` | Use-case services, DTOs, validators, Mapster registrations and application ports |
+| `OrderMgmt.Infrastructure` | EF Core persistence, migrations, seed, JWT/BCrypt/refresh-token implementations, Excel/PDF export and system services |
+| `OrderMgmt.WebApi` | Controllers, middleware, authorization policies, current-user adapter and startup configuration |
+| `OrderMgmt.IntegrationTests` | xUnit integration tests using `WebApplicationFactory` and Testcontainers PostgreSQL |
 
-## Entry points
+## Backend Modules
+
+| Area | Key Paths |
+| ---- | --------- |
+| Catalog customers | `Application/Catalog/Customers`, `Domain/Entities/Catalog/Customer.cs`, `CustomersController.cs` |
+| Catalog products | `Application/Catalog/Products`, `Domain/Entities/Catalog/Product.cs`, `ProductsController.cs` |
+| Lookups | `Application/Catalog/Lookups`, `LookupsController.cs` |
+| Auth | `Application/Identity`, `Infrastructure/Identity`, `AuthController.cs` |
+| Admin users | `Application/Identity/Admin`, `AdminUsersController.cs` |
+| Roles/permissions | `Application/Identity/Admin`, `AdminRolesController.cs`, `Domain/Constants/Permissions.cs` |
+| User quotation settings | `Application/Identity/UserSettings`, `AdminUserSettingsController.cs`, `MeQuotationSettingsController.cs` |
+| Quotations | `Application/Sales/Quotations`, `Domain/Entities/Sales`, `QuotationsController.cs` |
+| Dashboard | `Application/Sales/Quotations/Services`, `DashboardController.cs` |
+| Reports | `Application/Reports/SalesRevenue`, `ReportsController.cs` |
+| Search | `Application/Search`, `SearchController.cs` |
+| Branding | `Domain/Branding`, `Application/Branding`, `SettingsController.cs` |
+| Notifications | `Domain/Notifications`, `Application/Notifications`, `NotificationsController.cs` |
+
+## API Controllers
+
+| Controller | Main Routes |
+| ---------- | ----------- |
+| `AuthController` | `/api/auth/login`, `/refresh`, `/logout`, `/me` |
+| `CustomersController` | `/api/customers`, `/api/customers/search` |
+| `ProductsController` | `/api/products`, `/api/products/search` |
+| `QuotationsController` | `/api/quotations`, status transition, Excel/PDF export, clone, owner transfer |
+| `DashboardController` | `/api/dashboard/summary`, revenue series, top lists, recent activity, sales leaderboard |
+| `ReportsController` | `/api/reports/sales-revenue` |
+| `AdminUsersController` | `/api/admin/users` CRUD, reset password and status updates |
+| `AdminRolesController` | `/api/admin/roles`, `/api/admin/permissions` |
+| `AdminUserSettingsController` | `/api/admin/user-settings/{userId}`, bulk quotation transfer |
+| `MeQuotationSettingsController` | `/api/me/quotation-settings` and personal template upload/download/delete |
+| `SettingsController` | `/api/settings/branding`, logo read/update |
+| `NotificationsController` | `/api/notifications`, unread count, read actions |
+| `SearchController` | `/api/search/global` |
+| `LookupsController` | `/api/lookups/product-groups`, `/api/lookups/units` |
+
+## Frontend Structure
+
+```
+frontend/src/
+├── components/
+│   ├── auth/                    # permission-aware UI helpers
+│   ├── customer-autocomplete/   # quotation customer picker + quick add
+│   ├── layout/                  # app shell, header, sidebar, search, notifications
+│   └── ui/                      # shadcn-style primitives
+├── features/
+│   ├── admin-roles/
+│   ├── admin-user-settings/
+│   ├── admin-users/
+│   ├── auth/
+│   ├── branding/
+│   ├── customers/
+│   ├── dashboard/
+│   ├── me-settings/
+│   ├── notifications/
+│   ├── products/
+│   ├── quotations/
+│   ├── reports/sales-revenue/
+│   └── search/
+├── pages/
+│   ├── admin/
+│   ├── customers/
+│   ├── products/
+│   ├── quotations/
+│   ├── reports/
+│   └── settings/
+├── routes/
+├── stores/
+├── lib/
+├── styles/
+└── test/
+```
+
+Feature folders generally contain `api.ts`, `hooks.ts`, `types.ts`, optional `schema.ts` and `keys.ts`. Pages compose those hooks with reusable UI components.
+
+## Route Entry Points
 
 | Concern | File |
-|---|---|
-| App startup | [src/OrderMgmt.WebApi/Program.cs](../../backend/src/OrderMgmt.WebApi/Program.cs) |
-| Test entry | [tests/OrderMgmt.IntegrationTests/](../../backend/tests/OrderMgmt.IntegrationTests/) |
-| DB seed (dev) | [src/OrderMgmt.Infrastructure/Persistence/Seed/DbSeeder.cs](../../backend/src/OrderMgmt.Infrastructure/Persistence/Seed/DbSeeder.cs) — gated by `Database:AutoMigrateAndSeed` |
+| ------- | ---- |
+| Backend startup | [../../backend/src/OrderMgmt.WebApi/Program.cs](../../backend/src/OrderMgmt.WebApi/Program.cs) |
+| Backend configuration | [../../backend/src/OrderMgmt.WebApi/appsettings.json](../../backend/src/OrderMgmt.WebApi/appsettings.json) |
+| Development backend config | [../../backend/src/OrderMgmt.WebApi/appsettings.Development.json](../../backend/src/OrderMgmt.WebApi/appsettings.Development.json) |
+| EF DbContext | [../../backend/src/OrderMgmt.Infrastructure/Persistence/AppDbContext.cs](../../backend/src/OrderMgmt.Infrastructure/Persistence/AppDbContext.cs) |
+| Seed | [../../backend/src/OrderMgmt.Infrastructure/Persistence/Seed/DbSeeder.cs](../../backend/src/OrderMgmt.Infrastructure/Persistence/Seed/DbSeeder.cs) |
+| Frontend startup | [../../frontend/src/main.tsx](../../frontend/src/main.tsx) |
+| Frontend routes | [../../frontend/src/App.tsx](../../frontend/src/App.tsx) |
+| API client | [../../frontend/src/lib/api-client.ts](../../frontend/src/lib/api-client.ts) |
+| Auth store | [../../frontend/src/stores/auth-store.ts](../../frontend/src/stores/auth-store.ts) |
 
-## Runtime artifacts (gitignored)
+## Runtime Artifacts
 
 | Path | Notes |
-|---|---|
-| `backend/src/OrderMgmt.WebApi/logs/qldh-{date}.log` | Serilog rolling file, 14-day retention |
-| `backend/**/bin/`, `backend/**/obj/` | Build outputs |
+| ---- | ----- |
+| `backend/src/OrderMgmt.WebApi/logs/qldh-{date}.log` | Serilog rolling file logs |
+| `backend/src/OrderMgmt.WebApi/templates/template_baogia.xlsx` | Default quotation Excel template |
+| `backend/src/OrderMgmt.WebApi/templates/users/{userId}.xlsx` | Per-user quotation templates |
+| `backend/**/bin`, `backend/**/obj` | .NET build outputs |
+| `frontend/dist` | Vite production build output |
 
-## Required configuration (production)
-
-Provide via env vars / user-secrets:
+## Required Production Configuration
 
 | Key | Purpose |
-|---|---|
-| `ConnectionStrings__Default` | Npgsql connection string |
-| `Jwt__Secret` | ≥ 32 chars symmetric key |
-| `Jwt__Issuer`, `Jwt__Audience` | (have defaults but override per env) |
-| `RefreshToken__ExpiresInDays` | optional, default 14 |
-| `Seed__AdminPassword` | only needed first-run when seeding admin user |
-| `Cors__Origins__0`, `Cors__Origins__1`, ... | allowed origins |
+| --- | ------- |
+| `ConnectionStrings__Default` | PostgreSQL/Npgsql connection string |
+| `Jwt__Secret` | Symmetric signing key, at least 32 characters |
+| `Jwt__Issuer`, `Jwt__Audience` | JWT metadata |
+| `Seed__AdminPassword` | Initial admin password when production seed should create admin |
+| `Database__AutoMigrateAndSeed` | Enables automatic migration/seed; usually `false` outside controlled deployments |
+| `Cors__Origins__0`, `Cors__Origins__1` | Allowed frontend origins |
+| `AuthCookie__SameSite`, `AuthCookie__Secure` | Refresh cookie behavior |
+| `QuotationExport__LibreOfficePath` | Optional explicit LibreOffice executable path for PDF conversion |
+| `VITE_API_BASE_URL` | Frontend build-time backend API URL |

@@ -77,6 +77,8 @@ export interface QuotationListItem {
   discount: number;
   freight: number;
   total: number;
+  totalCost?: number | null;
+  grossProfit?: number | null;
   status: QuotationStatus;
   confirmedAt?: string;
   ownerUserId: string;
@@ -92,6 +94,8 @@ export interface QuotationListAggregates {
   discount: number;
   freight: number;
   total: number;
+  totalCost?: number | null;
+  grossProfit?: number | null;
 }
 
 export interface QuotationOwnerOption {

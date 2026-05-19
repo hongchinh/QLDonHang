@@ -6,7 +6,7 @@ import {
   useReactTable,
   type ColumnDef,
 } from '@tanstack/react-table';
-import { Plus, Pencil, Printer, Ban, Search, Copy, MoreHorizontal, Send, CheckCircle2 } from 'lucide-react';
+import { Plus, Pencil, Printer, Ban, Search, Copy, MoreHorizontal, Send, CheckCircle2, Loader2 } from 'lucide-react';
 import {
   useQuotations,
   useTransitionQuotation,
@@ -62,6 +62,10 @@ function formatDate(iso?: string) {
   return d.toLocaleDateString('vi-VN');
 }
 
+function formatNullableCurrency(value?: number | null) {
+  return typeof value === 'number' ? currency.format(value) : '—';
+}
+
 async function downloadPdf(id: string, code: string) {
   const blob = await quotationsApi.downloadPdf(id);
   const url = URL.createObjectURL(blob);
@@ -85,6 +89,7 @@ export function QuotationListPage() {
   const [ownerIdsParam, setOwnerIdsParam] = useSearchParamString('ownerUserIds');
   const debouncedSearch = useDebouncedValue(search, 300);
   const hasViewAll = useAuthStore((s) => s.hasPermission('quotations.view_all'));
+  const canViewCost = useAuthStore((s) => s.hasPermission('quotations.view_cost'));
 
   const pageSize = (PAGE_SIZE_OPTIONS as readonly number[]).includes(sizeParam)
     ? sizeParam
@@ -110,7 +115,7 @@ export function QuotationListPage() {
     action: QuotationAction;
   } | null>(null);
 
-  const { data, isLoading, isError, error } = useQuotations({
+  const { data, isLoading, isFetching, isError, error } = useQuotations({
     page,
     pageSize,
     search: debouncedSearch || undefined,
@@ -131,7 +136,21 @@ export function QuotationListPage() {
     }));
   }, [ownersQuery.data]);
 
-  const allTotals = data?.aggregates ?? { subtotal: 0, discount: 0, freight: 0, total: 0 };
+  const allTotals = useMemo(() => {
+    const items = data?.items ?? [];
+    return {
+      subtotal: data?.aggregates?.subtotal ?? 0,
+      discount: data?.aggregates?.discount ?? 0,
+      freight: data?.aggregates?.freight ?? 0,
+      total: data?.aggregates?.total ?? 0,
+      totalCost: canViewCost
+        ? data?.aggregates?.totalCost ?? items.reduce((sum, item) => sum + (item.totalCost ?? 0), 0)
+        : null,
+      grossProfit: canViewCost
+        ? data?.aggregates?.grossProfit ?? items.reduce((sum, item) => sum + (item.grossProfit ?? 0), 0)
+        : null,
+    };
+  }, [canViewCost, data?.aggregates, data?.items]);
 
   const columns = useMemo<ColumnDef<QuotationListItem>[]>(
     () => [
@@ -171,6 +190,24 @@ export function QuotationListPage() {
           <span className="tabular-nums">{currency.format(row.original.total)}</span>
         ),
       },
+      ...(canViewCost
+        ? [
+            {
+              header: 'Tổng nhập',
+              accessorKey: 'totalCost',
+              cell: ({ row }: { row: { original: QuotationListItem } }) => (
+                <span className="tabular-nums">{formatNullableCurrency(row.original.totalCost)}</span>
+              ),
+            } as ColumnDef<QuotationListItem>,
+            {
+              header: 'Tổng LN',
+              accessorKey: 'grossProfit',
+              cell: ({ row }: { row: { original: QuotationListItem } }) => (
+                <span className="tabular-nums">{formatNullableCurrency(row.original.grossProfit)}</span>
+              ),
+            } as ColumnDef<QuotationListItem>,
+          ]
+        : []),
       {
         header: 'Trạng thái',
         accessorKey: 'status',
@@ -275,7 +312,7 @@ export function QuotationListPage() {
         },
       },
     ],
-    [hasViewAll, clone, navigate],
+    [canViewCost, hasViewAll, clone, navigate],
   );
 
   const table = useReactTable({
@@ -382,7 +419,19 @@ export function QuotationListPage() {
             </div>
           )}
 
-          <div className="flex-1 min-h-0 rounded-md border overflow-hidden">
+          <div className="relative flex-1 min-h-0 rounded-md border overflow-hidden">
+            {isFetching && !isLoading && (
+              <div
+                className="absolute inset-0 z-20 flex items-center justify-center bg-background/60 backdrop-blur-[1px]"
+                role="status"
+                aria-live="polite"
+              >
+                <div className="flex items-center gap-2 rounded-md border bg-background px-3 py-2 text-sm text-muted-foreground shadow-sm">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Đang tải...
+                </div>
+              </div>
+            )}
             <Table containerClassName="h-full">
               <TableHeader className="sticky top-0 z-10">
                 {table.getHeaderGroups().map((hg) => (
@@ -433,7 +482,8 @@ export function QuotationListPage() {
               setSizeParam(next);
               if (page !== 1) setPage(1);
             }}
-            loading={isLoading}
+            showCostProfit={canViewCost}
+            loading={isFetching}
             errored={isError}
           />
         </CardContent>

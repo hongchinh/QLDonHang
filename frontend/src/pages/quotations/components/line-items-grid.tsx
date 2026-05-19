@@ -188,7 +188,20 @@ export const LineItemsGrid = forwardRef<LineItemsGridHandle, Props>(function Lin
     moveLineFocus(current, e.shiftKey ? -1 : 1);
   }
 
-  const subtotal = rows.reduce((sum, line) => sum + computeLineTotal(toLineLike(line)), 0);
+  const totals = rows.reduce(
+    (acc, line) => {
+      const lineLike = toLineLike(line);
+      const lineTotal = computeLineTotal(lineLike);
+      const lineCost = computeLineCost(lineLike);
+      acc.sales += lineTotal;
+      if (lineCost != null) {
+        acc.cost += lineCost;
+        acc.profit += lineTotal - lineCost;
+      }
+      return acc;
+    },
+    { sales: 0, cost: 0, profit: 0 },
+  );
 
   function clearAllLines() {
     for (let i = fields.length - 1; i >= 0; i--) remove(i);
@@ -214,8 +227,10 @@ export const LineItemsGrid = forwardRef<LineItemsGridHandle, Props>(function Lin
             <col style={{ width: 220 }} />
             <col style={{ width: 82 }} />
             <col style={{ width: 104 }} />
-            <col style={{ width: 104 }} />
             <col style={{ width: 122 }} />
+            {canViewCost && <col style={{ width: 112 }} />}
+            {canViewCost && <col style={{ width: 122 }} />}
+            {canViewCost && <col style={{ width: 122 }} />}
             <col style={{ width: 42 }} />
           </colgroup>
           <thead>
@@ -226,9 +241,11 @@ export const LineItemsGrid = forwardRef<LineItemsGridHandle, Props>(function Lin
               <th>ĐVT</th>
               <th>D × R × Dày × Tấm</th>
               <th>SL</th>
-              <th>Đơn giá</th>
-              {canViewCost && <th>Giá vốn</th>}
-              <th>Thành tiền</th>
+              <th>Đơn giá bán</th>
+              <th>Thành tiền bán</th>
+              {canViewCost && <th>Đơn giá nhập</th>}
+              {canViewCost && <th>Thành tiền nhập</th>}
+              {canViewCost && <th>Lợi nhuận</th>}
               <th></th>
             </tr>
           </thead>
@@ -237,6 +254,7 @@ export const LineItemsGrid = forwardRef<LineItemsGridHandle, Props>(function Lin
               const line = rows[idx] ?? (field as unknown as QuotationLineFormValues);
               const lineTotal = computeLineTotal(toLineLike(line));
               const lineCost = computeLineCost(toLineLike(line));
+              const lineProfit = lineCost != null ? lineTotal - lineCost : undefined;
               const lengthDisabled = isLineFocusFieldDisabled(line, 'length');
               const widthDisabled = isLineFocusFieldDisabled(line, 'width');
               const thicknessDisabled = isLineFocusFieldDisabled(line, 'thickness');
@@ -362,12 +380,15 @@ export const LineItemsGrid = forwardRef<LineItemsGridHandle, Props>(function Lin
                       className="cell-input cell-number"
                       type="text"
                       inputMode="decimal"
-                      aria-label="Đơn giá"
+                      aria-label="Đơn giá bán"
                       value={editingMoneyCellId === getLineCellId('unit-price', idx) ? (line.unitPrice ?? '') : formatMoneyForDisplay(line.unitPrice)}
                       onFocus={() => setEditingMoneyCellId(getLineCellId('unit-price', idx))}
                       onBlur={() => setEditingMoneyCellId(null)}
                       onChange={(e) => setLineField(idx, 'unitPrice', (parseMoneyInput(e.target.value) ?? 0) as never)}
                     />
+                  </td>
+                  <td className="cell-number">
+                    <div className="cell-readonly cell-number tabular-nums">{fmt.format(lineTotal)}</div>
                   </td>
                   {canViewCost && (
                     <td className="cell-number">
@@ -376,7 +397,7 @@ export const LineItemsGrid = forwardRef<LineItemsGridHandle, Props>(function Lin
                         className="cell-input cell-number"
                         type="text"
                         inputMode="decimal"
-                        aria-label="Giá vốn"
+                        aria-label="Đơn giá nhập"
                         value={editingMoneyCellId === getLineCellId('unit-cost', idx) ? (line.unitCost ?? '') : formatMoneyForDisplay(line.unitCost)}
                         onFocus={() => setEditingMoneyCellId(getLineCellId('unit-cost', idx))}
                         onBlur={() => setEditingMoneyCellId(null)}
@@ -384,14 +405,20 @@ export const LineItemsGrid = forwardRef<LineItemsGridHandle, Props>(function Lin
                       />
                     </td>
                   )}
-                  <td className="cell-number">
-                    <div className="cell-total-stack">
-                      <div className="cell-total-main tabular-nums">{fmt.format(lineTotal)}</div>
-                      {canViewCost && lineCost != null && (
-                        <div className="cell-total-meta tabular-nums">LN: {fmt.format(lineTotal - lineCost)}</div>
-                      )}
-                    </div>
-                  </td>
+                  {canViewCost && (
+                    <td className="cell-number">
+                      <div className="cell-readonly cell-number tabular-nums">
+                        {lineCost == null ? '' : fmt.format(lineCost)}
+                      </div>
+                    </td>
+                  )}
+                  {canViewCost && (
+                    <td className="cell-number">
+                      <div className="cell-readonly cell-number tabular-nums">
+                        {lineProfit == null ? '' : fmt.format(lineProfit)}
+                      </div>
+                    </td>
+                  )}
                   <td className="cell-action">
                     <button
                       type="button"
@@ -409,7 +436,7 @@ export const LineItemsGrid = forwardRef<LineItemsGridHandle, Props>(function Lin
             })}
             {fields.length === 0 && (
               <tr>
-                <td colSpan={canViewCost ? 10 : 9} className="empty-placeholder">
+                <td colSpan={canViewCost ? 12 : 9} className="empty-placeholder">
                   Chưa có dòng nào.{' '}
                   <button type="button" className="empty-placeholder-link" onClick={addLine}>
                     Bấm để thêm dòng đầu tiên
@@ -429,7 +456,11 @@ export const LineItemsGrid = forwardRef<LineItemsGridHandle, Props>(function Lin
           <span><span className="kbd">Insert</span> Thêm dòng</span>
           <span><span className="kbd">Ctrl</span>+<span className="kbd">Delete</span> Xóa dòng</span>
         </div>
-        <strong>Tổng: {vnd.format(subtotal)}</strong>
+        <div className="line-items-totals" aria-label="Tổng chi tiết hàng hóa">
+          <strong>Tổng thành tiền bán: {vnd.format(totals.sales)}</strong>
+          {canViewCost && <strong>Tổng thành tiền nhập: {vnd.format(totals.cost)}</strong>}
+          {canViewCost && <strong>Tổng lợi nhuận: {vnd.format(totals.profit)}</strong>}
+        </div>
       </div>
 
       <div className="line-items-toolbar">

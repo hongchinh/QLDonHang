@@ -1,29 +1,53 @@
-# QLDonHang — Product Goals
+# QLDonHang Product Goals
 
-## Mục tiêu sản phẩm
-QLDonHang là phần mềm quản lý báo giá. Báo giá là chứng từ duy nhất xuyên suốt vòng đời bán hàng. Khi báo giá đạt trạng thái Đã xác nhận, hệ thống ghi nhận doanh thu cho nhân viên kinh doanh sở hữu báo giá đó.
+## Product Goal
 
-## Đối tượng sử dụng
-- **Sale**: tạo báo giá, gửi khách, theo dõi trạng thái, xác nhận khi khách OK.
-- **Quản lý/Admin**: xem báo cáo doanh thu toàn hệ thống, hủy báo giá đã xác nhận khi cần.
+QLDonHang is a quotation-first sales management system. The quotation is the primary document through the sales lifecycle; revenue is recognized when a quotation reaches `Confirmed`.
 
-## Phạm vi
-- Lập, sửa, in báo giá (PDF/Excel).
-- Theo dõi trạng thái báo giá: `Draft → Sent → Confirmed → Cancelled`.
-- Khi flip sang Confirmed: snapshot thời điểm + người xác nhận, ghi nhận doanh thu cho owner sale.
-- Báo cáo doanh thu theo sale, group theo `ConfirmedAt`, hiển thị Total (gồm thuế + cước) và Subtotal (thuần).
-- Phân quyền: Sale tự confirm; chỉ admin/manager hủy báo giá đã Confirmed.
-- Quản lý danh mục khách hàng, hàng hóa.
+## Target Users
 
-## Non-goals
-- Không quản lý đơn hàng (Order) như chứng từ riêng.
-- Không quản lý bàn giao, phiếu xuất kho, biên bản bàn giao.
-- Không tracking thanh toán nhiều đợt, công nợ, tạm ứng.
-- Không báo cáo công nợ, báo cáo giao hàng.
-- Không gửi báo giá qua email/Zalo trực tiếp từ phần mềm (giai đoạn sau).
-- Không quản lý tồn kho.
+- **Sales**: create quotations, maintain customer/product details, send quotations, confirm successful deals and manage their own quotation templates.
+- **Manager/Admin**: view cross-user quotations, transfer ownership, manage users/roles, configure lock rules, cancel confirmed quotations and monitor revenue.
+- **Accounting/Reporting users**: view revenue reports when granted report permissions.
 
-## Tài liệu liên quan
-- Brainstorm: [../brainstorms/260515-1249-quotation-only-pivot/SUMMARY.md](../brainstorms/260515-1249-quotation-only-pivot/SUMMARY.md)
-- BD doc cũ (đã archive): [../bd/archived/phan-tich-yeu-cau-phan-mem-quan-ly-don-hang.md](../bd/archived/phan-tich-yeu-cau-phan-mem-quan-ly-don-hang.md)
+## Current Scope
+
+- Authentication with JWT access tokens and refresh-token rotation.
+- Role and permission based authorization.
+- Customer and product catalog management.
+- Product group and unit lookups.
+- Quotation CRUD with line items, status transitions and owner scoping.
+- Quotation Excel/PDF export using a default or per-user Excel template.
+- Per-user quotation settings, including lock-at status and template upload.
+- Admin user CRUD, password reset, account status update and bulk quotation transfer.
+- Role-permission matrix management.
+- Dashboard summary, revenue series, top customers/products, recent activity and sales leaderboard.
+- Sales revenue report.
+- Global search, system branding and notifications.
+
+## Core Business Rules
+
+- Quotation status flow is `Draft -> Sent -> Confirmed -> Cancelled`.
+- A quotation is owned by one user through `OwnerUserId`.
+- Users can only see their own quotations unless they have `quotations.view_all`.
+- Revenue is based on confirmed quotations and excludes cancelled quotations.
+- Lock-at status prevents normal users from editing quotations at or beyond the configured status unless they have `quotations.bypass_lock`.
+- Admin/manager-level permissions control cross-user views and transfers.
+- Confirmed quotations can be cancelled only by users with the dedicated cancel permission.
+- Export uses the owner user's template when present, then falls back to the default template.
+
+## Non-Goals
+
+- No separate order document workflow.
+- No delivery, warehouse issue note or handover workflow.
+- No inventory tracking.
+- No multi-stage payment, debt or advance-payment tracking.
+- No direct email/Zalo sending from the app.
+- No full accounting module.
+
+## Related Docs
+
 - Architecture: [../architecture/system-architecture.md](../architecture/system-architecture.md)
+- Codebase map: [../codebase/directory-structure.md](../codebase/directory-structure.md)
+- Quotation pivot brainstorm: [../brainstorms/260515-1249-quotation-only-pivot/SUMMARY.md](../brainstorms/260515-1249-quotation-only-pivot/SUMMARY.md)
+- Archived original BD: [../bd/archived/phan-tich-yeu-cau-phan-mem-quan-ly-don-hang.md](../bd/archived/phan-tich-yeu-cau-phan-mem-quan-ly-don-hang.md)

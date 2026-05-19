@@ -100,6 +100,8 @@ public class QuotationListItemDto
     public decimal Discount { get; set; }
     public decimal Freight { get; set; }
     public decimal Total { get; set; }
+    public decimal? TotalCost { get; set; }
+    public decimal? GrossProfit { get; set; }
     public QuotationStatus Status { get; set; }
     public DateTime? ConfirmedAt { get; set; }
     public Guid OwnerUserId { get; set; }
@@ -116,6 +118,8 @@ public class QuotationListAggregates
     public decimal Discount { get; set; }
     public decimal Freight { get; set; }
     public decimal Total { get; set; }
+    public decimal? TotalCost { get; set; }
+    public decimal? GrossProfit { get; set; }
 }
 
 public class QuotationListResult : PagedResult<QuotationListItemDto>

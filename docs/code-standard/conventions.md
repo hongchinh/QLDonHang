@@ -1,0 +1,47 @@
+# Coding Conventions
+
+## Backend
+
+- Target framework is `net9.0`; versions for EF Core, ASP.NET Core and Npgsql are pinned in `backend/Directory.Build.props`.
+- Nullable reference types and implicit usings are enabled.
+- Keep Clean Architecture dependencies one-way: Domain -> none, Application -> Domain, Infrastructure -> Application/Domain, WebApi -> all for composition.
+- Put business entities in `OrderMgmt.Domain`; do not place EF or HTTP concerns there.
+- Application services own use-case logic and receive dependencies through interfaces in `Application/Common/Interfaces` or feature-specific `Interfaces` folders.
+- Controllers should stay thin: authorize, validate route/body binding and delegate to application services.
+- Return standard `ApiResponse` wrappers through `ApiControllerBase`.
+- Use FluentValidation for request validation and Mapster registrations for DTO mapping where a feature needs mapping configuration.
+- Protect endpoints with `[HasPermission(Permissions.<Module>.<Action>)]`; add new permission constants in `Domain/Constants/Permissions.cs` and seed them in `DbSeeder`.
+- New persisted entities should have EF configuration under `Infrastructure/Persistence/Configurations`.
+- Prefer soft delete for business entities that inherit `BaseEntity`. Use hard delete only for pure join entities such as role-permission assignments.
+- Add EF migrations under `Infrastructure/Persistence/Migrations` using the WebApi project as startup project.
+
+## Frontend
+
+- Use React 18 + TypeScript + Vite.
+- Keep route screens in `pages/`; keep module server-state access in `features/<module>`.
+- A normal feature folder uses `api.ts`, `hooks.ts`, `types.ts`, optional `schema.ts` and optional `keys.ts`.
+- Use TanStack Query hooks for API-backed state. Keep query keys centralized per feature when a module has more than trivial fetching.
+- Use React Hook Form + Zod for forms that need validation.
+- Use shadcn-style primitives from `components/ui` and layout components from `components/layout`.
+- Gate pages with `ProtectedRoute permission="..."`; use permission-aware helpers for conditional UI.
+- Keep API calls inside feature `api.ts` files and use `lib/api-client.ts` instead of raw Axios instances.
+- Keep shared CSS tokens in `src/styles`; avoid one-off layout CSS when an existing token/helper fits.
+
+## Tests And Verification
+
+- Backend integration tests live in `backend/tests/OrderMgmt.IntegrationTests`.
+- Frontend tests use Vitest and Testing Library. Test files sit next to the behavior they cover, usually as `*.test.ts` or `*.test.tsx`.
+- Run backend build/tests from `backend`; run frontend `npm run typecheck`, `npm run test` or `npm run build` from `frontend`.
+
+## Local Development
+
+- PostgreSQL and pgAdmin are provided by `docker-compose.yml`.
+- Development backend configuration enables `Database:AutoMigrateAndSeed` and seeds `admin` / `Admin@123`.
+- `appsettings.Development.json` currently points to `qldonhang_test` with `postgres` / `1`; when using the database from `docker-compose.yml`, override `ConnectionStrings__Default` to `qldonhang` with `qldh` / `qldh_dev_password`.
+- Frontend dev server proxies `/api` to the backend through Vite config.
+
+## Deployment Notes
+
+- Backend and frontend each have a Dockerfile for Railway-style separate services.
+- `VITE_API_BASE_URL` is a frontend build-time variable; changing it requires rebuilding the frontend image.
+- For cross-domain auth, configure backend CORS and refresh cookie settings together.

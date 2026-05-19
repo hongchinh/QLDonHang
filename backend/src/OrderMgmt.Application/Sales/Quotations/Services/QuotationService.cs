@@ -124,6 +124,7 @@ public class QuotationService : IQuotationService
 
     public async Task<QuotationListResult> ListAsync(QuotationListRequest request, CancellationToken ct = default)
     {
+        var canViewCost = CanViewCost();
         var query = ApplyOwnerScope(_db.Quotations
             .AsNoTracking()
             .Where(q => !q.IsDeleted));
@@ -169,6 +170,8 @@ public class QuotationService : IQuotationService
                 Discount = g.Sum(q => q.Discount),
                 Freight  = g.Sum(q => q.Freight),
                 Total    = g.Sum(q => q.Total),
+                TotalCost = canViewCost ? g.Sum(q => q.TotalCost) : null,
+                GrossProfit = canViewCost ? g.Sum(q => q.GrossProfit) : null,
             })
             .FirstOrDefaultAsync(ct) ?? new QuotationListAggregates();
 
@@ -199,6 +202,8 @@ public class QuotationService : IQuotationService
                 Discount = q.Discount,
                 Freight = q.Freight,
                 Total = q.Total,
+                TotalCost = canViewCost ? q.TotalCost : null,
+                GrossProfit = canViewCost ? q.GrossProfit : null,
                 Status = q.Status,
                 ConfirmedAt = q.ConfirmedAt,
                 OwnerUserId = q.OwnerUserId,

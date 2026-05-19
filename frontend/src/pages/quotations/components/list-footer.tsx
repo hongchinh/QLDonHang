@@ -21,12 +21,13 @@ interface ListFooterProps {
   hasNext: boolean;
   onPageChange: (page: number) => void;
   onPageSizeChange: (size: number) => void;
+  showCostProfit?: boolean;
   loading?: boolean;
   errored?: boolean;
 }
 
 interface MoneyProps {
-  value: number;
+  value?: number | null;
   loading?: boolean;
   errored?: boolean;
   strong?: boolean;
@@ -41,7 +42,7 @@ function Money({ value, loading, errored, strong }: MoneyProps) {
       />
     );
   }
-  const text = errored ? '—' : currency.format(value);
+  const text = errored || typeof value !== 'number' ? '—' : currency.format(value);
   return (
     <span className={`tabular-nums ${strong ? 'font-semibold text-foreground' : ''}`}>
       {text}
@@ -60,6 +61,7 @@ export function ListFooter({
   hasNext,
   onPageChange,
   onPageSizeChange,
+  showCostProfit,
   loading,
   errored,
 }: ListFooterProps) {
@@ -71,6 +73,12 @@ export function ListFooter({
         {' • '}Tiền hàng <Money value={aggregates.subtotal} loading={loading} errored={errored} />
         {' • '}CK <Money value={aggregates.discount} loading={loading} errored={errored} />
         {' • '}VC <Money value={aggregates.freight} loading={loading} errored={errored} />
+        {showCostProfit && (
+          <>
+            {' • '}Nhập <Money value={aggregates.totalCost} loading={loading} errored={errored} />
+            {' • '}LN <Money value={aggregates.grossProfit} loading={loading} errored={errored} />
+          </>
+        )}
         {' • '}
         <span className="font-semibold text-foreground">
           Tổng <Money value={aggregates.total} loading={loading} errored={errored} strong />
