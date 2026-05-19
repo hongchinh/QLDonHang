@@ -53,6 +53,7 @@ export interface Quotation {
   deliveryAddress?: string;
   deliveryRecipient?: string;
   deliveryPhone?: string;
+  transportVehicleNumber?: string;
   deliveryDate?: string;
   deliveryNote?: string;
   subtotal: number;
@@ -160,6 +161,7 @@ export interface UpsertQuotationRequest {
   deliveryAddress?: string;
   deliveryRecipient?: string;
   deliveryPhone?: string;
+  transportVehicleNumber?: string;
   deliveryDate?: string;
   deliveryNote?: string;
   taxRate: number;

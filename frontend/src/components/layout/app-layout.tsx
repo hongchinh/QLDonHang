@@ -43,6 +43,7 @@ const navGroups: NavGroup[] = [
     items: [
       { to: '/reports/revenue', label: 'Doanh thu', icon: BarChart3, permission: 'reports.revenue' },
       { to: '/reports/sales-revenue', label: 'Doanh thu sale', icon: BarChart3, permission: 'reports.revenue' },
+      { to: '/reports/vehicle-revenue', label: 'Doanh thu xe', icon: BarChart3, permission: 'reports.revenue' },
       { to: '/reports/sales-performance', label: 'Hiệu suất sale', icon: BarChart3, permission: 'quotations.view_all' },
     ],
   },

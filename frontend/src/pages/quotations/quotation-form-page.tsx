@@ -202,6 +202,7 @@ function QuotationFormInner({
   const watchedFreight = useWatch({ control: form.control, name: 'freight' }) as number | undefined;
   const status: QuotationStatus = initial?.status ?? 'Draft';
   const activitiesQuery = useQuotationActivities(initial?.id, isEdit && !!initial?.id);
+  const revenueDateText = formatRevenueDate(initial?.confirmedAt);
 
   const [selectedCustomerView, setSelectedCustomerView] = useState<{ id: string; code: string; name: string } | null>(
     () =>
@@ -228,6 +229,7 @@ function QuotationFormInner({
     'deliveryAddress',
     'deliveryRecipient',
     'deliveryPhone',
+    'transportVehicleNumber',
     'deliveryNote',
     'internalNote',
   ] as const;
@@ -554,13 +556,21 @@ function QuotationFormInner({
               </CardHeader>
               <TabsContent value="general" className="mt-0">
                 <CardContent className="space-y-3" onKeyDown={handleGeneralInfoKeyDown}>
-              <div className="form-inline-grid form-cols-2">
+              <div className="form-inline-grid form-cols-3">
                 <Label htmlFor="quotationDate" className="field-label required">Ngày báo giá</Label>
                 <Input
                   id="quotationDate"
                   type="date"
                   {...form.register('quotationDate')}
                   className="max-w-[200px]"
+                />
+                <Label htmlFor="revenueDate" className="field-label">Ngày doanh thu</Label>
+                <Input
+                  id="revenueDate"
+                  value={revenueDateText}
+                  readOnly
+                  tabIndex={-1}
+                  className="max-w-[200px] bg-muted text-muted-foreground"
                 />
                 <Label htmlFor="deliveryDate" className="field-label">Ngày giao</Label>
                 <Input
@@ -613,11 +623,13 @@ function QuotationFormInner({
                 <Input id="deliveryAddress" {...form.register('deliveryAddress')} />
               </div>
 
-              <div className="form-inline-grid form-cols-2">
+              <div className="form-inline-grid form-cols-3">
                 <Label htmlFor="deliveryRecipient" className="field-label">Người nhận</Label>
                 <Input id="deliveryRecipient" {...form.register('deliveryRecipient')} />
                 <Label htmlFor="deliveryPhone" className="field-label">Điện thoại</Label>
                 <Input id="deliveryPhone" {...form.register('deliveryPhone')} />
+                <Label htmlFor="transportVehicleNumber" className="field-label">Số xe</Label>
+                <Input id="transportVehicleNumber" {...form.register('transportVehicleNumber')} />
               </div>
 
               <div className="form-inline-grid form-cols-2">
@@ -812,6 +824,17 @@ function formatActivityTime(value: string) {
   });
 }
 
+function formatRevenueDate(value?: string) {
+  if (!value) return 'Chưa ghi nhận';
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value;
+  return date.toLocaleDateString('vi-VN', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+  });
+}
+
 function toFormDefaults(q?: Quotation): QuotationFormValues {
   const today = new Date();
   const tomorrow = new Date(today);
@@ -825,6 +848,7 @@ function toFormDefaults(q?: Quotation): QuotationFormValues {
     deliveryAddress: q?.deliveryAddress ?? '',
     deliveryRecipient: q?.deliveryRecipient ?? '',
     deliveryPhone: q?.deliveryPhone ?? '',
+    transportVehicleNumber: q?.transportVehicleNumber ?? '',
     deliveryDate: q?.deliveryDate ?? (q ? '' : defaultDeliveryDate),
     deliveryNote: q?.deliveryNote ?? '',
     taxRate: (q?.taxRate ?? 0) as number,
@@ -885,6 +909,7 @@ function toPayload(parsed: QuotationFormParsed): UpsertQuotationRequest {
     deliveryAddress: parsed.deliveryAddress,
     deliveryRecipient: parsed.deliveryRecipient,
     deliveryPhone: parsed.deliveryPhone,
+    transportVehicleNumber: parsed.transportVehicleNumber,
     deliveryDate: parsed.deliveryDate,
     deliveryNote: parsed.deliveryNote,
     taxRate: parsed.taxRate,

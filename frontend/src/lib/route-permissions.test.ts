@@ -35,8 +35,10 @@ describe('canAccessRoute', () => {
 
   it('chặn /reports/revenue nếu thiếu reports.revenue, cho phép nếu có', () => {
     expect(canAccessRoute('/reports/revenue', [], [])).toBe(false);
+    expect(canAccessRoute('/reports/vehicle-revenue', [], [])).toBe(false);
     expect(canAccessRoute('/reports/revenue', ['reports.revenue'], [])).toBe(true);
     expect(canAccessRoute('/reports/sales-revenue', ['reports.revenue'], [])).toBe(true);
+    expect(canAccessRoute('/reports/vehicle-revenue', ['reports.revenue'], [])).toBe(true);
   });
 
   it('chặn /admin/users và /admin/users/:id nếu thiếu user_settings.manage', () => {

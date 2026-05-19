@@ -16,6 +16,8 @@ using OrderMgmt.Application.Identity.UserSettings.Interfaces;
 using OrderMgmt.Application.Identity.UserSettings.Services;
 using OrderMgmt.Application.Reports.SalesRevenue.Interfaces;
 using OrderMgmt.Application.Reports.SalesRevenue.Services;
+using OrderMgmt.Application.Reports.VehicleRevenue.Interfaces;
+using OrderMgmt.Application.Reports.VehicleRevenue.Services;
 using OrderMgmt.Application.Branding.Interfaces;
 using OrderMgmt.Application.Branding.Services;
 using OrderMgmt.Application.Notifications.Interfaces;
@@ -53,6 +55,7 @@ public static class DependencyInjection
         services.AddScoped<IAdminUserService, AdminUserService>();
         services.AddScoped<IAdminRoleService, AdminRoleService>();
         services.AddScoped<ISalesRevenueReportService, SalesRevenueReportService>();
+        services.AddScoped<IVehicleRevenueReportService, VehicleRevenueReportService>();
         services.AddScoped<IBrandingService, BrandingService>();
         services.AddScoped<ISearchService, SearchService>();
         services.AddScoped<INotificationService, NotificationService>();

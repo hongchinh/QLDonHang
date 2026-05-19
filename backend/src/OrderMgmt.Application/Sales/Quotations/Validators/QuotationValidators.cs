@@ -64,6 +64,7 @@ public class UpsertQuotationRequestValidator : AbstractValidator<UpsertQuotation
         RuleFor(x => x.DeliveryAddress).MaximumLength(1000);
         RuleFor(x => x.DeliveryRecipient).MaximumLength(255);
         RuleFor(x => x.DeliveryPhone).MaximumLength(30);
+        RuleFor(x => x.TransportVehicleNumber).MaximumLength(50);
         RuleFor(x => x.DeliveryNote).MaximumLength(1000);
 
         RuleFor(x => x.Lines)

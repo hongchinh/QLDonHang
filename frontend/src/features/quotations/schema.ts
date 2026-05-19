@@ -39,6 +39,7 @@ export const quotationSchema = z.object({
   deliveryAddress: optionalString(1000),
   deliveryRecipient: optionalString(255),
   deliveryPhone: optionalString(30),
+  transportVehicleNumber: optionalString(50),
   deliveryDate: optionalString(20),
   deliveryNote: optionalString(1000),
   taxRate: z.coerce.number().min(0).max(100),

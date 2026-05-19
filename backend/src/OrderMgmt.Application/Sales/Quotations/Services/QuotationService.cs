@@ -19,6 +19,7 @@ public class QuotationService : IQuotationService
 {
     private const string CodePrefix = "BG";
     private const int MaxCreateAttempts = 5;
+    private const string DefaultTransportVehicleNumber = "Xe khác";
 
     // (current, action) -> next status
     private static readonly Dictionary<(QuotationStatus, QuotationAction), QuotationStatus> Transitions = new()
@@ -419,6 +420,7 @@ public class QuotationService : IQuotationService
                 DeliveryAddress = request.DeliveryAddress ?? customer.DefaultShippingAddress,
                 DeliveryRecipient = request.DeliveryRecipient,
                 DeliveryPhone = request.DeliveryPhone,
+                TransportVehicleNumber = NormalizeTransportVehicleNumber(request.TransportVehicleNumber),
                 DeliveryDate = request.DeliveryDate,
                 DeliveryNote = request.DeliveryNote,
                 TaxRate = request.TaxRate,
@@ -474,6 +476,7 @@ public class QuotationService : IQuotationService
         quotation.DeliveryAddress = request.DeliveryAddress;
         quotation.DeliveryRecipient = request.DeliveryRecipient;
         quotation.DeliveryPhone = request.DeliveryPhone;
+        quotation.TransportVehicleNumber = NormalizeTransportVehicleNumber(request.TransportVehicleNumber);
         quotation.DeliveryDate = request.DeliveryDate;
         quotation.DeliveryNote = request.DeliveryNote;
         quotation.TaxRate = request.TaxRate;
@@ -604,6 +607,7 @@ public class QuotationService : IQuotationService
                 DeliveryAddress = source.DeliveryAddress,
                 DeliveryRecipient = source.DeliveryRecipient,
                 DeliveryPhone = source.DeliveryPhone,
+                TransportVehicleNumber = NormalizeTransportVehicleNumber(source.TransportVehicleNumber),
                 DeliveryDate = source.DeliveryDate,
                 DeliveryNote = source.DeliveryNote,
                 TaxRate = source.TaxRate,
@@ -903,6 +907,9 @@ public class QuotationService : IQuotationService
     private static string EscapeLike(string input) =>
         input.Replace("\\", "\\\\").Replace("%", "\\%").Replace("_", "\\_");
 
+    private static string NormalizeTransportVehicleNumber(string? value) =>
+        string.IsNullOrWhiteSpace(value) ? DefaultTransportVehicleNumber : value.Trim();
+
     private static QuotationActivityAction ActivityActionForTransition(QuotationAction action) => action switch
     {
         QuotationAction.Send => QuotationActivityAction.Sent,
@@ -944,6 +951,7 @@ public class QuotationService : IQuotationService
         DeliveryAddress = q.DeliveryAddress,
         DeliveryRecipient = q.DeliveryRecipient,
         DeliveryPhone = q.DeliveryPhone,
+        TransportVehicleNumber = NormalizeTransportVehicleNumber(q.TransportVehicleNumber),
         DeliveryDate = q.DeliveryDate,
         DeliveryNote = q.DeliveryNote,
         Subtotal = q.Subtotal,

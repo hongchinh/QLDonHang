@@ -17,7 +17,7 @@ const RULES: RouteRule[] = [
   { pattern: /^\/admin\/roles$/, permission: 'roles.view' },
   { pattern: /^\/admin\/dashboard$/, permission: 'quotations.view_all' },
   { pattern: /^\/reports\/sales-performance$/, permission: 'quotations.view_all' },
-  { pattern: /^\/reports\/(revenue|sales-revenue)$/, permission: 'reports.revenue' },
+  { pattern: /^\/reports\/(revenue|sales-revenue|vehicle-revenue)$/, permission: 'reports.revenue' },
   { pattern: /^\/customers(\/[^/]+)?$/, permission: 'customers.view' },
   { pattern: /^\/products(\/[^/]+)?$/, permission: 'products.view' },
   { pattern: /^\/quotations(\/[^/]+)?$/, permission: 'quotations.view' },

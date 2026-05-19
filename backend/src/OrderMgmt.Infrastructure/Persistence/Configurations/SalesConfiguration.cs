@@ -20,6 +20,7 @@ public class QuotationConfiguration : IEntityTypeConfiguration<Quotation>
         b.Property(x => x.DeliveryAddress).HasMaxLength(1000);
         b.Property(x => x.DeliveryRecipient).HasMaxLength(255);
         b.Property(x => x.DeliveryPhone).HasMaxLength(30);
+        b.Property(x => x.TransportVehicleNumber).HasMaxLength(50);
         b.Property(x => x.DeliveryNote).HasMaxLength(1000);
         b.Property(x => x.InternalNote).HasMaxLength(2000);
 

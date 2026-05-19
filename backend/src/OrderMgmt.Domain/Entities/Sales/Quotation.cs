@@ -25,6 +25,7 @@ public class Quotation : BaseEntity
     public string? DeliveryAddress { get; set; }
     public string? DeliveryRecipient { get; set; }
     public string? DeliveryPhone { get; set; }
+    public string? TransportVehicleNumber { get; set; }
     public DateOnly? DeliveryDate { get; set; }
     public string? DeliveryNote { get; set; }
 
