@@ -44,4 +44,5 @@ public class Quotation : BaseEntity
     public string? InternalNote { get; set; }
 
     public ICollection<QuotationLine> Lines { get; set; } = new List<QuotationLine>();
+    public ICollection<QuotationActivity> Activities { get; set; } = new List<QuotationActivity>();
 }

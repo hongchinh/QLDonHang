@@ -54,6 +54,11 @@ public class QuotationConfiguration : IEntityTypeConfiguration<Quotation>
             .HasForeignKey(x => x.QuotationId)
             .OnDelete(DeleteBehavior.Restrict);
 
+        b.HasMany(x => x.Activities)
+            .WithOne(x => x.Quotation!)
+            .HasForeignKey(x => x.QuotationId)
+            .OnDelete(DeleteBehavior.Restrict);
+
         b.HasIndex(x => x.Code).IsUnique().HasFilter("is_deleted = false");
         b.HasIndex(x => x.CustomerId);
         b.HasIndex(x => x.QuotationDate);
@@ -114,5 +119,31 @@ public class QuotationOwnerHistoryConfiguration : IEntityTypeConfiguration<Quota
 
         b.HasIndex(x => new { x.QuotationId, x.ChangedAt })
             .HasDatabaseName("ix_quotation_owner_history_quotation_changed");
+    }
+}
+
+public class QuotationActivityConfiguration : IEntityTypeConfiguration<QuotationActivity>
+{
+    public void Configure(EntityTypeBuilder<QuotationActivity> b)
+    {
+        b.ToTable("quotation_activities");
+        b.HasKey(x => x.Id);
+
+        b.Property(x => x.Action).HasConversion<int>();
+        b.Property(x => x.Description).IsRequired().HasMaxLength(500);
+        b.Property(x => x.MetadataJson).HasColumnType("jsonb");
+        b.Property(x => x.OccurredAt).HasColumnType("timestamptz");
+
+        b.HasOne(x => x.Quotation)
+            .WithMany(x => x.Activities)
+            .HasForeignKey(x => x.QuotationId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        b.HasIndex(x => new { x.QuotationId, x.OccurredAt })
+            .IsDescending(false, true)
+            .HasDatabaseName("ix_quotation_activities_quotation_occurred");
+        b.HasIndex(x => x.ActorUserId);
+
+        b.HasQueryFilter(x => !x.IsDeleted && !x.Quotation!.IsDeleted);
     }
 }

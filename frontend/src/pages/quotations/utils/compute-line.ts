@@ -26,36 +26,29 @@ export function round0(value: number): number {
   return Math.round(value + Number.EPSILON);
 }
 
-// Derive default quantity from snapshot dimensions when those dimensions cover the
-// requested pricing mode. Returns undefined when the user hasn't supplied enough info.
-// (Backend always trusts `Quantity` from the request; this is FE convenience only.)
-export function deriveQuantityFromDimensions(line: LineLike): number | undefined {
-  const sheet = line.sheetCount ?? 1;
-  const L = line.length;
-  const W = line.width;
-  const T = line.thickness;
+export function computePricingFactor(line: LineLike): number {
+  const L = line.length ?? 0;
+  const W = line.width ?? 0;
+  const T = line.thickness ?? 0;
   switch (line.pricingMode) {
     case 'PerSquareMeter':
-      if (L === undefined || W === undefined) return undefined;
-      return round2((L * W * sheet) / 1_000_000);
+      return (L * W) / 1_000_000;
     case 'PerLinearMeter':
-      if (L === undefined) return undefined;
-      return round2((L * sheet) / 1000);
+      return L / 1000;
     case 'PerCubicMeter':
-      if (L === undefined || W === undefined || T === undefined) return undefined;
-      return round2((L * W * T * sheet) / 1_000_000_000);
+      return (L * W * T) / 1_000_000_000;
     case 'PerUnit':
     default:
-      return undefined;
+      return 1;
   }
 }
 
 export function computeLineTotal(line: LineLike): number {
-  return round2(line.quantity * line.unitPrice);
+  return round2(line.quantity * computePricingFactor(line) * line.unitPrice);
 }
 
 export function computeLineCost(line: LineLike): number | undefined {
-  return line.unitCost != null ? round2(line.quantity * line.unitCost) : undefined;
+  return line.unitCost != null ? round2(line.quantity * computePricingFactor(line) * line.unitCost) : undefined;
 }
 
 export interface Totals {

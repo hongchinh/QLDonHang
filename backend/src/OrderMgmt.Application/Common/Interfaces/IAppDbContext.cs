@@ -27,6 +27,7 @@ public interface IAppDbContext
     DbSet<Quotation> Quotations { get; }
     DbSet<QuotationLine> QuotationLines { get; }
     DbSet<QuotationOwnerHistory> QuotationOwnerHistory { get; }
+    DbSet<QuotationActivity> QuotationActivities { get; }
 
     DbSet<SystemBranding> SystemBranding { get; }
 

@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using System.Text.Json;
 using OrderMgmt.Application.Common.Interfaces;
 using OrderMgmt.Application.Identity.UserSettings.Interfaces;
 using OrderMgmt.Application.Identity.UserSettings.Models;
@@ -64,14 +65,30 @@ public class QuotationBulkTransferService : IQuotationBulkTransferService
         var now = _clock.UtcNow;
         foreach (var q in quotations)
         {
+            var oldOwnerUserId = q.OwnerUserId;
             _db.QuotationOwnerHistory.Add(new QuotationOwnerHistory
             {
                 QuotationId = q.Id,
-                OldOwnerUserId = q.OwnerUserId,
+                OldOwnerUserId = oldOwnerUserId,
                 NewOwnerUserId = request.ToUserId,
                 ActorUserId = actorId,
                 Reason = request.Reason,
                 ChangedAt = now,
+            });
+            _db.QuotationActivities.Add(new QuotationActivity
+            {
+                QuotationId = q.Id,
+                Action = QuotationActivityAction.OwnerTransferred,
+                ActorUserId = actorId,
+                OccurredAt = now,
+                Description = "Chuyển chủ sở hữu báo giá hàng loạt",
+                MetadataJson = JsonSerializer.Serialize(new
+                {
+                    OldOwnerUserId = oldOwnerUserId,
+                    NewOwnerUserId = request.ToUserId,
+                    request.Reason,
+                    Bulk = true,
+                }),
             });
             q.OwnerUserId = request.ToUserId;
         }

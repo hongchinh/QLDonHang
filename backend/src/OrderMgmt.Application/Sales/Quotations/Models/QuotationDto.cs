@@ -61,6 +61,18 @@ public class QuotationDto
     public Guid? CreatedBy { get; set; }
 }
 
+public class QuotationActivityDto
+{
+    public Guid Id { get; set; }
+    public Guid QuotationId { get; set; }
+    public QuotationActivityAction Action { get; set; }
+    public Guid? ActorUserId { get; set; }
+    public string? ActorName { get; set; }
+    public DateTimeOffset OccurredAt { get; set; }
+    public string Description { get; set; } = default!;
+    public string? MetadataJson { get; set; }
+}
+
 public class QuotationLineDto
 {
     public Guid Id { get; set; }

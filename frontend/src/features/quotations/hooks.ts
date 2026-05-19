@@ -24,11 +24,22 @@ export function useQuotation(id: string | undefined) {
   });
 }
 
+export function useQuotationActivities(id: string | undefined, enabled: boolean) {
+  return useQuery({
+    queryKey: quotationKeys.activities(id ?? ''),
+    queryFn: () => quotationsApi.listActivities(id!),
+    enabled: !!id && enabled,
+  });
+}
+
 export function useCreateQuotation() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (data: UpsertQuotationRequest) => quotationsApi.create(data),
-    onSuccess: () => qc.invalidateQueries({ queryKey: quotationKeys.lists() }),
+    onSuccess: (data) => {
+      qc.invalidateQueries({ queryKey: quotationKeys.lists() });
+      qc.invalidateQueries({ queryKey: quotationKeys.activities(data.id) });
+    },
   });
 }
 
@@ -40,6 +51,7 @@ export function useUpdateQuotation() {
     onSuccess: (_data, { id }) => {
       qc.invalidateQueries({ queryKey: quotationKeys.lists() });
       qc.invalidateQueries({ queryKey: quotationKeys.detail(id) });
+      qc.invalidateQueries({ queryKey: quotationKeys.activities(id) });
     },
   });
 }
@@ -60,6 +72,7 @@ export function useTransitionQuotation() {
     onSuccess: (_data, { id }) => {
       qc.invalidateQueries({ queryKey: quotationKeys.lists() });
       qc.invalidateQueries({ queryKey: quotationKeys.detail(id) });
+      qc.invalidateQueries({ queryKey: quotationKeys.activities(id) });
     },
   });
 }
@@ -72,6 +85,7 @@ export function useTransferOwner() {
     onSuccess: (_data, { id }) => {
       qc.invalidateQueries({ queryKey: quotationKeys.lists() });
       qc.invalidateQueries({ queryKey: quotationKeys.detail(id) });
+      qc.invalidateQueries({ queryKey: quotationKeys.activities(id) });
     },
   });
 }
@@ -80,7 +94,10 @@ export function useCloneQuotation() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (id: string) => quotationsApi.clone(id),
-    onSuccess: () => qc.invalidateQueries({ queryKey: quotationKeys.lists() }),
+    onSuccess: (data) => {
+      qc.invalidateQueries({ queryKey: quotationKeys.lists() });
+      qc.invalidateQueries({ queryKey: quotationKeys.activities(data.id) });
+    },
   });
 }
 

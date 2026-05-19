@@ -49,6 +49,13 @@ public class QuotationsController : ApiControllerBase
     public async Task<ActionResult<ApiResponse<QuotationDto>>> Get(Guid id, CancellationToken ct)
         => Success(await _quotations.GetAsync(id, ct));
 
+    [HttpGet("{id:guid}/activities")]
+    [HasPermission(Permissions.Quotations.View)]
+    [ProducesResponseType(typeof(ApiResponse<IReadOnlyList<QuotationActivityDto>>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<ApiResponse<IReadOnlyList<QuotationActivityDto>>>> ListActivities(
+        Guid id, CancellationToken ct)
+        => Success(await _quotations.ListActivitiesAsync(id, ct));
+
     [HttpPost]
     [HasPermission(Permissions.Quotations.Create)]
     public async Task<ActionResult<ApiResponse<QuotationDto>>> Create(

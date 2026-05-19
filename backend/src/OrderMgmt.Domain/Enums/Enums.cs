@@ -36,6 +36,17 @@ public enum QuotationStatus
     Cancelled = 9,
 }
 
+public enum QuotationActivityAction
+{
+    Created = 1,
+    Updated = 2,
+    Sent = 3,
+    Confirmed = 4,
+    Cancelled = 5,
+    OwnerTransferred = 6,
+    Cloned = 7,
+}
+
 public enum UserStatus
 {
     Active = 1,

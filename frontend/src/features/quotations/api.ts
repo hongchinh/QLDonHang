@@ -2,6 +2,7 @@ import api, { apiDelete, apiGet, apiPatch, apiPost, apiPut } from '@/lib/api-cli
 import type {
   Quotation,
   QuotationAction,
+  QuotationActivity,
   QuotationListParams,
   QuotationListResult,
   QuotationOwnerOption,
@@ -24,6 +25,7 @@ export const quotationsApi = {
   listOwners: (includeDeleted = true) =>
     apiGet<QuotationOwnerOption[]>('/quotations/owners', { includeDeleted }),
   get: (id: string) => apiGet<Quotation>(`/quotations/${id}`),
+  listActivities: (id: string) => apiGet<QuotationActivity[]>(`/quotations/${id}/activities`),
   create: (data: UpsertQuotationRequest) => apiPost<Quotation>('/quotations', data),
   update: (id: string, data: UpsertQuotationRequest) =>
     apiPut<Quotation>(`/quotations/${id}`, data),

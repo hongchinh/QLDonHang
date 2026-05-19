@@ -7,6 +7,7 @@ public interface IQuotationService
 {
     Task<QuotationListResult> ListAsync(QuotationListRequest request, CancellationToken ct = default);
     Task<IReadOnlyList<QuotationOwnerOptionDto>> ListOwnersAsync(bool includeDeleted, CancellationToken ct = default);
+    Task<IReadOnlyList<QuotationActivityDto>> ListActivitiesAsync(Guid id, CancellationToken ct = default);
     Task<QuotationDto> GetAsync(Guid id, CancellationToken ct = default);
     Task<QuotationDto> CreateAsync(UpsertQuotationRequest request, CancellationToken ct = default);
     Task<QuotationDto> UpdateAsync(Guid id, UpsertQuotationRequest request, CancellationToken ct = default);

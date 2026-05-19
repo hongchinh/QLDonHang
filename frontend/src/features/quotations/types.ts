@@ -3,6 +3,14 @@ import type { PricingMode } from '@/features/products/types';
 
 export type QuotationStatus = 'Draft' | 'Sent' | 'Confirmed' | 'Cancelled';
 export type QuotationAction = 'Send' | 'Confirm' | 'Cancel';
+export type QuotationActivityAction =
+  | 'Created'
+  | 'Updated'
+  | 'Sent'
+  | 'Confirmed'
+  | 'Cancelled'
+  | 'OwnerTransferred'
+  | 'Cloned';
 
 export interface QuotationLine {
   id: string;
@@ -107,6 +115,17 @@ export interface QuotationOwnerOption {
 
 export interface QuotationListResult extends PagedResult<QuotationListItem> {
   aggregates: QuotationListAggregates;
+}
+
+export interface QuotationActivity {
+  id: string;
+  quotationId: string;
+  action: QuotationActivityAction;
+  actorUserId?: string;
+  actorName?: string;
+  occurredAt: string;
+  description: string;
+  metadataJson?: string;
 }
 
 export interface TransferOwnerRequest {

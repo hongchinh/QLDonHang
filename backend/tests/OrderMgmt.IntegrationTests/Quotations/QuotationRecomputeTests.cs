@@ -21,23 +21,23 @@ public class QuotationRecomputeTests : QuotationTestBase
     }
 
     [Fact]
-    public async Task PerSquareMeter_trusts_client_quantity()
+    public async Task PerSquareMeter_line_total_uses_quantity_dimensions_and_unit_price()
     {
-        var dto = await CreateAsync(PricingMode.PerSquareMeter, quantity: 8, unitPrice: 50_000);
-        dto.Lines[0].LineTotal.Should().Be(400_000m);
+        var dto = await CreateAsync(PricingMode.PerSquareMeter, quantity: 2, unitPrice: 50_000, length: 2000, width: 1000);
+        dto.Lines[0].LineTotal.Should().Be(200_000m);
     }
 
     [Fact]
-    public async Task PerLinearMeter_trusts_client_quantity()
+    public async Task PerLinearMeter_line_total_uses_quantity_length_and_unit_price()
     {
-        var dto = await CreateAsync(PricingMode.PerLinearMeter, quantity: 10, unitPrice: 25_000);
+        var dto = await CreateAsync(PricingMode.PerLinearMeter, quantity: 4, unitPrice: 25_000, length: 2500);
         dto.Lines[0].LineTotal.Should().Be(250_000m);
     }
 
     [Fact]
-    public async Task PerCubicMeter_trusts_client_quantity()
+    public async Task PerCubicMeter_line_total_uses_quantity_dimensions_and_unit_price()
     {
-        var dto = await CreateAsync(PricingMode.PerCubicMeter, quantity: 0.5m, unitPrice: 1_000_000);
+        var dto = await CreateAsync(PricingMode.PerCubicMeter, quantity: 1, unitPrice: 1_000_000, length: 1000, width: 1000, thickness: 500);
         dto.Lines[0].LineTotal.Should().Be(500_000m);
     }
 
@@ -134,7 +134,13 @@ public class QuotationRecomputeTests : QuotationTestBase
         dto.GrossProfit.Should().Be(10_000m); // 60k - 40k - 10k discount
     }
 
-    private async Task<QuotationDto> CreateAsync(PricingMode mode, decimal quantity, decimal unitPrice)
+    private async Task<QuotationDto> CreateAsync(
+        PricingMode mode,
+        decimal quantity,
+        decimal unitPrice,
+        decimal? length = null,
+        decimal? width = null,
+        decimal? thickness = null)
     {
         var req = BuildRequest();
         req.TaxRate = 0;
@@ -146,6 +152,9 @@ public class QuotationRecomputeTests : QuotationTestBase
                 ProductId = _productId,
                 ProductName = "X", UnitName = "Tấm",
                 PricingMode = mode,
+                Length = length,
+                Width = width,
+                Thickness = thickness,
                 Quantity = quantity, UnitPrice = unitPrice,
             },
         };

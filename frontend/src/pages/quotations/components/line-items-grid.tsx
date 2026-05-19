@@ -8,7 +8,7 @@ import type {
   QuotationLineFormValues,
 } from '@/features/quotations/schema';
 import { ProductTypeaheadCell } from './product-typeahead-cell';
-import { computeLineCost, computeLineTotal, deriveQuantityFromDimensions } from '@/pages/quotations/utils/compute-line';
+import { computeLineCost, computeLineTotal } from '@/pages/quotations/utils/compute-line';
 import { formatMoneyForDisplay, parseMoneyInput } from '@/pages/quotations/utils/money-input';
 import { useAuthStore } from '@/stores/auth-store';
 import './line-items-grid.css';
@@ -72,6 +72,8 @@ function isLineFocusFieldDisabled(line: QuotationLineFormValues, field: LineFocu
       return field === 'width' || field === 'thickness' || field === 'sheet-count';
     case 'PerSquareMeter':
       return field === 'thickness' || field === 'sheet-count';
+    case 'PerCubicMeter':
+      return field === 'sheet-count';
     default:
       return false;
   }
@@ -322,7 +324,6 @@ export const LineItemsGrid = forwardRef<LineItemsGridHandle, Props>(function Lin
                         onChange={(e) => {
                           const v = parseNum(e.target.value);
                           setLineField(idx, 'length', v as never);
-                          recomputeQty(idx, { ...line, length: v });
                         }}
                       />
                       <input
@@ -337,7 +338,6 @@ export const LineItemsGrid = forwardRef<LineItemsGridHandle, Props>(function Lin
                         onChange={(e) => {
                           const v = parseNum(e.target.value);
                           setLineField(idx, 'width', v as never);
-                          recomputeQty(idx, { ...line, width: v });
                         }}
                       />
                       <input
@@ -352,7 +352,6 @@ export const LineItemsGrid = forwardRef<LineItemsGridHandle, Props>(function Lin
                         onChange={(e) => {
                           const v = parseNum(e.target.value);
                           setLineField(idx, 'thickness', v as never);
-                          recomputeQty(idx, { ...line, thickness: v });
                         }}
                       />
                       <input
@@ -367,7 +366,6 @@ export const LineItemsGrid = forwardRef<LineItemsGridHandle, Props>(function Lin
                         onChange={(e) => {
                           const v = parseNum(e.target.value);
                           setLineField(idx, 'sheetCount', v as never);
-                          recomputeQty(idx, { ...line, sheetCount: v });
                         }}
                       />
                     </div>
@@ -491,12 +489,6 @@ export const LineItemsGrid = forwardRef<LineItemsGridHandle, Props>(function Lin
     </div>
   );
 
-  function recomputeQty(idx: number, lineDraft: QuotationLineFormValues) {
-    const derived = deriveQuantityFromDimensions(toLineLike(lineDraft));
-    if (derived !== undefined) {
-      setLineField(idx, 'quantity', derived as never);
-    }
-  }
 });
 
 function toLineLike(line: QuotationLineFormValues) {

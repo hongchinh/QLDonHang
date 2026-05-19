@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
+using System.Text.Json;
 using OrderMgmt.Application.Common.Interfaces;
 using OrderMgmt.Application.Common.Models;
 using OrderMgmt.Application.Common.Options;
@@ -64,6 +65,25 @@ public class QuotationService : IQuotationService
     }
 
     private bool CanViewCost() => _currentUser.HasPermission(Permissions.Quotations.ViewCost);
+
+    private QuotationActivity AddActivity(
+        Quotation quotation,
+        QuotationActivityAction action,
+        string description,
+        object? metadata = null)
+    {
+        var activity = new QuotationActivity
+        {
+            QuotationId = quotation.Id,
+            Action = action,
+            ActorUserId = _currentUser.UserId,
+            OccurredAt = _clock.UtcNow,
+            Description = description,
+            MetadataJson = metadata is null ? null : JsonSerializer.Serialize(metadata),
+        };
+        _db.QuotationActivities.Add(activity);
+        return activity;
+    }
 
     private void EnsureCanAccess(Quotation quotation)
     {
@@ -302,6 +322,60 @@ public class QuotationService : IQuotationService
         return MapToDto(quotation, owner?.FullName, owner?.IsDeleted ?? false, canEdit, confirmedByName, CanViewCost());
     }
 
+    public async Task<IReadOnlyList<QuotationActivityDto>> ListActivitiesAsync(Guid id, CancellationToken ct = default)
+    {
+        var quotation = await _db.Quotations
+            .AsNoTracking()
+            .FirstOrDefaultAsync(q => q.Id == id && !q.IsDeleted, ct)
+            ?? throw new NotFoundException(nameof(Quotation), id);
+
+        EnsureCanAccess(quotation);
+
+        var activities = await _db.QuotationActivities
+            .AsNoTracking()
+            .Where(a => a.QuotationId == id && !a.IsDeleted)
+            .OrderByDescending(a => a.OccurredAt)
+            .Select(a => new
+            {
+                a.Id,
+                a.QuotationId,
+                a.Action,
+                a.ActorUserId,
+                a.OccurredAt,
+                a.Description,
+                a.MetadataJson,
+            })
+            .ToListAsync(ct);
+
+        var actorIds = activities
+            .Where(a => a.ActorUserId.HasValue)
+            .Select(a => a.ActorUserId!.Value)
+            .Distinct()
+            .ToList();
+
+        var actors = actorIds.Count == 0
+            ? new Dictionary<Guid, string>()
+            : await _db.Users.IgnoreQueryFilters()
+                .AsNoTracking()
+                .Where(u => actorIds.Contains(u.Id))
+                .Select(u => new { u.Id, u.FullName })
+                .ToDictionaryAsync(u => u.Id, u => u.FullName, ct);
+
+        return activities.Select(a => new QuotationActivityDto
+        {
+            Id = a.Id,
+            QuotationId = a.QuotationId,
+            Action = a.Action,
+            ActorUserId = a.ActorUserId,
+            ActorName = a.ActorUserId.HasValue
+                ? actors.GetValueOrDefault(a.ActorUserId.Value) ?? "Người dùng không xác định"
+                : "Hệ thống",
+            OccurredAt = a.OccurredAt,
+            Description = a.Description,
+            MetadataJson = a.MetadataJson,
+        }).ToList();
+    }
+
     private async Task<bool> ComputeCanEditAsync(Quotation q, bool isOwnerDeleted, CancellationToken ct)
     {
         if (q.Status == QuotationStatus.Cancelled) return false;
@@ -357,6 +431,7 @@ public class QuotationService : IQuotationService
             await PopulateLinesAsync(quotation, request.Lines, isNew: true, ct);
             Recompute(quotation);
             _db.Quotations.Add(quotation);
+            var activity = AddActivity(quotation, QuotationActivityAction.Created, "Tạo báo giá");
 
             try
             {
@@ -366,6 +441,7 @@ public class QuotationService : IQuotationService
             catch (DbUpdateException ex) when (IsUniqueViolation(ex) && attempt < MaxCreateAttempts)
             {
                 _db.Entry(quotation).State = EntityState.Detached;
+                _db.Entry(activity).State = EntityState.Detached;
                 foreach (var line in quotation.Lines)
                     _db.Entry(line).State = EntityState.Detached;
             }
@@ -407,6 +483,7 @@ public class QuotationService : IQuotationService
 
         await PopulateLinesAsync(quotation, request.Lines, isNew: false, ct);
         Recompute(quotation);
+        AddActivity(quotation, QuotationActivityAction.Updated, "Cập nhật báo giá");
 
         await _db.SaveChangesAsync(ct);
         return await GetAsync(quotation.Id, ct);
@@ -475,6 +552,7 @@ public class QuotationService : IQuotationService
 
         quotation.Status = next;
         ApplyStatusTimestamps(quotation, next);
+        AddActivity(quotation, ActivityActionForTransition(action), ActivityDescriptionForTransition(action));
         await _db.SaveChangesAsync(ct);
         return await GetAsync(quotation.Id, ct);
     }
@@ -560,6 +638,11 @@ public class QuotationService : IQuotationService
 
             Recompute(clone);
             _db.Quotations.Add(clone);
+            var activity = AddActivity(clone, QuotationActivityAction.Cloned, "Clone báo giá", new
+            {
+                SourceQuotationId = source.Id,
+                SourceQuotationCode = source.Code,
+            });
 
             try
             {
@@ -569,6 +652,7 @@ public class QuotationService : IQuotationService
             catch (DbUpdateException ex) when (IsUniqueViolation(ex) && attempt < MaxCreateAttempts)
             {
                 _db.Entry(clone).State = EntityState.Detached;
+                _db.Entry(activity).State = EntityState.Detached;
                 foreach (var line in clone.Lines)
                     _db.Entry(line).State = EntityState.Detached;
             }
@@ -620,6 +704,12 @@ public class QuotationService : IQuotationService
             ActorUserId = actorId,
             Reason = request.Reason,
             ChangedAt = _clock.UtcNow,
+        });
+        AddActivity(quotation, QuotationActivityAction.OwnerTransferred, "Chuyển chủ sở hữu báo giá", new
+        {
+            OldOwnerUserId = oldOwnerId,
+            NewOwnerUserId = request.NewOwnerUserId,
+            request.Reason,
         });
 
         await _db.SaveChangesAsync(ct);
@@ -755,10 +845,11 @@ public class QuotationService : IQuotationService
 
         foreach (var line in q.Lines.Where(l => !l.IsDeleted))
         {
-            line.LineTotal = Math.Round(line.Quantity * line.UnitPrice, 2, MidpointRounding.AwayFromZero);
+            var pricingFactor = PricingFactor(line);
+            line.LineTotal = Math.Round(line.Quantity * pricingFactor * line.UnitPrice, 2, MidpointRounding.AwayFromZero);
             if (line.UnitCost.HasValue)
             {
-                line.LineCost = Math.Round(line.Quantity * line.UnitCost.Value, 2, MidpointRounding.AwayFromZero);
+                line.LineCost = Math.Round(line.Quantity * pricingFactor * line.UnitCost.Value, 2, MidpointRounding.AwayFromZero);
                 line.LineProfit = line.LineTotal - line.LineCost.Value;
             }
             else
@@ -778,6 +869,21 @@ public class QuotationService : IQuotationService
         q.GrossProfit = subtotal - totalCost - q.Discount;
     }
 
+    private static decimal PricingFactor(QuotationLine line)
+    {
+        var length = line.Length ?? 0m;
+        var width = line.Width ?? 0m;
+        var thickness = line.Thickness ?? 0m;
+
+        return line.PricingMode switch
+        {
+            PricingMode.PerLinearMeter => length / 1000m,
+            PricingMode.PerSquareMeter => length * width / 1_000_000m,
+            PricingMode.PerCubicMeter => length * width * thickness / 1_000_000_000m,
+            _ => 1m,
+        };
+    }
+
     private async Task<string> GenerateCodeAsync(CancellationToken ct)
     {
         var date = _clock.Now.ToString("yyMMdd");
@@ -795,6 +901,22 @@ public class QuotationService : IQuotationService
 
     private static string EscapeLike(string input) =>
         input.Replace("\\", "\\\\").Replace("%", "\\%").Replace("_", "\\_");
+
+    private static QuotationActivityAction ActivityActionForTransition(QuotationAction action) => action switch
+    {
+        QuotationAction.Send => QuotationActivityAction.Sent,
+        QuotationAction.Confirm => QuotationActivityAction.Confirmed,
+        QuotationAction.Cancel => QuotationActivityAction.Cancelled,
+        _ => throw new ArgumentOutOfRangeException(nameof(action), action, null),
+    };
+
+    private static string ActivityDescriptionForTransition(QuotationAction action) => action switch
+    {
+        QuotationAction.Send => "Gửi báo giá",
+        QuotationAction.Confirm => "Xác nhận báo giá",
+        QuotationAction.Cancel => "Hủy báo giá",
+        _ => throw new ArgumentOutOfRangeException(nameof(action), action, null),
+    };
 
     private static QuotationDto MapToDto(
         Quotation q,

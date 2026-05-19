@@ -2,11 +2,24 @@ import { useEffect, useRef, useState } from 'react';
 import { useForm, useWatch, type Resolver } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, Send, CheckCircle2, Ban, Printer, FileSpreadsheet, Copy } from 'lucide-react';
+import {
+  ArrowLeft,
+  ArrowRightLeft,
+  Ban,
+  CheckCircle2,
+  CirclePlus,
+  Copy,
+  FileSpreadsheet,
+  Loader2,
+  Printer,
+  Save,
+  Send,
+} from 'lucide-react';
 import {
   useCloneQuotation,
   useCreateQuotation,
   useQuotation,
+  useQuotationActivities,
   useTransitionQuotation,
   useUpdateQuotation,
 } from '@/features/quotations/hooks';
@@ -20,6 +33,8 @@ import {
 import type {
   Quotation,
   QuotationAction,
+  QuotationActivity,
+  QuotationActivityAction,
   QuotationStatus,
   UpsertQuotationLineRequest,
   UpsertQuotationRequest,
@@ -32,6 +47,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { ButtonLoader } from '@/components/ui/button-loader';
 import { Can } from '@/components/auth/can';
@@ -184,6 +200,7 @@ function QuotationFormInner({
   const watchedDiscount = useWatch({ control: form.control, name: 'discount' }) as number | undefined;
   const watchedFreight = useWatch({ control: form.control, name: 'freight' }) as number | undefined;
   const status: QuotationStatus = initial?.status ?? 'Draft';
+  const activitiesQuery = useQuotationActivities(initial?.id, isEdit && !!initial?.id);
 
   const [selectedCustomerView, setSelectedCustomerView] = useState<{ id: string; code: string; name: string } | null>(
     () =>
@@ -524,8 +541,18 @@ function QuotationFormInner({
       >
         <div className="grid gap-4 lg:grid-cols-[1fr_320px] items-stretch">
           <Card>
-            <CardHeader><CardTitle>Thông tin chung</CardTitle></CardHeader>
-            <CardContent className="space-y-3" onKeyDown={handleGeneralInfoKeyDown}>
+            <Tabs defaultValue="general">
+              <CardHeader className="flex flex-row items-center justify-between gap-3 space-y-0">
+                <CardTitle>Thông tin chung</CardTitle>
+                {isEdit && (
+                  <TabsList>
+                    <TabsTrigger value="general">Thông tin chung</TabsTrigger>
+                    <TabsTrigger value="history">Lịch sử</TabsTrigger>
+                  </TabsList>
+                )}
+              </CardHeader>
+              <TabsContent value="general" className="mt-0">
+                <CardContent className="space-y-3" onKeyDown={handleGeneralInfoKeyDown}>
               <div className="form-inline-grid form-cols-2">
                 <Label htmlFor="quotationDate" className="field-label required">Ngày báo giá</Label>
                 <Input
@@ -598,7 +625,22 @@ function QuotationFormInner({
                 <Label htmlFor="internalNote" className="field-label">Ghi chú NB</Label>
                 <Input id="internalNote" {...form.register('internalNote')} />
               </div>
-            </CardContent>
+                </CardContent>
+              </TabsContent>
+              {isEdit && (
+                <TabsContent value="history" className="mt-0">
+                  <CardContent>
+                    <QuotationActivityHistory
+                      activities={activitiesQuery.data ?? []}
+                      isLoading={activitiesQuery.isLoading}
+                      isError={activitiesQuery.isError}
+                      errorMessage={getErrorMessage(activitiesQuery.error)}
+                      onRetry={() => void activitiesQuery.refetch()}
+                    />
+                  </CardContent>
+                </TabsContent>
+              )}
+            </Tabs>
           </Card>
 
           <TotalsPanel lines={lineLikes} header={header} onHeaderChange={onHeaderChange} />
@@ -655,6 +697,118 @@ function QuotationFormInner({
       />
     </div>
   );
+}
+
+interface QuotationActivityHistoryProps {
+  activities: QuotationActivity[];
+  isLoading: boolean;
+  isError: boolean;
+  errorMessage: string;
+  onRetry: () => void;
+}
+
+function QuotationActivityHistory({
+  activities,
+  isLoading,
+  isError,
+  errorMessage,
+  onRetry,
+}: QuotationActivityHistoryProps) {
+  if (isLoading) {
+    return (
+      <div className="flex items-center gap-2 py-6 text-sm text-muted-foreground">
+        <Loader2 className="h-4 w-4 animate-spin text-blue-600" />
+        Đang tải lịch sử...
+      </div>
+    );
+  }
+
+  if (isError) {
+    return (
+      <div className="rounded-md border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive">
+        <div>{errorMessage}</div>
+        <Button type="button" variant="outline" size="sm" className="mt-2" onClick={onRetry}>
+          Thử lại
+        </Button>
+      </div>
+    );
+  }
+
+  if (activities.length === 0) {
+    return (
+      <div className="rounded-md border border-dashed p-6 text-center text-sm text-muted-foreground">
+        Chưa có lịch sử phát sinh sau khi bật tính năng này.
+      </div>
+    );
+  }
+
+  return (
+    <ul className="divide-y rounded-md border">
+      {activities.map((activity) => (
+        <li key={activity.id} className="flex gap-3 p-3">
+          <div className="mt-0.5">{activityIcon(activity.action)}</div>
+          <div className="min-w-0 flex-1">
+            <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+              <span className="font-medium">{activityLabel(activity.action)}</span>
+              <span className="text-xs text-muted-foreground">{formatActivityTime(activity.occurredAt)}</span>
+            </div>
+            <p className="mt-1 text-sm text-foreground">{activity.description}</p>
+            <p className="mt-1 text-xs text-muted-foreground">{activity.actorName ?? 'Người dùng không xác định'}</p>
+          </div>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+function activityIcon(action: QuotationActivityAction) {
+  switch (action) {
+    case 'Created':
+      return <CirclePlus className="h-4 w-4 text-cyan-600" />;
+    case 'Updated':
+      return <Save className="h-4 w-4 text-blue-600" />;
+    case 'Sent':
+      return <Send className="h-4 w-4 text-cyan-600" />;
+    case 'Confirmed':
+      return <CheckCircle2 className="h-4 w-4 text-emerald-600" />;
+    case 'Cancelled':
+      return <Ban className="h-4 w-4 text-red-600" />;
+    case 'OwnerTransferred':
+      return <ArrowRightLeft className="h-4 w-4 text-violet-600" />;
+    case 'Cloned':
+      return <Copy className="h-4 w-4 text-violet-600" />;
+  }
+}
+
+function activityLabel(action: QuotationActivityAction) {
+  switch (action) {
+    case 'Created':
+      return 'Tạo báo giá';
+    case 'Updated':
+      return 'Cập nhật';
+    case 'Sent':
+      return 'Gửi';
+    case 'Confirmed':
+      return 'Xác nhận';
+    case 'Cancelled':
+      return 'Hủy';
+    case 'OwnerTransferred':
+      return 'Chuyển chủ sở hữu';
+    case 'Cloned':
+      return 'Clone';
+  }
+}
+
+function formatActivityTime(value: string) {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value;
+  return date.toLocaleString('vi-VN', {
+    hour: '2-digit',
+    minute: '2-digit',
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+  });
 }
 
 function toFormDefaults(q?: Quotation): QuotationFormValues {

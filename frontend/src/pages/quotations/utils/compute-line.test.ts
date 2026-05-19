@@ -3,11 +3,10 @@ import {
   computeLineCost,
   computeLineTotal,
   computeTotals,
-  deriveQuantityFromDimensions,
 } from './compute-line';
 
 describe('compute-line', () => {
-  it('PerUnit line total: qty × unitPrice', () => {
+  it('PerUnit line total: qty x unitPrice', () => {
     expect(computeLineTotal({
       pricingMode: 'PerUnit',
       quantity: 5,
@@ -15,52 +14,45 @@ describe('compute-line', () => {
     })).toBe(60000);
   });
 
-  it('PerSquareMeter derives area from L*W*Sheet', () => {
-    const area = deriveQuantityFromDimensions({
+  it('PerLinearMeter line total: qty x length(m) x unitPrice', () => {
+    expect(computeLineTotal({
+      pricingMode: 'PerLinearMeter',
+      length: 2500,
+      quantity: 4,
+      unitPrice: 25000,
+    })).toBe(250000);
+  });
+
+  it('PerSquareMeter line total: qty x length(m) x width(m) x unitPrice', () => {
+    expect(computeLineTotal({
       pricingMode: 'PerSquareMeter',
       length: 2000,
       width: 1000,
-      sheetCount: 3,
-      quantity: 0,
-      unitPrice: 0,
-    });
-    expect(area).toBe(6);
+      quantity: 2,
+      unitPrice: 50000,
+    })).toBe(200000);
   });
 
-  it('PerLinearMeter derives meters from L*Sheet/1000', () => {
-    const m = deriveQuantityFromDimensions({
-      pricingMode: 'PerLinearMeter',
-      length: 2500,
-      sheetCount: 4,
-      quantity: 0,
-      unitPrice: 0,
-    });
-    expect(m).toBe(10);
-  });
-
-  it('PerCubicMeter derives m³ from L*W*T*Sheet/1e9', () => {
-    const v = deriveQuantityFromDimensions({
+  it('PerCubicMeter line total: qty x length(m) x width(m) x thickness(m) x unitPrice', () => {
+    expect(computeLineTotal({
       pricingMode: 'PerCubicMeter',
       length: 1000,
       width: 1000,
       thickness: 500,
-      sheetCount: 1,
-      quantity: 0,
-      unitPrice: 0,
-    });
-    expect(v).toBe(0.5);
+      quantity: 1,
+      unitPrice: 1000000,
+    })).toBe(500000);
   });
 
-  it('returns undefined when dimensions missing', () => {
+  it('returns zero total when required dimensions are missing', () => {
     expect(
-      deriveQuantityFromDimensions({
+      computeLineTotal({
         pricingMode: 'PerSquareMeter',
         length: 2000,
-        sheetCount: 1,
-        quantity: 0,
-        unitPrice: 0,
+        quantity: 1,
+        unitPrice: 50000,
       }),
-    ).toBeUndefined();
+    ).toBe(0);
   });
 
   it('totals: subtotal + tax - discount + freight', () => {
