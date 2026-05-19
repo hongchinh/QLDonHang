@@ -27,6 +27,7 @@
 - Keep API calls inside feature `api.ts` files and use `lib/api-client.ts` instead of raw Axios instances.
 - Keep shared CSS tokens in `src/styles`; avoid one-off layout CSS when an existing token/helper fits.
 - For dense action bars, keep button backgrounds restrained and color icons semantically: primary/save blue, send/add cyan, confirm/success emerald, cancel/delete red, clone/copy violet, Excel/export emerald, print indigo, navigation slate. Avoid coloring every button background unless a screen explicitly needs stronger grouping.
+- In data tables, right-align numeric and currency columns in both headers and cells, and use `tabular-nums` for readable column scanning.
 
 ## Tests And Verification
 

@@ -55,6 +55,10 @@ const STATUS_OPTIONS: ReadonlyArray<{ value: QuotationStatus; label: string }> =
 const VALID_STATUSES: ReadonlySet<QuotationStatus> = new Set(STATUS_OPTIONS.map((o) => o.value));
 const DEFAULT_ACTIVE_STATUSES: ReadonlyArray<QuotationStatus> = ['Draft', 'Sent', 'Confirmed'];
 
+function moneyHeader(label: string) {
+  return <div className="text-right">{label}</div>;
+}
+
 function formatDate(iso?: string) {
   if (!iso) return '';
   const d = new Date(iso);
@@ -64,6 +68,10 @@ function formatDate(iso?: string) {
 
 function formatNullableCurrency(value?: number | null) {
   return typeof value === 'number' ? currency.format(value) : '—';
+}
+
+function moneyCell(value?: number | null) {
+  return <span className="block text-right tabular-nums">{formatNullableCurrency(value)}</span>;
 }
 
 async function downloadPdf(id: string, code: string) {
@@ -163,48 +171,36 @@ export function QuotationListPage() {
       { header: 'Khách hàng', accessorKey: 'customerName' },
       { header: 'SĐT', accessorKey: 'contactPhone' },
       {
-        header: 'Tổng tiền hàng',
+        header: () => moneyHeader('Tổng tiền hàng'),
         accessorKey: 'subtotal',
-        cell: ({ row }) => (
-          <span className="tabular-nums">{currency.format(row.original.subtotal)}</span>
-        ),
+        cell: ({ row }) => moneyCell(row.original.subtotal),
       },
       {
-        header: 'Chiết khấu',
+        header: () => moneyHeader('Chiết khấu'),
         accessorKey: 'discount',
-        cell: ({ row }) => (
-          <span className="tabular-nums">{currency.format(row.original.discount)}</span>
-        ),
+        cell: ({ row }) => moneyCell(row.original.discount),
       },
       {
-        header: 'Vận chuyển',
+        header: () => moneyHeader('Vận chuyển'),
         accessorKey: 'freight',
-        cell: ({ row }) => (
-          <span className="tabular-nums">{currency.format(row.original.freight)}</span>
-        ),
+        cell: ({ row }) => moneyCell(row.original.freight),
       },
       {
-        header: 'Tổng tiền',
+        header: () => moneyHeader('Tổng tiền'),
         accessorKey: 'total',
-        cell: ({ row }) => (
-          <span className="tabular-nums">{currency.format(row.original.total)}</span>
-        ),
+        cell: ({ row }) => moneyCell(row.original.total),
       },
       ...(canViewCost
         ? [
             {
-              header: 'Tổng nhập',
+              header: () => moneyHeader('Tổng nhập'),
               accessorKey: 'totalCost',
-              cell: ({ row }: { row: { original: QuotationListItem } }) => (
-                <span className="tabular-nums">{formatNullableCurrency(row.original.totalCost)}</span>
-              ),
+              cell: ({ row }: { row: { original: QuotationListItem } }) => moneyCell(row.original.totalCost),
             } as ColumnDef<QuotationListItem>,
             {
-              header: 'Tổng LN',
+              header: () => moneyHeader('Tổng LN'),
               accessorKey: 'grossProfit',
-              cell: ({ row }: { row: { original: QuotationListItem } }) => (
-                <span className="tabular-nums">{formatNullableCurrency(row.original.grossProfit)}</span>
-              ),
+              cell: ({ row }: { row: { original: QuotationListItem } }) => moneyCell(row.original.grossProfit),
             } as ColumnDef<QuotationListItem>,
           ]
         : []),
