@@ -26,8 +26,8 @@ const quotationLineSchema = z.object({
   quantity: z.coerce.number().positive('Số lượng phải > 0'),
   unitPrice: z.coerce.number().nonnegative(),
   lineTotal: optionalNumber({ min: 0 }),
-  unitCost: optionalNumber({ min: 0 }),
-  lineCost: optionalNumber({ min: 0 }),
+  unitCost: optionalNumber(),
+  lineCost: optionalNumber(),
   lineProfit: optionalNumber(),
   note: optionalString(1000),
 });

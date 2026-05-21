@@ -17,7 +17,6 @@ public class UpsertQuotationLineRequestValidator : AbstractValidator<UpsertQuota
         RuleFor(x => x.PricingMode).IsInEnum();
         RuleFor(x => x.Quantity).GreaterThan(0);
         RuleFor(x => x.UnitPrice).GreaterThanOrEqualTo(0);
-        RuleFor(x => x.UnitCost).GreaterThanOrEqualTo(0).When(x => x.UnitCost.HasValue);
         RuleFor(x => x.Length).GreaterThanOrEqualTo(0).When(x => x.Length.HasValue);
         RuleFor(x => x.Width).GreaterThanOrEqualTo(0).When(x => x.Width.HasValue);
         RuleFor(x => x.Thickness).GreaterThanOrEqualTo(0).When(x => x.Thickness.HasValue);
