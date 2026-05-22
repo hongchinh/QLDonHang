@@ -43,4 +43,28 @@ export const quotationsApi = {
     const res = await api.get(`/quotations/${id}/excel`, { responseType: 'blob' });
     return res.data as Blob;
   },
+  downloadHandoverWithPriceExcel: async (id: string): Promise<Blob> => {
+    const res = await api.get(`/quotations/${id}/handover-with-price/excel`, {
+      responseType: 'blob',
+    });
+    return res.data as Blob;
+  },
+  downloadHandoverWithPricePdf: async (id: string): Promise<Blob> => {
+    const res = await api.get(`/quotations/${id}/handover-with-price/pdf`, {
+      responseType: 'blob',
+    });
+    return res.data as Blob;
+  },
+  downloadHandoverNoPriceExcel: async (id: string): Promise<Blob> => {
+    const res = await api.get(`/quotations/${id}/handover-no-price/excel`, {
+      responseType: 'blob',
+    });
+    return res.data as Blob;
+  },
+  downloadHandoverNoPricePdf: async (id: string): Promise<Blob> => {
+    const res = await api.get(`/quotations/${id}/handover-no-price/pdf`, {
+      responseType: 'blob',
+    });
+    return res.data as Blob;
+  },
 };

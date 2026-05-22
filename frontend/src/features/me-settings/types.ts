@@ -7,4 +7,10 @@ export interface MyQuotationSettings {
   templateFileName: string | null;
   templateOriginalName: string | null;
   templateUploadedAt: string | null;
+  handoverWithPriceTemplateFileName: string | null;
+  handoverWithPriceTemplateOriginalName: string | null;
+  handoverWithPriceTemplateUploadedAt: string | null;
+  handoverNoPriceTemplateFileName: string | null;
+  handoverNoPriceTemplateOriginalName: string | null;
+  handoverNoPriceTemplateUploadedAt: string | null;
 }
