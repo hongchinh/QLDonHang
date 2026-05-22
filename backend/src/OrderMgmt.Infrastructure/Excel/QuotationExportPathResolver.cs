@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using OrderMgmt.Application.Common.Interfaces;
 using OrderMgmt.Application.Sales.Quotations.Interfaces;
+using OrderMgmt.Application.Sales.Quotations.Models;
 
 namespace OrderMgmt.Infrastructure.Excel;
 
@@ -32,6 +33,29 @@ public class QuotationExportPathResolver : IQuotationExportPathResolver
         }
 
         return ResolveAbsolute(opts.TemplatePath);
+    }
+
+    public Task<string> ResolveHandoverTemplatePathAsync(
+        Guid ownerUserId,
+        QuotationTemplateType type,
+        CancellationToken ct = default)
+    {
+        var opts = _options.CurrentValue;
+
+        var (userFileName, systemPath) = type switch
+        {
+            QuotationTemplateType.HandoverWithPrice =>
+                ($"{ownerUserId}_handover_with_price.xlsx", opts.HandoverWithPriceTemplatePath),
+            QuotationTemplateType.HandoverNoPrice =>
+                ($"{ownerUserId}_handover_no_price.xlsx", opts.HandoverNoPriceTemplatePath),
+            _ => throw new ArgumentOutOfRangeException(nameof(type), type, null),
+        };
+
+        var userDir = ResolveAbsolute(opts.UserTemplatesPath);
+        var userPath = Path.Combine(userDir, userFileName);
+        if (File.Exists(userPath)) return Task.FromResult(userPath);
+
+        return Task.FromResult(ResolveAbsolute(systemPath));
     }
 
     public string GetUserTemplatesDirectory()

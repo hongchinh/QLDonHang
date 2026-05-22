@@ -26,9 +26,9 @@ export function optionalEmail(max = 255) {
 // after enforcing optional min/max bounds.
 export function optionalNumber(opts: { min?: number; max?: number } = {}) {
   return z
-    .union([z.string(), z.number(), z.undefined()])
+    .union([z.string(), z.number(), z.undefined(), z.null()])
     .transform((value, ctx) => {
-      if (value === '' || value === undefined) return undefined;
+      if (value == null || value === '') return undefined;
       const n = typeof value === 'number' ? value : Number(value);
       if (!Number.isFinite(n)) {
         ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Phải là số hợp lệ' });

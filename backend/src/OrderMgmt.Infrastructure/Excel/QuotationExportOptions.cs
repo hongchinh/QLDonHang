@@ -6,6 +6,8 @@ public class QuotationExportOptions
     public string TemplatePath { get; set; } = string.Empty;
     public string LibreOfficePath { get; set; } = string.Empty;
     public int ConversionTimeoutSeconds { get; set; } = 60;
+    public string HandoverWithPriceTemplatePath { get; set; } = string.Empty;
+    public string HandoverNoPriceTemplatePath { get; set; } = string.Empty;
 
     public string UserTemplatesPath { get; set; } = "templates/users";
     public long UploadMaxBytes { get; set; } = 5 * 1024 * 1024;

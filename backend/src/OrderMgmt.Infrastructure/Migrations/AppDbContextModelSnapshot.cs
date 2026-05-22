@@ -856,6 +856,30 @@ namespace OrderMgmt.Infrastructure.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("deleted_by");
 
+                    b.Property<string>("HandoverNoPriceTemplateFileName")
+                        .HasColumnType("text")
+                        .HasColumnName("handover_no_price_template_file_name");
+
+                    b.Property<string>("HandoverNoPriceTemplateOriginalName")
+                        .HasColumnType("text")
+                        .HasColumnName("handover_no_price_template_original_name");
+
+                    b.Property<DateTimeOffset?>("HandoverNoPriceTemplateUploadedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("handover_no_price_template_uploaded_at");
+
+                    b.Property<string>("HandoverWithPriceTemplateFileName")
+                        .HasColumnType("text")
+                        .HasColumnName("handover_with_price_template_file_name");
+
+                    b.Property<string>("HandoverWithPriceTemplateOriginalName")
+                        .HasColumnType("text")
+                        .HasColumnName("handover_with_price_template_original_name");
+
+                    b.Property<DateTimeOffset?>("HandoverWithPriceTemplateUploadedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("handover_with_price_template_uploaded_at");
+
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("boolean")
                         .HasColumnName("is_deleted");
