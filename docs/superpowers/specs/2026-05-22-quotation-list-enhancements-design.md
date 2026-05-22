@@ -67,8 +67,9 @@ public decimal AdvancePayment { get; set; }
 - Presets giữ nguyên: Hôm nay, 7N, 30N, Tháng này, Tháng trước, Tuỳ chỉnh
 
 **Cập nhật import:**
-- `pages/dashboard-page.tsx`: đổi import sang `@/components/ui/range-picker`
-- `features/dashboard/use-dashboard-params.ts`: không thay đổi (export `RangePreset` type vẫn ở đây, RangePicker import từ new location)
+- `RangePreset` type move cùng vào `components/ui/range-picker.tsx` (không còn export từ `use-dashboard-params.ts`)
+- `features/dashboard/use-dashboard-params.ts`: import `RangePreset` từ `@/components/ui/range-picker`
+- `pages/dashboard-page.tsx`: đổi import `RangePicker` sang `@/components/ui/range-picker`
 - Xoá file cũ `features/dashboard/components/range-picker.tsx`
 
 **`pages/quotations/quotation-list-page.tsx`:**
