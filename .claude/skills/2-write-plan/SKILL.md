@@ -192,7 +192,7 @@ If multiple viable approaches exist, present options via `AskUserQuestion`:
 When approved, end with:
 
 > Plan `<relative_path_to_plan>/SUMMARY.md` is ready.
-> Use `/clear` and then invoke the `execute-plan` skill with `<relative_path_to_plan>/SUMMARY.md` to execute it.
+> Use `/clear` and then invoke the `2-execute-plans` skill with `<relative_path_to_plan>/SUMMARY.md` to execute it.
 
 ## Rules
 
