@@ -1,5 +1,5 @@
 ---
-name: 1-brainstorming
+name: brainstorming
 description: "You MUST use this before any creative work - creating features, building components, adding functionality, or modifying behavior. Explores user intent, requirements and design before implementation."
 ---
 
@@ -19,17 +19,17 @@ Every project goes through this process. A todo list, a single-function utility,
 
 ## Checklist
 
-You MUST create a task for each of these items and complete them in order:
+Complete all applicable steps in order. Steps marked [conditional] are skipped when their condition is false:
 
 1. **Explore project context** — check files, docs, recent commits
-2. **Offer visual companion** (if topic will involve visual questions) — this is its own message, not combined with a clarifying question. See the Visual Companion section below.
+2. **[conditional: visual questions expected]** Offer visual companion — this is its own message, not combined with a clarifying question. See the Visual Companion section below.
 3. **Ask clarifying questions** — use `AskUserQuestion` tool, one topic at a time, understand purpose/constraints/success criteria
 4. **Propose 2-5 approaches** — with trade-offs and your recommendation
 5. **Present design** — in sections scaled to their complexity, get user approval after each section
 6. **Close the Loop** — use `AskUserQuestion` to present next-action options (write-plan / write artifacts / end session)
-7. **[If write artifacts]** Write design doc to `docs/brainstorms/YYMMDD-HHmm-<slug>/SUMMARY.md`
-8. **[If write artifacts]** Spec self-review — quick inline check for placeholders, contradictions, ambiguity, scope; then loop back to Close the Loop
-9. **[If write plan]** Invoke write-plan skill to create implementation plan
+7. **[conditional: user chose "write artifacts"]** Write design doc to `docs/brainstorms/YYMMDD-HHmm-<slug>/SUMMARY.md`
+8. **[conditional: user chose "write artifacts"]** Spec self-review — quick inline check for placeholders, contradictions, ambiguity, scope; then loop back to Close the Loop
+9. **[conditional: user chose "write plan"]** Invoke write-plan skill to create implementation plan
 
 ## Process Flow
 
@@ -169,4 +169,4 @@ A browser-based companion for showing mockups, diagrams, and visual options duri
 A question about a UI topic is not automatically a visual question. "What does personality mean in this context?" is a conceptual question — use the terminal. "Which wizard layout works better?" is a visual question — use the browser.
 
 If they agree to the companion, read the detailed guide before proceeding:
-`skills/1-brainstorming/visual-companion.md`
+`skills/brainstorming/visual-companion.md`

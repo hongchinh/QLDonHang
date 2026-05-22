@@ -89,10 +89,18 @@ IF conflicts with your human partner's prior decisions:
 
 ```
 IF reviewer suggests "implementing properly":
-  grep codebase for actual usage
+  Is this existing code being enhanced, or new code being added?
 
-  IF unused: "This endpoint isn't called. Remove it (YAGNI)?"
-  IF used: Then implement properly
+  IF existing code:
+    grep codebase for actual usage
+    IF unused: "This endpoint isn't called. Remove it (YAGNI)?"
+    IF used: Then implement properly
+
+  IF new code (feature doesn't exist yet):
+    grep is irrelevant — no callers exist by definition
+    Ask instead: "Is this feature in scope for the current task?"
+    IF not in scope: decline (YAGNI)
+    IF in scope: implement properly
 ```
 
 **your human partner's rule:** "You and reviewer both report to me. If we don't need this feature, don't add it."
@@ -203,6 +211,16 @@ You understand 1,2,3,6. Unclear on 4,5.
 ## GitHub Thread Replies
 
 When replying to inline review comments on GitHub, reply in the comment thread (`gh api repos/{owner}/{repo}/pulls/{pr}/comments/{id}/replies`), not as a top-level PR comment.
+
+## After All Feedback Is Resolved
+
+When every item is fixed and verified:
+
+1. Run full test suite — confirm no regressions
+2. If working in a branch: commit any remaining changes, then invoke `requesting-code-review` for a final pass before merge
+3. If all clear: invoke `finishing-a-development-branch` to complete the work
+
+Do not self-declare done without running tests. Do not push/merge without a final review pass.
 
 ## The Bottom Line
 

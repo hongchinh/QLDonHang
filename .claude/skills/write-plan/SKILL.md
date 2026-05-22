@@ -1,5 +1,5 @@
 ---
-name: 2-write-plan
+name: write-plan
 description: Create detailed, execution-ready implementation plans for complex or high-risk changes without coding. Use when scope is large, requirements are mostly known, and work should be broken into validated phases before execution.
 ---
 
@@ -26,17 +26,7 @@ Capture:
 - Constraints and dependencies
 - Risks, assumptions, and unknowns
 
-### Step 2: Initialize Plan Artifacts
-
-1. Create: `docs/plans/YYMMDD-HHmm-<plan-slug>/`
-2. Create:
-   - `SUMMARY.md`
-   - one phase file per implementation phase with naming convention `phase-XX-<name>.md`
-3. Add `research/` only if needed.
-
-Use the local clock for the `YYMMDD-HHmm` timestamp.
-
-### Step 3: Clarify Requirements
+### Step 2: Clarify Requirements
 
 Ask clarifying questions to resolve any ambiguity in the request. Focus on:
 
@@ -50,6 +40,16 @@ Rules:
 - If requirements are already clear or come from a prior `brainstorm` context, skip the confirmation step.
 - Use `AskUserQuestion` for gathering answers.
 - State assumptions explicitly in `SUMMARY.md`. If multiple interpretations of the request exist, list them and ask — never pick silently.
+
+### Step 3: Initialize Plan Artifacts
+
+1. Create: `docs/plans/YYMMDD-HHmm-<plan-slug>/`
+2. Create:
+   - `SUMMARY.md`
+   - one phase file per implementation phase with naming convention `phase-XX-<name>.md`
+3. Add `research/` only if needed.
+
+Use the local clock for the `YYMMDD-HHmm` timestamp.
 
 ### Step 4: Define Strategy and Phases
 
@@ -76,6 +76,8 @@ Granularity rule:
 5. Commit
 
 Write each of these as a separate numbered step inside the task. Steps that skip this cycle (e.g., "implement X and add tests") are plan failures.
+
+**Greenfield exception:** If the project has no test framework yet, the first phase MUST be "Set up test infrastructure" — install framework, configure runner, write one smoke test to confirm the setup works. All subsequent phases then follow TDD normally. Never plan feature tasks without a working test runner.
 
 ### Step 5: Research (Only if Needed)
 
@@ -192,7 +194,7 @@ If multiple viable approaches exist, present options via `AskUserQuestion`:
 When approved, end with:
 
 > Plan `<relative_path_to_plan>/SUMMARY.md` is ready.
-> Use `/clear` and then invoke the `2-execute-plans` skill with `<relative_path_to_plan>/SUMMARY.md` to execute it.
+> Use `/clear` and then invoke the `execute-plan` skill with `<relative_path_to_plan>/SUMMARY.md` to execute it.
 
 ## Rules
 
@@ -201,4 +203,4 @@ When approved, end with:
 - Align with project standards and existing architecture.
 - Keep plans self-contained and deterministic.
 - **Plan the minimum viable change:** No speculative phases, no "just in case" abstractions, no flexibility that wasn't requested. If a plan can be 3 phases instead of 6, make it 3. Every task should trace directly to a stated requirement.
-- If the write-plan request comes from a `brainstorm` session, skip steps already covered (context gathering, requirement clarification, research). Start from Step 4 using the brainstorm output as context.
+- If the write-plan request comes from a `brainstorm` session, skip steps already covered (context gathering, requirement clarification, research). Start from Step 3 (Initialize Plan Artifacts) using the brainstorm output as context.

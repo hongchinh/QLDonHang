@@ -24,9 +24,17 @@ Dispatch a code reviewer subagent to catch issues before they cascade. The revie
 ## How to Request
 
 **1. Get git SHAs:**
+
+Bash:
 ```bash
 BASE_SHA=$(git rev-parse HEAD~1)  # or origin/main
 HEAD_SHA=$(git rev-parse HEAD)
+```
+
+PowerShell:
+```powershell
+$BASE_SHA = git rev-parse HEAD~1  # or origin/main
+$HEAD_SHA = git rev-parse HEAD
 ```
 
 **2. Dispatch code reviewer subagent:**

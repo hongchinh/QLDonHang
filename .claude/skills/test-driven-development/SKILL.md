@@ -110,6 +110,8 @@ Vague name, tests mock not code
 - Clear name
 - Real code (no mocks unless unavoidable)
 
+**When mocking IS unavoidable:** external HTTP/network calls, third-party services with no test mode, hardware interfaces, system clock/time, non-deterministic sources (random, UUID). For everything else — database, file system, internal modules — prefer real implementations or in-memory alternatives over mocks.
+
 ### Verify RED - Watch It Fail
 
 **MANDATORY. Never skip.**
