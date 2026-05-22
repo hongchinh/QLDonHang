@@ -13,4 +13,12 @@ public class UserQuotationSettings : BaseEntity
     public string? TemplateFileName { get; set; }
     public string? TemplateOriginalName { get; set; }
     public DateTimeOffset? TemplateUploadedAt { get; set; }
+
+    public string? HandoverWithPriceTemplateFileName { get; set; }
+    public string? HandoverWithPriceTemplateOriginalName { get; set; }
+    public DateTimeOffset? HandoverWithPriceTemplateUploadedAt { get; set; }
+
+    public string? HandoverNoPriceTemplateFileName { get; set; }
+    public string? HandoverNoPriceTemplateOriginalName { get; set; }
+    public DateTimeOffset? HandoverNoPriceTemplateUploadedAt { get; set; }
 }
