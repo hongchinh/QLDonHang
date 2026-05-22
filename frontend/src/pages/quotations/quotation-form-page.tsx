@@ -8,6 +8,7 @@ import {
   BadgeCheck,
   Ban,
   CheckCircle2,
+  ChevronDown,
   CirclePlus,
   Copy,
   FileSpreadsheet,
@@ -45,6 +46,12 @@ import type { Customer, CustomerSearchItem } from '@/features/customers/types';
 import { CustomerAutocomplete } from '@/components/customer-autocomplete/customer-autocomplete';
 import { CustomerQuickAddDialog } from '@/components/customer-autocomplete/customer-quick-add-dialog';
 import { Button } from '@/components/ui/button';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -61,7 +68,7 @@ import { computeLineQuantity } from './utils/compute-line';
 import type { HeaderLike, LineLike } from './utils/compute-line';
 
 type QuotationSubmitIntent = 'save-exit' | 'save-stay' | 'save-print';
-type QuotationButtonAction = 'send' | 'confirm' | 'cancel' | 'accounting-confirm' | 'clone' | 'print' | 'excel';
+type QuotationButtonAction = 'send' | 'confirm' | 'cancel' | 'accounting-confirm' | 'clone' | 'print' | 'excel' | 'excel-handover-price' | 'excel-handover-no-price' | 'print-handover-price' | 'print-handover-no-price';
 
 export function QuotationFormPage() {
   const { id } = useParams<{ id: string }>();
@@ -149,6 +156,60 @@ export function QuotationFormPage() {
           toast({ variant: 'destructive', title: 'Không tải được Excel', description: getErrorMessage(err) });
         }
       }}
+      onPrintHandoverWithPrice={async () => {
+        if (!id || !isEdit || !quotation) return;
+        try {
+          const blob = await quotationsApi.downloadHandoverWithPricePdf(id);
+          const url = URL.createObjectURL(blob);
+          window.open(url, '_blank', 'noopener,noreferrer');
+          window.setTimeout(() => URL.revokeObjectURL(url), 60_000);
+        } catch (err) {
+          toast({ variant: 'destructive', title: 'Không mở được PDF', description: getErrorMessage(err) });
+        }
+      }}
+      onPrintHandoverNoPrice={async () => {
+        if (!id || !isEdit || !quotation) return;
+        try {
+          const blob = await quotationsApi.downloadHandoverNoPricePdf(id);
+          const url = URL.createObjectURL(blob);
+          window.open(url, '_blank', 'noopener,noreferrer');
+          window.setTimeout(() => URL.revokeObjectURL(url), 60_000);
+        } catch (err) {
+          toast({ variant: 'destructive', title: 'Không mở được PDF', description: getErrorMessage(err) });
+        }
+      }}
+      onDownloadHandoverWithPriceExcel={async () => {
+        if (!id || !isEdit || !quotation) return;
+        try {
+          const blob = await quotationsApi.downloadHandoverWithPriceExcel(id);
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = `BieuBanBanGiao_${quotation.code}.xlsx`;
+          document.body.appendChild(a);
+          a.click();
+          a.remove();
+          URL.revokeObjectURL(url);
+        } catch (err) {
+          toast({ variant: 'destructive', title: 'Không tải được Excel', description: getErrorMessage(err) });
+        }
+      }}
+      onDownloadHandoverNoPriceExcel={async () => {
+        if (!id || !isEdit || !quotation) return;
+        try {
+          const blob = await quotationsApi.downloadHandoverNoPriceExcel(id);
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = `BieuBanBanGiao_${quotation.code}.xlsx`;
+          document.body.appendChild(a);
+          a.click();
+          a.remove();
+          URL.revokeObjectURL(url);
+        } catch (err) {
+          toast({ variant: 'destructive', title: 'Không tải được Excel', description: getErrorMessage(err) });
+        }
+      }}
     />
   );
 }
@@ -171,6 +232,10 @@ interface InnerProps {
   onTransition: (action: QuotationAction) => Promise<void>;
   onPrint: () => Promise<void>;
   onDownloadExcel: () => Promise<void>;
+  onPrintHandoverWithPrice: () => Promise<void>;
+  onPrintHandoverNoPrice: () => Promise<void>;
+  onDownloadHandoverWithPriceExcel: () => Promise<void>;
+  onDownloadHandoverNoPriceExcel: () => Promise<void>;
 }
 
 function QuotationFormInner({
@@ -184,6 +249,10 @@ function QuotationFormInner({
   onTransition,
   onPrint,
   onDownloadExcel,
+  onPrintHandoverWithPrice,
+  onPrintHandoverNoPrice,
+  onDownloadHandoverWithPriceExcel,
+  onDownloadHandoverNoPriceExcel,
 }: InnerProps) {
   const navigateInner = useNavigate();
   const clone = useCloneQuotation();
@@ -510,26 +579,54 @@ function QuotationFormInner({
                 {pendingButtonAction === 'clone' || clone.isPending ? 'Đang clone...' : 'Clone'}
               </Button>
             </Can>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => runButtonAction('excel', onDownloadExcel)}
-              disabled={isSubmitBusy}
-              aria-busy={pendingButtonAction === 'excel'}
-            >
-              {pendingButtonAction === 'excel' ? <ButtonLoader className="mr-2" /> : <FileSpreadsheet className="mr-2 h-4 w-4 text-emerald-700" />}
-              {pendingButtonAction === 'excel' ? 'Đang xuất...' : 'Excel'}
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => runButtonAction('print', onPrint)}
-              disabled={isSubmitBusy}
-              aria-busy={pendingButtonAction === 'print'}
-            >
-              {pendingButtonAction === 'print' ? <ButtonLoader className="mr-2" /> : <Printer className="mr-2 h-4 w-4 text-indigo-600" />}
-              {pendingButtonAction === 'print' ? 'Đang mở PDF...' : 'In'}
-            </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={isSubmitBusy}
+                >
+                  <FileSpreadsheet className="mr-2 h-4 w-4 text-emerald-700" />
+                  Excel
+                  <ChevronDown className="ml-1 h-3 w-3" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={() => runButtonAction('excel', onDownloadExcel)}>
+                  Báo giá
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => runButtonAction('excel-handover-price', onDownloadHandoverWithPriceExcel)}>
+                  Biên bản bàn giao (có tiền)
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => runButtonAction('excel-handover-no-price', onDownloadHandoverNoPriceExcel)}>
+                  Biên bản bàn giao (không tiền)
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={isSubmitBusy}
+                >
+                  <Printer className="mr-2 h-4 w-4 text-indigo-600" />
+                  In
+                  <ChevronDown className="ml-1 h-3 w-3" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={() => runButtonAction('print', onPrint)}>
+                  Báo giá
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => runButtonAction('print-handover-price', onPrintHandoverWithPrice)}>
+                  Biên bản bàn giao (có tiền)
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => runButtonAction('print-handover-no-price', onPrintHandoverNoPrice)}>
+                  Biên bản bàn giao (không tiền)
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
               </>
             )}
           </div>
