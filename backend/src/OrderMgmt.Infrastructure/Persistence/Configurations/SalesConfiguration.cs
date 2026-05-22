@@ -29,6 +29,7 @@ public class QuotationConfiguration : IEntityTypeConfiguration<Quotation>
         b.Property(x => x.Freight).HasColumnType("numeric(18,2)");
         b.Property(x => x.TaxAmount).HasColumnType("numeric(18,2)");
         b.Property(x => x.Total).HasColumnType("numeric(18,2)");
+        b.Property(x => x.AdvancePayment).HasColumnType("numeric(18,2)");
         b.Property(x => x.TotalCost).HasColumnType("numeric(18,2)");
         b.Property(x => x.GrossProfit).HasColumnType("numeric(18,2)");
         b.Property(x => x.TaxRate).HasColumnType("numeric(5,2)");

@@ -29,6 +29,8 @@ public class QuotationService : IQuotationService
         { (QuotationStatus.Sent, QuotationAction.Confirm), QuotationStatus.Confirmed },
         { (QuotationStatus.Sent, QuotationAction.Cancel), QuotationStatus.Cancelled },
         { (QuotationStatus.Confirmed, QuotationAction.Cancel), QuotationStatus.Cancelled },
+        { (QuotationStatus.Confirmed, QuotationAction.AccountingConfirm), QuotationStatus.AccountingConfirmed },
+        { (QuotationStatus.AccountingConfirmed, QuotationAction.Cancel), QuotationStatus.Cancelled },
     };
 
     private readonly IAppDbContext _db;
@@ -128,16 +130,22 @@ public class QuotationService : IQuotationService
         {
             q.CancelledAt = nowUtc;
         }
+        if (newStatus == QuotationStatus.AccountingConfirmed && q.AccountingConfirmedAt == null)
+        {
+            q.AccountingConfirmedAt = nowUtc;
+            q.AccountingConfirmedByUserId = _currentUser.UserId;
+        }
     }
 
     private static int CompareStatus(QuotationStatus a, QuotationStatus b)
     {
-        // Order: Draft(1) < Sent(2) < Confirmed(3). Cancelled handled separately.
+        // Order: Draft(0) < Sent(1) < Confirmed(2) < AccountingConfirmed(3). Cancelled handled separately.
         static int Rank(QuotationStatus s) => s switch
         {
             QuotationStatus.Draft => 0,
             QuotationStatus.Sent => 1,
             QuotationStatus.Confirmed => 2,
+            QuotationStatus.AccountingConfirmed => 3,
             _ => -1,
         };
         return Rank(a).CompareTo(Rank(b));
@@ -227,6 +235,7 @@ public class QuotationService : IQuotationService
                 GrossProfit = canViewCost ? q.GrossProfit : null,
                 Status = q.Status,
                 ConfirmedAt = q.ConfirmedAt,
+                AccountingConfirmedAt = q.AccountingConfirmedAt,
                 OwnerUserId = q.OwnerUserId,
                 OwnerFullName = _db.Users.IgnoreQueryFilters()
                     .Where(u => u.Id == q.OwnerUserId)
@@ -319,8 +328,18 @@ public class QuotationService : IQuotationService
                 .FirstOrDefaultAsync(ct);
         }
 
+        string? accountingConfirmedByName = null;
+        if (quotation.AccountingConfirmedByUserId.HasValue)
+        {
+            accountingConfirmedByName = await _db.Users.IgnoreQueryFilters()
+                .AsNoTracking()
+                .Where(u => u.Id == quotation.AccountingConfirmedByUserId.Value)
+                .Select(u => u.FullName)
+                .FirstOrDefaultAsync(ct);
+        }
+
         var canEdit = await ComputeCanEditAsync(quotation, owner?.IsDeleted ?? false, ct);
-        return MapToDto(quotation, owner?.FullName, owner?.IsDeleted ?? false, canEdit, confirmedByName, CanViewCost());
+        return MapToDto(quotation, owner?.FullName, owner?.IsDeleted ?? false, canEdit, confirmedByName, CanViewCost(), accountingConfirmedByName);
     }
 
     public async Task<IReadOnlyList<QuotationActivityDto>> ListActivitiesAsync(Guid id, CancellationToken ct = default)
@@ -426,6 +445,7 @@ public class QuotationService : IQuotationService
                 TaxRate = request.TaxRate,
                 Discount = request.Discount,
                 Freight = request.Freight,
+                AdvancePayment = request.AdvancePayment,
                 InternalNote = request.InternalNote,
                 Status = QuotationStatus.Draft,
             };
@@ -482,6 +502,7 @@ public class QuotationService : IQuotationService
         quotation.TaxRate = request.TaxRate;
         quotation.Discount = request.Discount;
         quotation.Freight = request.Freight;
+        quotation.AdvancePayment = request.AdvancePayment;
         quotation.InternalNote = request.InternalNote;
 
         await PopulateLinesAsync(quotation, request.Lines, isNew: false, ct);
@@ -542,8 +563,9 @@ public class QuotationService : IQuotationService
         if (!Transitions.TryGetValue((quotation.Status, action), out var next))
             throw new DomainException("CONFLICT", $"Không thể chuyển trạng thái '{quotation.Status}' bằng hành động '{action}'.");
 
-        // Cancel always allowed; other actions are subject to lock-at and orphan/cancelled guards.
-        if (action != QuotationAction.Cancel)
+        // Cancel and AccountingConfirm skip lock-at: both are transitions (not content edits),
+        // each gated by its own dedicated permission.
+        if (action != QuotationAction.Cancel && action != QuotationAction.AccountingConfirm)
             await EnsureCanModifyAsync(quotation, ct);
 
         if (action == QuotationAction.Cancel
@@ -552,6 +574,15 @@ public class QuotationService : IQuotationService
         {
             throw new ForbiddenException("Bạn không có quyền hủy báo giá đã xác nhận.");
         }
+
+        if (action == QuotationAction.AccountingConfirm
+            && !_currentUser.HasPermission(Permissions.Quotations.AccountingConfirm))
+            throw new ForbiddenException("Bạn không có quyền xác nhận kế toán báo giá.");
+
+        if (action == QuotationAction.Cancel
+            && quotation.Status == QuotationStatus.AccountingConfirmed
+            && !_currentUser.HasPermission(Permissions.Quotations.CancelAccountingConfirmed))
+            throw new ForbiddenException("Bạn không có quyền hủy báo giá đã kế toán xác nhận.");
 
         quotation.Status = next;
         ApplyStatusTimestamps(quotation, next);
@@ -914,6 +945,7 @@ public class QuotationService : IQuotationService
     {
         QuotationAction.Send => QuotationActivityAction.Sent,
         QuotationAction.Confirm => QuotationActivityAction.Confirmed,
+        QuotationAction.AccountingConfirm => QuotationActivityAction.AccountingConfirmed,
         QuotationAction.Cancel => QuotationActivityAction.Cancelled,
         _ => throw new ArgumentOutOfRangeException(nameof(action), action, null),
     };
@@ -922,6 +954,7 @@ public class QuotationService : IQuotationService
     {
         QuotationAction.Send => "Gửi báo giá",
         QuotationAction.Confirm => "Xác nhận báo giá",
+        QuotationAction.AccountingConfirm => "Kế toán xác nhận đã nhận tiền",
         QuotationAction.Cancel => "Hủy báo giá",
         _ => throw new ArgumentOutOfRangeException(nameof(action), action, null),
     };
@@ -932,7 +965,8 @@ public class QuotationService : IQuotationService
         bool isOwnerDeleted = false,
         bool canEdit = true,
         string? confirmedByName = null,
-        bool canViewCost = false) => new()
+        bool canViewCost = false,
+        string? accountingConfirmedByName = null) => new()
     {
         Id = q.Id,
         Code = q.Code,
@@ -960,6 +994,7 @@ public class QuotationService : IQuotationService
         TaxRate = q.TaxRate,
         TaxAmount = q.TaxAmount,
         Total = q.Total,
+        AdvancePayment = q.AdvancePayment,
         TotalCost = canViewCost ? q.TotalCost : null,
         GrossProfit = canViewCost ? q.GrossProfit : null,
         Status = q.Status,
@@ -967,6 +1002,9 @@ public class QuotationService : IQuotationService
         ConfirmedByUserId = q.ConfirmedByUserId,
         ConfirmedByName = confirmedByName,
         CancelledAt = q.CancelledAt,
+        AccountingConfirmedAt = q.AccountingConfirmedAt,
+        AccountingConfirmedByUserId = q.AccountingConfirmedByUserId,
+        AccountingConfirmedByName = accountingConfirmedByName,
         InternalNote = q.InternalNote,
         CreatedAt = q.CreatedAt,
         CreatedBy = q.CreatedBy,

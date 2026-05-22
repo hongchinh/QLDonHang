@@ -26,9 +26,62 @@ public class QuotationStateMachineTests : QuotationTestBase
         afterConfirm.ConfirmedAt.Should().NotBeNull();
         afterConfirm.ConfirmedByUserId.Should().NotBeNull();
 
+        var afterAccountingConfirm = await TransitionAsync(draft.Id, QuotationAction.AccountingConfirm);
+        afterAccountingConfirm.Status.Should().Be(QuotationStatus.AccountingConfirmed);
+        afterAccountingConfirm.AccountingConfirmedAt.Should().NotBeNull();
+        afterAccountingConfirm.AccountingConfirmedByUserId.Should().NotBeNull();
+
         var afterCancel = await TransitionAsync(draft.Id, QuotationAction.Cancel);
         afterCancel.Status.Should().Be(QuotationStatus.Cancelled);
         afterCancel.CancelledAt.Should().NotBeNull();
+    }
+
+    [Fact]
+    public async Task Confirmed_to_AccountingConfirmed_succeeds()
+    {
+        var draft = await CreateDraftAsync();
+        await TransitionToConfirmedAsync(draft.Id);
+
+        var result = await TransitionAsync(draft.Id, QuotationAction.AccountingConfirm);
+
+        result.Status.Should().Be(QuotationStatus.AccountingConfirmed);
+        result.AccountingConfirmedAt.Should().NotBeNull();
+        result.AccountingConfirmedByUserId.Should().NotBeNull();
+        result.AccountingConfirmedAt.Should().BeCloseTo(DateTime.UtcNow, precision: TimeSpan.FromSeconds(10));
+    }
+
+    [Fact]
+    public async Task AccountingConfirmed_to_Cancelled_succeeds()
+    {
+        var draft = await CreateDraftAsync();
+        await TransitionToConfirmedAsync(draft.Id);
+        await TransitionAsync(draft.Id, QuotationAction.AccountingConfirm);
+
+        var result = await TransitionAsync(draft.Id, QuotationAction.Cancel);
+
+        result.Status.Should().Be(QuotationStatus.Cancelled);
+        result.CancelledAt.Should().NotBeNull();
+    }
+
+    [Fact]
+    public async Task Cannot_accounting_confirm_from_draft()
+    {
+        var draft = await CreateDraftAsync();
+        var resp = await _client.PostAsJsonAsync(
+            $"/api/quotations/{draft.Id}/transition",
+            new TransitionQuotationRequest { Action = QuotationAction.AccountingConfirm });
+        resp.StatusCode.Should().Be(HttpStatusCode.Conflict);
+    }
+
+    [Fact]
+    public async Task Cannot_accounting_confirm_from_sent()
+    {
+        var draft = await CreateDraftAsync();
+        await TransitionAsync(draft.Id, QuotationAction.Send);
+        var resp = await _client.PostAsJsonAsync(
+            $"/api/quotations/{draft.Id}/transition",
+            new TransitionQuotationRequest { Action = QuotationAction.AccountingConfirm });
+        resp.StatusCode.Should().Be(HttpStatusCode.Conflict);
     }
 
     [Fact]
@@ -81,5 +134,11 @@ public class QuotationStateMachineTests : QuotationTestBase
         resp.EnsureSuccessStatusCode();
         var body = await resp.Content.ReadFromJsonAsync<ApiResponse<QuotationDto>>(TestJson.Options);
         return body!.Data!;
+    }
+
+    private async Task<QuotationDto> TransitionToConfirmedAsync(Guid id)
+    {
+        await TransitionAsync(id, QuotationAction.Send);
+        return await TransitionAsync(id, QuotationAction.Confirm);
     }
 }

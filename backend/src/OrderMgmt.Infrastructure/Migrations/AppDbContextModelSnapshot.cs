@@ -927,6 +927,18 @@ namespace OrderMgmt.Infrastructure.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("id");
 
+                    b.Property<DateTime?>("AccountingConfirmedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("accounting_confirmed_at");
+
+                    b.Property<Guid?>("AccountingConfirmedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("accounting_confirmed_by_user_id");
+
+                    b.Property<decimal>("AdvancePayment")
+                        .HasColumnType("numeric(18,2)")
+                        .HasColumnName("advance_payment");
+
                     b.Property<DateTime?>("CancelledAt")
                         .HasColumnType("timestamptz")
                         .HasColumnName("cancelled_at");
@@ -1382,6 +1394,40 @@ namespace OrderMgmt.Infrastructure.Migrations
                         .HasDatabaseName("ix_quotation_owner_history_quotation_changed");
 
                     b.ToTable("quotation_owner_history", (string)null);
+                });
+
+            modelBuilder.Entity("OrderMgmt.Domain.Entities.Sales.QuotationSystemSettings", b =>
+                {
+                    b.Property<int>("Id")
+                        .HasColumnType("integer")
+                        .HasColumnName("id");
+
+                    b.Property<string>("RevenueReportingDateField")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("revenue_reporting_date_field");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.Property<Guid?>("UpdatedBy")
+                        .HasColumnType("uuid")
+                        .HasColumnName("updated_by");
+
+                    b.HasKey("Id")
+                        .HasName("pk_quotation_system_settings");
+
+                    b.ToTable("quotation_system_settings", (string)null);
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1,
+                            RevenueReportingDateField = "QuotationDate",
+                            UpdatedAt = new DateTimeOffset(new DateTime(1970, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0))
+                        });
                 });
 
             modelBuilder.Entity("OrderMgmt.Domain.Notifications.Notification", b =>

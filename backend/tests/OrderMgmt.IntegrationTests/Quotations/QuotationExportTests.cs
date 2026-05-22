@@ -1,6 +1,7 @@
 using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
+using ClosedXML.Excel;
 using FluentAssertions;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.DependencyInjection;
@@ -8,6 +9,7 @@ using OrderMgmt.Application.Common.Models;
 using OrderMgmt.Application.Identity.Models;
 using OrderMgmt.Application.Sales.Quotations.Interfaces;
 using OrderMgmt.Application.Sales.Quotations.Models;
+using OrderMgmt.Infrastructure.Excel;
 using OrderMgmt.IntegrationTests.Fixtures;
 using Xunit;
 
@@ -57,6 +59,32 @@ public class QuotationExportTests : QuotationTestBase
 
         client.Dispose();
         await ((IAsyncLifetime)factory).DisposeAsync();
+    }
+
+    [Fact]
+    public async Task Excel_AdvancePayment_WrittenToCorrectCells()
+    {
+        var request = BuildRequest();
+        request.AdvancePayment = 50_000m;
+        var create = await _client.PostAsJsonAsync("/api/quotations", request);
+        var created = await create.Content.ReadFromJsonAsync<ApiResponse<QuotationDto>>(TestJson.Options);
+        var id = created!.Data!.Id;
+
+        var response = await _client.GetAsync($"/api/quotations/{id}/excel");
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var bytes = await response.Content.ReadAsByteArrayAsync();
+
+        using var wb = new XLWorkbook(new MemoryStream(bytes));
+        var ws = wb.Worksheet(1);
+
+        // summaryRow với 1 item line = FirstSampleRow(15) + 1 = 16
+        const int summaryRow = 16;
+        var advanceCell = ws.Cell(summaryRow + QuotationExcelRenderer.AdvancePaymentRowOffset, 7);
+        var remainingCell = ws.Cell(summaryRow + QuotationExcelRenderer.RemainingBalanceRowOffset, 7);
+
+        advanceCell.GetDouble().Should().Be(50_000d);
+        // Total = 5 * 12000 = 60000, AdvancePayment = 50000, Remaining = 10000
+        remainingCell.GetDouble().Should().Be(10_000d);
     }
 
     private static async Task AuthenticateClientAsync(HttpClient client)

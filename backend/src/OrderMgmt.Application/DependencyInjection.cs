@@ -48,6 +48,7 @@ public static class DependencyInjection
         services.AddScoped<IProductService, ProductService>();
         services.AddScoped<ICatalogLookupService, CatalogLookupService>();
         services.AddScoped<IQuotationService, QuotationService>();
+        services.AddScoped<IQuotationSystemSettingsService, QuotationSystemSettingsService>();
         services.AddScoped<IQuotationDashboardService, QuotationDashboardService>();
         services.AddScoped<IDashboardService, DashboardService>();
         services.AddScoped<IUserQuotationSettingsService, UserQuotationSettingsService>();

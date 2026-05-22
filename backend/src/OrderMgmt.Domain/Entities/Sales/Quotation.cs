@@ -35,6 +35,7 @@ public class Quotation : BaseEntity
     public decimal TaxRate { get; set; }
     public decimal TaxAmount { get; set; }
     public decimal Total { get; set; }
+    public decimal AdvancePayment { get; set; }
     public decimal TotalCost { get; set; }
     public decimal GrossProfit { get; set; }
 
@@ -42,6 +43,8 @@ public class Quotation : BaseEntity
     public DateTime? ConfirmedAt { get; set; }
     public Guid? ConfirmedByUserId { get; set; }
     public DateTime? CancelledAt { get; set; }
+    public DateTime? AccountingConfirmedAt { get; set; }
+    public Guid? AccountingConfirmedByUserId { get; set; }
     public string? InternalNote { get; set; }
 
     public ICollection<QuotationLine> Lines { get; set; } = new List<QuotationLine>();

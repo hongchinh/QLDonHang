@@ -23,4 +23,7 @@
     <ProjectReference Include="..\OrderMgmt.Domain\OrderMgmt.Domain.csproj" />
     <ProjectReference Include="..\OrderMgmt.Application\OrderMgmt.Application.csproj" />
   </ItemGroup>
+  <ItemGroup>
+    <InternalsVisibleTo Include="OrderMgmt.IntegrationTests" />
+  </ItemGroup>
 </Project>

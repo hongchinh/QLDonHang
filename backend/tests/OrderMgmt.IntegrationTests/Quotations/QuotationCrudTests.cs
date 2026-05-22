@@ -155,4 +155,51 @@ public class QuotationCrudTests : QuotationTestBase
             $"/api/quotations/{id}", TestJson.Options);
         get!.Data!.CustomerName.Should().Be("Test Customer");
     }
+
+    [Fact]
+    public async Task Create_WithAdvancePayment_PersistsValue()
+    {
+        var request = BuildRequest();
+        request.AdvancePayment = 50_000m;
+
+        var create = await _client.PostAsJsonAsync("/api/quotations", request);
+        create.StatusCode.Should().Be(HttpStatusCode.OK);
+        var created = await create.Content.ReadFromJsonAsync<ApiResponse<QuotationDto>>(TestJson.Options);
+
+        var get = await _client.GetFromJsonAsync<ApiResponse<QuotationDto>>(
+            $"/api/quotations/{created!.Data!.Id}", TestJson.Options);
+        get!.Data!.AdvancePayment.Should().Be(50_000m);
+    }
+
+    [Fact]
+    public async Task Update_ChangesAdvancePayment()
+    {
+        var create = await _client.PostAsJsonAsync("/api/quotations", BuildRequest());
+        var created = await create.Content.ReadFromJsonAsync<ApiResponse<QuotationDto>>(TestJson.Options);
+        var id = created!.Data!.Id;
+
+        var update = BuildRequest();
+        update.AdvancePayment = 30_000m;
+        var put = await _client.PutAsJsonAsync($"/api/quotations/{id}", update);
+        put.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        var get = await _client.GetFromJsonAsync<ApiResponse<QuotationDto>>(
+            $"/api/quotations/{id}", TestJson.Options);
+        get!.Data!.AdvancePayment.Should().Be(30_000m);
+    }
+
+    [Fact]
+    public async Task Clone_DoesNotCopyAdvancePayment()
+    {
+        var request = BuildRequest();
+        request.AdvancePayment = 100_000m;
+        var create = await _client.PostAsJsonAsync("/api/quotations", request);
+        var created = await create.Content.ReadFromJsonAsync<ApiResponse<QuotationDto>>(TestJson.Options);
+        var id = created!.Data!.Id;
+
+        var clone = await _client.PostAsJsonAsync($"/api/quotations/{id}/clone", new { });
+        clone.StatusCode.Should().Be(HttpStatusCode.OK);
+        var cloned = await clone.Content.ReadFromJsonAsync<ApiResponse<QuotationDto>>(TestJson.Options);
+        cloned!.Data!.AdvancePayment.Should().Be(0m);
+    }
 }

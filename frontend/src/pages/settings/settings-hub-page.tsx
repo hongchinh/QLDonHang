@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { UserCog, Users2 } from 'lucide-react';
+import { Settings, UserCog, Users2 } from 'lucide-react';
 import { Card, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAuthStore } from '@/stores/auth-store';
 
@@ -15,6 +15,21 @@ export function SettingsHubPage() {
       </div>
 
       <div className="grid gap-4 md:grid-cols-2">
+        {hasPermission('system.manage_settings') && (
+          <Link to="/settings/quotation" className="block">
+            <Card className="h-full transition hover:border-primary">
+              <CardHeader>
+                <div className="flex items-center gap-2">
+                  <Settings className="h-5 w-5" />
+                  <CardTitle>Cấu hình hệ thống báo giá</CardTitle>
+                </div>
+                <CardDescription>
+                  Chọn trường ngày dùng trong báo cáo doanh thu và dashboard.
+                </CardDescription>
+              </CardHeader>
+            </Card>
+          </Link>
+        )}
         <Link to="/settings/my-quotation-settings" className="block">
           <Card className="h-full transition hover:border-primary">
             <CardHeader>

@@ -526,6 +526,16 @@ function dialogContent(p: { item: QuotationListItem; action: QuotationAction }):
           </>
         ),
       };
+    case 'AccountingConfirm':
+      return {
+        title: 'KT xác nhận đã nhận tiền?',
+        confirmLabel: 'KT xác nhận',
+        description: (
+          <>
+            Báo giá <strong>{p.item.code}</strong> sẽ chuyển sang trạng thái "KT xác nhận".
+          </>
+        ),
+      };
     case 'Cancel':
       return {
         title: 'Hủy báo giá?',
@@ -548,6 +558,7 @@ function successToastTitle(action: QuotationAction): string {
   switch (action) {
     case 'Send': return 'Đã gửi báo giá';
     case 'Confirm': return 'Đã xác nhận báo giá';
+    case 'AccountingConfirm': return 'KT đã xác nhận';
     case 'Cancel': return 'Đã hủy báo giá';
   }
 }
@@ -556,6 +567,7 @@ function errorToastTitle(action: QuotationAction): string {
   switch (action) {
     case 'Send': return 'Không thể gửi';
     case 'Confirm': return 'Không thể xác nhận';
+    case 'AccountingConfirm': return 'Không thể KT xác nhận';
     case 'Cancel': return 'Không thể hủy';
   }
 }

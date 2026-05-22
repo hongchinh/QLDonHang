@@ -33,6 +33,7 @@ public enum QuotationStatus
     Draft = 1,
     Sent = 2,
     Confirmed = 3,
+    AccountingConfirmed = 4,
     Cancelled = 9,
 }
 
@@ -45,6 +46,7 @@ public enum QuotationActivityAction
     Cancelled = 5,
     OwnerTransferred = 6,
     Cloned = 7,
+    AccountingConfirmed = 8,
 }
 
 public enum UserStatus

@@ -30,6 +30,7 @@ public interface IAppDbContext
     DbSet<QuotationActivity> QuotationActivities { get; }
 
     DbSet<SystemBranding> SystemBranding { get; }
+    DbSet<QuotationSystemSettings> QuotationSystemSettings { get; }
 
     DbSet<Notification> Notifications { get; }
 

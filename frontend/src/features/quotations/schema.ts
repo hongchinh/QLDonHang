@@ -45,6 +45,7 @@ export const quotationSchema = z.object({
   taxRate: z.coerce.number().min(0).max(100),
   discount: z.coerce.number().min(0),
   freight: z.coerce.number().min(0),
+  advancePayment: z.coerce.number().min(0),
   internalNote: optionalString(2000),
   lines: z.array(quotationLineSchema).min(1, 'Báo giá phải có ít nhất 1 dòng'),
 });

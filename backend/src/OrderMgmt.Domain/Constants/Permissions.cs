@@ -51,6 +51,13 @@ public static class Permissions
         public const string TransferAny = "quotations.transfer_any";
         public const string CloneOrphan = "quotations.clone_orphan";
         public const string BypassLock = "quotations.bypass_lock";
+        public const string AccountingConfirm = "quotations.accounting_confirm";
+        public const string CancelAccountingConfirmed = "quotations.cancel_accounting_confirmed";
+    }
+
+    public static class System
+    {
+        public const string ManageSettings = "system.manage_settings";
     }
 
     public static class UserSettings

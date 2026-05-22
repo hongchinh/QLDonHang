@@ -5,6 +5,7 @@ const MAP: Record<QuotationStatus, { label: string; variant: BadgeProps['variant
   Draft: { label: 'Nháp', variant: 'secondary' },
   Sent: { label: 'Đã gửi', variant: 'outline' },
   Confirmed: { label: 'Đã xác nhận', variant: 'success' },
+  AccountingConfirmed: { label: 'KT xác nhận', variant: 'info' },
   Cancelled: { label: 'Đã hủy', variant: 'destructive' },
 };
 

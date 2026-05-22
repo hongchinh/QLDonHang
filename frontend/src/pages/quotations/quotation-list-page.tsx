@@ -6,7 +6,7 @@ import {
   useReactTable,
   type ColumnDef,
 } from '@tanstack/react-table';
-import { Plus, Pencil, Printer, Ban, Search, Copy, MoreHorizontal, Send, CheckCircle2, Loader2 } from 'lucide-react';
+import { Plus, Pencil, Printer, Ban, Search, Copy, MoreHorizontal, Send, CheckCircle2, BadgeCheck, Loader2 } from 'lucide-react';
 import {
   useQuotations,
   useTransitionQuotation,
@@ -240,6 +240,19 @@ export function QuotationListPage() {
                 <Button asChild variant="ghost" size="icon" aria-label="Sửa">
                   <Link to={`/quotations/${q.id}`}><Pencil className="h-4 w-4 text-blue-600" /></Link>
                 </Button>
+              </Can>
+              <Can permission="quotations.accounting_confirm">
+                {q.status === 'Confirmed' && (
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    aria-label="KT xác nhận đã nhận tiền"
+                    title="KT xác nhận đã nhận tiền"
+                    onClick={() => setPendingTransition({ item: q, action: 'AccountingConfirm' })}
+                  >
+                    <BadgeCheck className="h-4 w-4 text-emerald-600" />
+                  </Button>
+                )}
               </Can>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
@@ -525,6 +538,16 @@ function dialogContent(p: { item: QuotationListItem; action: QuotationAction }):
           </>
         ),
       };
+    case 'AccountingConfirm':
+      return {
+        title: 'KT xác nhận đã nhận tiền?',
+        confirmLabel: 'KT xác nhận',
+        description: (
+          <>
+            Báo giá <strong>{p.item.code}</strong> sẽ chuyển sang trạng thái "KT xác nhận".
+          </>
+        ),
+      };
     case 'Cancel':
       return {
         title: 'Hủy báo giá?',
@@ -547,6 +570,7 @@ function successToastTitle(action: QuotationAction): string {
   switch (action) {
     case 'Send': return 'Đã gửi báo giá';
     case 'Confirm': return 'Đã xác nhận báo giá';
+    case 'AccountingConfirm': return 'KT đã xác nhận';
     case 'Cancel': return 'Đã hủy báo giá';
   }
 }
@@ -555,6 +579,7 @@ function errorToastTitle(action: QuotationAction): string {
   switch (action) {
     case 'Send': return 'Không thể gửi';
     case 'Confirm': return 'Không thể xác nhận';
+    case 'AccountingConfirm': return 'Không thể KT xác nhận';
     case 'Cancel': return 'Không thể hủy';
   }
 }

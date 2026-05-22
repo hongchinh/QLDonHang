@@ -16,6 +16,7 @@ export interface HeaderLike {
   taxRate: number;
   discount: number;
   freight: number;
+  advancePayment: number;
 }
 
 export function round2(value: number): number {
@@ -58,6 +59,7 @@ export interface Totals {
   taxAmount: number;
   total: number;
   grossProfit: number;
+  remainingBalance: number;
 }
 
 export function computeTotals(lines: LineLike[], header: HeaderLike): Totals {
@@ -66,5 +68,6 @@ export function computeTotals(lines: LineLike[], header: HeaderLike): Totals {
   const taxAmount = round0((subtotal * header.taxRate) / 100);
   const total = subtotal - header.discount + header.freight + taxAmount;
   const grossProfit = subtotal - totalCost - header.discount;
-  return { subtotal, totalCost, taxAmount, total, grossProfit };
+  const remainingBalance = total - header.advancePayment;
+  return { subtotal, totalCost, taxAmount, total, grossProfit, remainingBalance };
 }

@@ -69,6 +69,27 @@ export function TotalsPanel({ lines, header, onHeaderChange }: Props) {
             )}
           </div>
         </SummaryRow>
+
+        <SummaryRow label="Tạm ứng">
+          <EditableMetric
+            id="advancePayment"
+            value={header.advancePayment}
+            onChange={(value) => onHeaderChange({ advancePayment: value })}
+          />
+        </SummaryRow>
+
+        {header.advancePayment > 0 && (
+          <SummaryRow label="Còn lại" emphasized>
+            <div className="min-w-0 text-right">
+              <MetricValue
+                value={fmt.format(totals.remainingBalance)}
+                bold
+                large
+                negative={totals.remainingBalance < 0}
+              />
+            </div>
+          </SummaryRow>
+        )}
       </CardContent>
     </Card>
   );
@@ -91,7 +112,7 @@ function SummaryRow({ label, children, emphasized }: SummaryRowProps) {
 
 interface EditableMetricProps {
   id: string;
-  label: string;
+  label?: string;
   value: number;
   onChange: (value: number) => void;
 }
@@ -101,9 +122,11 @@ function EditableMetric({ id, label, value, onChange }: EditableMetricProps) {
   const [draft, setDraft] = useState('');
   return (
     <div className="min-w-0">
-      <Label htmlFor={id} className="mb-1 block text-xs text-muted-foreground">
-        {label}
-      </Label>
+      {label && (
+        <Label htmlFor={id} className="mb-1 block text-xs text-muted-foreground">
+          {label}
+        </Label>
+      )}
       <Input
         id={id}
         type="text"
@@ -131,12 +154,18 @@ interface MetricValueProps {
   value: string;
   bold?: boolean;
   large?: boolean;
+  negative?: boolean;
 }
 
-function MetricValue({ value, bold, large }: MetricValueProps) {
+function MetricValue({ value, bold, large, negative }: MetricValueProps) {
   return (
     <span
-      className={['block truncate tabular-nums', bold ? 'font-bold' : '', large ? 'text-base' : 'text-sm'].join(' ')}
+      className={[
+        'block truncate tabular-nums',
+        bold ? 'font-bold' : '',
+        large ? 'text-base' : 'text-sm',
+        negative ? 'text-destructive' : '',
+      ].join(' ')}
     >
       {value}
     </span>

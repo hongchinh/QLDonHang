@@ -59,6 +59,7 @@ public class UpsertQuotationRequestValidator : AbstractValidator<UpsertQuotation
         RuleFor(x => x.TaxRate).InclusiveBetween(0, 100);
         RuleFor(x => x.Discount).GreaterThanOrEqualTo(0);
         RuleFor(x => x.Freight).GreaterThanOrEqualTo(0);
+        RuleFor(x => x.AdvancePayment).GreaterThanOrEqualTo(0);
         RuleFor(x => x.InternalNote).MaximumLength(2000);
         RuleFor(x => x.DeliveryAddress).MaximumLength(1000);
         RuleFor(x => x.DeliveryRecipient).MaximumLength(255);

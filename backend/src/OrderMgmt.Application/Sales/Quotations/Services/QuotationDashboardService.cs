@@ -35,19 +35,37 @@ public class QuotationDashboardService : IQuotationDashboardService
         var rangeFrom = from ?? new DateOnly(today.Year, today.Month, 1);
         var rangeTo = to ?? today;
 
-        var query = ApplyOwnerScope(_db.Quotations.AsNoTracking().Where(q => !q.IsDeleted))
-            .Where(q => q.QuotationDate >= rangeFrom && q.QuotationDate <= rangeTo);
+        var settings = await _db.QuotationSystemSettings
+            .AsNoTracking()
+            .FirstOrDefaultAsync(s => s.Id == 1, ct);
+        var dateMode = settings?.RevenueReportingDateField ?? RevenueDateField.QuotationDate;
 
-        var grouped = await query
+        var baseQuery = ApplyOwnerScope(_db.Quotations.AsNoTracking().Where(q => !q.IsDeleted));
+
+        var fromDt = rangeFrom.ToDateTime(TimeOnly.MinValue);
+        var toDt   = rangeTo.ToDateTime(TimeOnly.MaxValue);
+
+        IQueryable<Quotation> rangeQuery = dateMode switch
+        {
+            RevenueDateField.ConfirmedAt => baseQuery.Where(q =>
+                (q.Status == QuotationStatus.Confirmed || q.Status == QuotationStatus.AccountingConfirmed)
+                && q.ConfirmedAt != null
+                && q.ConfirmedAt >= fromDt
+                && q.ConfirmedAt <= toDt),
+            RevenueDateField.AccountingConfirmedAt => baseQuery.Where(q =>
+                q.Status == QuotationStatus.AccountingConfirmed
+                && q.AccountingConfirmedAt != null
+                && q.AccountingConfirmedAt >= fromDt
+                && q.AccountingConfirmedAt <= toDt),
+            _ => baseQuery.Where(q => q.QuotationDate >= rangeFrom && q.QuotationDate <= rangeTo),
+        };
+
+        var grouped = await rangeQuery
             .GroupBy(q => q.Status)
             .Select(g => new { Status = g.Key, Count = g.Count(), Revenue = g.Sum(x => (decimal?)x.Total) ?? 0m })
             .ToListAsync(ct);
 
-        var dto = new QuotationStatsDto
-        {
-            From = rangeFrom,
-            To = rangeTo,
-        };
+        var dto = new QuotationStatsDto { From = rangeFrom, To = rangeTo };
 
         foreach (var row in grouped)
         {
@@ -57,14 +75,35 @@ public class QuotationDashboardService : IQuotationDashboardService
                 case QuotationStatus.Draft: dto.DraftCount = row.Count; break;
                 case QuotationStatus.Sent: dto.SentCount = row.Count; break;
                 case QuotationStatus.Confirmed: dto.ConfirmedCount = row.Count; break;
+                case QuotationStatus.AccountingConfirmed:
+                    dto.AccountingConfirmedCount = row.Count;
+                    dto.AccountingConfirmedRevenue = row.Revenue;
+                    break;
                 case QuotationStatus.Cancelled: dto.CancelledCount = row.Count; break;
             }
             if (row.Status != QuotationStatus.Cancelled)
                 dto.TotalRevenue += row.Revenue;
         }
 
-        dto.TodayRevenue = await ApplyOwnerScope(_db.Quotations.AsNoTracking().Where(q => !q.IsDeleted))
-            .Where(q => q.QuotationDate == today && q.Status != QuotationStatus.Cancelled)
+        var todayStart = today.ToDateTime(TimeOnly.MinValue);
+        var todayEnd   = today.ToDateTime(TimeOnly.MaxValue);
+
+        IQueryable<Quotation> todayQuery = dateMode switch
+        {
+            RevenueDateField.ConfirmedAt => baseQuery.Where(q =>
+                (q.Status == QuotationStatus.Confirmed || q.Status == QuotationStatus.AccountingConfirmed)
+                && q.ConfirmedAt != null
+                && q.ConfirmedAt >= todayStart
+                && q.ConfirmedAt <= todayEnd),
+            RevenueDateField.AccountingConfirmedAt => baseQuery.Where(q =>
+                q.Status == QuotationStatus.AccountingConfirmed
+                && q.AccountingConfirmedAt != null
+                && q.AccountingConfirmedAt >= todayStart
+                && q.AccountingConfirmedAt <= todayEnd),
+            _ => baseQuery.Where(q => q.QuotationDate == today && q.Status != QuotationStatus.Cancelled),
+        };
+
+        dto.TodayRevenue = await todayQuery
             .SumAsync(q => (decimal?)q.Total, ct) ?? 0m;
 
         return dto;

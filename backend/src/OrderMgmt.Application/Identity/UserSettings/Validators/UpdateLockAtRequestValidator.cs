@@ -10,12 +10,13 @@ public class UpdateLockAtRequestValidator : AbstractValidator<UpdateLockAtReques
     {
         QuotationStatus.Sent,
         QuotationStatus.Confirmed,
+        QuotationStatus.AccountingConfirmed,
     };
 
     public UpdateLockAtRequestValidator()
     {
         RuleFor(x => x.LockAtStatus)
             .Must(s => !s.HasValue || AllowedLockAt.Contains(s.Value))
-            .WithMessage("LockAtStatus chỉ chấp nhận: null | Sent | Confirmed.");
+            .WithMessage("LockAtStatus chỉ chấp nhận: null | Sent | Confirmed | AccountingConfirmed.");
     }
 }

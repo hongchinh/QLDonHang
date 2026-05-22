@@ -89,7 +89,10 @@ public static class DbSeeder
             (Permissions.Quotations.TransferAny, Permissions.SalesModule, "Chuyển báo giá của bất kỳ user nào"),
             (Permissions.Quotations.CloneOrphan, Permissions.SalesModule, "Clone báo giá của user đã nghỉ"),
             (Permissions.Quotations.BypassLock, Permissions.SalesModule, "Bypass khoá trạng thái báo giá"),
+            (Permissions.Quotations.AccountingConfirm, Permissions.SalesModule, "Kế toán xác nhận đã nhận tiền"),
+            (Permissions.Quotations.CancelAccountingConfirmed, Permissions.SalesModule, "Huỷ báo giá đã kế toán xác nhận"),
             (Permissions.UserSettings.Manage, Permissions.SystemModule, "Cấu hình thiết lập của user khác"),
+            (Permissions.System.ManageSettings, Permissions.SystemModule, "Quản trị cấu hình hệ thống"),
 
             (Permissions.Reports.Revenue, Permissions.ReportModule, "Báo cáo doanh thu"),
             (Permissions.Reports.Profit, Permissions.ReportModule, "Báo cáo lợi nhuận"),
@@ -126,6 +129,7 @@ public static class DbSeeder
                 Permissions.Customers.View, Permissions.Products.View,
                 Permissions.Quotations.View,
                 Permissions.Quotations.ViewAll,
+                Permissions.Quotations.AccountingConfirm,   // default for new ACCOUNTANT roles; existing roles must be granted manually via UI
                 Permissions.Reports.Revenue, Permissions.Reports.Debt,
             }),
             (RoleCodes.Warehouse, "Kho / giao hàng", new[]

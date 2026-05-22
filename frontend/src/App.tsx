@@ -16,6 +16,7 @@ import { ProductFormPage } from '@/pages/products/product-form-page';
 import { QuotationListPage } from '@/pages/quotations/quotation-list-page';
 import { QuotationFormPage } from '@/pages/quotations/quotation-form-page';
 import { MyQuotationSettingsPage } from '@/pages/settings/my-quotation-settings-page';
+import { QuotationSystemSettingsPage } from '@/pages/settings/quotation-system-settings-page';
 import { SettingsHubPage } from '@/pages/settings/settings-hub-page';
 import { UserSettingsPage } from '@/pages/admin/user-settings-page';
 import { UsersListPage } from '@/pages/admin/users-list-page';
@@ -123,6 +124,14 @@ export function App() {
                 <Route
                   path="settings/my-quotation-settings"
                   element={<MyQuotationSettingsPage />}
+                />
+                <Route
+                  path="settings/quotation"
+                  element={
+                    <ProtectedRoute permission="system.manage_settings">
+                      <QuotationSystemSettingsPage />
+                    </ProtectedRoute>
+                  }
                 />
                 <Route
                   path="admin/users"

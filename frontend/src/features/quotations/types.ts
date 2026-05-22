@@ -1,13 +1,14 @@
 import type { PagedResult } from '@/features/customers/types';
 import type { PricingMode } from '@/features/products/types';
 
-export type QuotationStatus = 'Draft' | 'Sent' | 'Confirmed' | 'Cancelled';
-export type QuotationAction = 'Send' | 'Confirm' | 'Cancel';
+export type QuotationStatus = 'Draft' | 'Sent' | 'Confirmed' | 'AccountingConfirmed' | 'Cancelled';
+export type QuotationAction = 'Send' | 'Confirm' | 'AccountingConfirm' | 'Cancel';
 export type QuotationActivityAction =
   | 'Created'
   | 'Updated'
   | 'Sent'
   | 'Confirmed'
+  | 'AccountingConfirmed'
   | 'Cancelled'
   | 'OwnerTransferred'
   | 'Cloned';
@@ -62,6 +63,7 @@ export interface Quotation {
   taxRate: number;
   taxAmount: number;
   total: number;
+  advancePayment: number;
   // Cost/profit are nullable: server redacts them when caller lacks `quotations.view_cost`.
   totalCost?: number;
   grossProfit?: number;
@@ -70,6 +72,9 @@ export interface Quotation {
   confirmedByUserId?: string;
   confirmedByName?: string;
   cancelledAt?: string;
+  accountingConfirmedAt?: string;
+  accountingConfirmedByUserId?: string;
+  accountingConfirmedByName?: string;
   internalNote?: string;
   lines: QuotationLine[];
   createdAt: string;
@@ -90,6 +95,7 @@ export interface QuotationListItem {
   grossProfit?: number | null;
   status: QuotationStatus;
   confirmedAt?: string;
+  accountingConfirmedAt?: string;
   ownerUserId: string;
   ownerFullName?: string;
   isOwnerDeleted: boolean;
@@ -167,6 +173,7 @@ export interface UpsertQuotationRequest {
   taxRate: number;
   discount: number;
   freight: number;
+  advancePayment: number;
   internalNote?: string;
   lines: UpsertQuotationLineRequest[];
 }

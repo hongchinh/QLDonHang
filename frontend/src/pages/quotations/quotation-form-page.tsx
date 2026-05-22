@@ -5,6 +5,7 @@ import { Link, useNavigate, useParams } from 'react-router-dom';
 import {
   ArrowLeft,
   ArrowRightLeft,
+  BadgeCheck,
   Ban,
   CheckCircle2,
   CirclePlus,
@@ -60,7 +61,7 @@ import { computeLineQuantity } from './utils/compute-line';
 import type { HeaderLike, LineLike } from './utils/compute-line';
 
 type QuotationSubmitIntent = 'save-exit' | 'save-stay' | 'save-print';
-type QuotationButtonAction = 'send' | 'confirm' | 'cancel' | 'clone' | 'print' | 'excel';
+type QuotationButtonAction = 'send' | 'confirm' | 'cancel' | 'accounting-confirm' | 'clone' | 'print' | 'excel';
 
 export function QuotationFormPage() {
   const { id } = useParams<{ id: string }>();
@@ -200,6 +201,7 @@ function QuotationFormInner({
   const watchedTaxRate = useWatch({ control: form.control, name: 'taxRate' }) as number | undefined;
   const watchedDiscount = useWatch({ control: form.control, name: 'discount' }) as number | undefined;
   const watchedFreight = useWatch({ control: form.control, name: 'freight' }) as number | undefined;
+  const watchedAdvancePayment = useWatch({ control: form.control, name: 'advancePayment' }) as number | undefined;
   const status: QuotationStatus = initial?.status ?? 'Draft';
   const activitiesQuery = useQuotationActivities(initial?.id, isEdit && !!initial?.id);
   const revenueDateText = formatRevenueDate(initial?.confirmedAt);
@@ -216,6 +218,7 @@ function QuotationFormInner({
   );
   const [quickAddOpen, setQuickAddOpen] = useState(false);
   const [confirmCloneOpen, setConfirmCloneOpen] = useState(false);
+  const [confirmAccountingConfirmOpen, setConfirmAccountingConfirmOpen] = useState(false);
   const [pendingSubmitIntent, setPendingSubmitIntent] = useState<QuotationSubmitIntent | null>(null);
   const [pendingButtonAction, setPendingButtonAction] = useState<QuotationButtonAction | null>(null);
   const lineItemsGridRef = useRef<LineItemsGridHandle>(null);
@@ -349,12 +352,14 @@ function QuotationFormInner({
     taxRate: Number(watchedTaxRate ?? 0) || 0,
     discount: Number(watchedDiscount ?? 0) || 0,
     freight: Number(watchedFreight ?? 0) || 0,
+    advancePayment: Number(watchedAdvancePayment ?? 0) || 0,
   };
 
   const onHeaderChange = (patch: Partial<HeaderLike>) => {
     if (patch.discount !== undefined) form.setValue('discount', patch.discount as never, { shouldDirty: true });
     if (patch.freight !== undefined) form.setValue('freight', patch.freight as never, { shouldDirty: true });
     if (patch.taxRate !== undefined) form.setValue('taxRate', patch.taxRate as never, { shouldDirty: true });
+    if (patch.advancePayment !== undefined) form.setValue('advancePayment', patch.advancePayment as never, { shouldDirty: true });
   };
 
   return (
@@ -445,6 +450,20 @@ function QuotationFormInner({
                 {pendingButtonAction === 'confirm' ? 'Đang xác nhận...' : 'Xác nhận'}
               </Button>
             )}
+            {status === 'Confirmed' && (
+              <Can permission="quotations.accounting_confirm">
+                <Button
+                  variant="default"
+                  size="sm"
+                  onClick={() => setConfirmAccountingConfirmOpen(true)}
+                  disabled={isSubmitBusy}
+                  aria-busy={pendingButtonAction === 'accounting-confirm'}
+                >
+                  {pendingButtonAction === 'accounting-confirm' ? <ButtonLoader className="mr-2" /> : <BadgeCheck className="mr-2 h-4 w-4" />}
+                  {pendingButtonAction === 'accounting-confirm' ? 'Đang xác nhận...' : 'KT xác nhận'}
+                </Button>
+              </Can>
+            )}
             {(status === 'Draft' || status === 'Sent' || status === 'Confirmed') && (
               <Button
                 variant="outline"
@@ -464,6 +483,20 @@ function QuotationFormInner({
                 {pendingButtonAction === 'cancel' ? <ButtonLoader className="mr-2" /> : <Ban className="mr-2 h-4 w-4 text-red-600" />}
                 {pendingButtonAction === 'cancel' ? 'Đang hủy...' : 'Hủy'}
               </Button>
+            )}
+            {status === 'AccountingConfirmed' && (
+              <Can permission="quotations.cancel_accounting_confirmed">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => runButtonAction('cancel', () => onTransition('Cancel'))}
+                  disabled={isSubmitBusy}
+                  aria-busy={pendingButtonAction === 'cancel'}
+                >
+                  {pendingButtonAction === 'cancel' ? <ButtonLoader className="mr-2" /> : <Ban className="mr-2 h-4 w-4 text-red-600" />}
+                  {pendingButtonAction === 'cancel' ? 'Đang hủy...' : 'Hủy'}
+                </Button>
+              </Can>
             )}
             <Can permission="quotations.create">
               <Button
@@ -565,13 +598,21 @@ function QuotationFormInner({
                   className="max-w-[200px]"
                 />
                 <Label htmlFor="revenueDate" className="field-label">Ngày doanh thu</Label>
-                <Input
-                  id="revenueDate"
-                  value={revenueDateText}
-                  readOnly
-                  tabIndex={-1}
-                  className="max-w-[200px] bg-muted text-muted-foreground"
-                />
+                <div>
+                  <Input
+                    id="revenueDate"
+                    value={revenueDateText}
+                    readOnly
+                    tabIndex={-1}
+                    className="max-w-[200px] bg-muted text-muted-foreground"
+                  />
+                  {initial?.accountingConfirmedAt && (
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      KT xác nhận: {formatRevenueDate(initial.accountingConfirmedAt)}
+                      {initial.accountingConfirmedByName && ` bởi ${initial.accountingConfirmedByName}`}
+                    </p>
+                  )}
+                </div>
                 <Label htmlFor="deliveryDate" className="field-label">Ngày giao</Label>
                 <Input
                   id="deliveryDate"
@@ -708,6 +749,20 @@ function QuotationFormInner({
           void doClone();
         }}
       />
+
+      <ConfirmDialog
+        open={confirmAccountingConfirmOpen}
+        onOpenChange={setConfirmAccountingConfirmOpen}
+        title="Xác nhận kế toán đã nhận tiền?"
+        description={`Báo giá ${initial?.code} sẽ chuyển sang trạng thái "KT xác nhận". Thao tác này không thể hoàn tác trực tiếp.`}
+        confirmLabel="KT xác nhận"
+        loading={pendingButtonAction === 'accounting-confirm'}
+        onConfirm={() => {
+          setConfirmAccountingConfirmOpen(false);
+          setPendingButtonAction('accounting-confirm');
+          void onTransition('AccountingConfirm').finally(() => setPendingButtonAction(null));
+        }}
+      />
     </div>
   );
 }
@@ -784,6 +839,8 @@ function activityIcon(action: QuotationActivityAction) {
       return <Send className="h-4 w-4 text-cyan-600" />;
     case 'Confirmed':
       return <CheckCircle2 className="h-4 w-4 text-emerald-600" />;
+    case 'AccountingConfirmed':
+      return <CheckCircle2 className="h-4 w-4 text-sky-600" />;
     case 'Cancelled':
       return <Ban className="h-4 w-4 text-red-600" />;
     case 'OwnerTransferred':
@@ -803,6 +860,8 @@ function activityLabel(action: QuotationActivityAction) {
       return 'Gửi';
     case 'Confirmed':
       return 'Xác nhận';
+    case 'AccountingConfirmed':
+      return 'KT xác nhận';
     case 'Cancelled':
       return 'Hủy';
     case 'OwnerTransferred':
@@ -854,6 +913,7 @@ function toFormDefaults(q?: Quotation): QuotationFormValues {
     taxRate: (q?.taxRate ?? 0) as number,
     discount: (q?.discount ?? 0) as number,
     freight: (q?.freight ?? 0) as number,
+    advancePayment: (q?.advancePayment ?? 0) as number,
     internalNote: q?.internalNote ?? '',
     lines: (q?.lines ?? []).map((l, idx) => ({
       _uiKey: l.id ?? crypto.randomUUID(),
@@ -915,6 +975,7 @@ function toPayload(parsed: QuotationFormParsed): UpsertQuotationRequest {
     taxRate: parsed.taxRate,
     discount: parsed.discount,
     freight: parsed.freight,
+    advancePayment: parsed.advancePayment,
     internalNote: parsed.internalNote,
     lines: parsed.lines.map<UpsertQuotationLineRequest>((l, idx) => {
       const lineLike = toLineLike(l);
@@ -945,6 +1006,7 @@ function actionLabel(action: QuotationAction) {
   switch (action) {
     case 'Send': return 'Gửi báo giá';
     case 'Confirm': return 'Xác nhận';
+    case 'AccountingConfirm': return 'Kế toán xác nhận';
     case 'Cancel': return 'Hủy';
   }
 }

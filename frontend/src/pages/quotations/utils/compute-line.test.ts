@@ -77,7 +77,7 @@ describe('compute-line', () => {
         { pricingMode: 'PerUnit', quantity: 5, unitPrice: 12000 },
         { pricingMode: 'PerUnit', quantity: 1, unitPrice: 40000 },
       ],
-      { taxRate: 10, discount: 10000, freight: 5000 },
+      { taxRate: 10, discount: 10000, freight: 5000, advancePayment: 0 },
     );
     expect(totals.subtotal).toBe(100000);
     expect(totals.taxAmount).toBe(10000);
@@ -87,7 +87,7 @@ describe('compute-line', () => {
   it('totals: gross profit excludes freight, includes discount', () => {
     const totals = computeTotals(
       [{ pricingMode: 'PerUnit', quantity: 5, unitPrice: 12000, unitCost: 8000 }],
-      { taxRate: 0, discount: 10000, freight: 50000 },
+      { taxRate: 0, discount: 10000, freight: 50000, advancePayment: 0 },
     );
     expect(totals.subtotal).toBe(60000);
     expect(totals.totalCost).toBe(40000);
@@ -97,7 +97,7 @@ describe('compute-line', () => {
   it('tax rounds to integer VND', () => {
     const totals = computeTotals(
       [{ pricingMode: 'PerUnit', quantity: 1, unitPrice: 123 }],
-      { taxRate: 8, discount: 0, freight: 0 },
+      { taxRate: 8, discount: 0, freight: 0, advancePayment: 0 },
     );
     expect(totals.taxAmount).toBe(10);
   });
@@ -111,5 +111,22 @@ describe('compute-line', () => {
     };
     expect(computeLineCost(line)).toBe(40000);
     expect(computeLineTotal(line) - (computeLineCost(line) ?? 0)).toBe(20000);
+  });
+
+  it('totals: remainingBalance = total - advancePayment', () => {
+    const totals = computeTotals(
+      [{ pricingMode: 'PerUnit', quantity: 5, unitPrice: 12000 }],
+      { taxRate: 0, discount: 0, freight: 0, advancePayment: 20000 },
+    );
+    expect(totals.total).toBe(60000);
+    expect(totals.remainingBalance).toBe(40000);
+  });
+
+  it('totals: remainingBalance = total when advancePayment = 0', () => {
+    const totals = computeTotals(
+      [{ pricingMode: 'PerUnit', quantity: 1, unitPrice: 100000 }],
+      { taxRate: 0, discount: 0, freight: 0, advancePayment: 0 },
+    );
+    expect(totals.remainingBalance).toBe(100000);
   });
 });

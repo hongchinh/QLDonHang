@@ -12,6 +12,11 @@ public class QuotationExcelRenderer : IQuotationExcelRenderer
     private const int FirstSampleRow = 15;
     private const int SampleRowCount = 2;
 
+    // Offset từ summaryRow đến các dòng tạm ứng/còn lại trong template_baogia.xlsx.
+    // Nếu template thay đổi cấu trúc, cập nhật cả 2 constants này.
+    internal const int AdvancePaymentRowOffset = 1;
+    internal const int RemainingBalanceRowOffset = 2;
+
     private readonly IOptions<QuotationExportOptions> _options;
 
     public QuotationExcelRenderer(IOptions<QuotationExportOptions> options)
@@ -28,6 +33,7 @@ public class QuotationExcelRenderer : IQuotationExcelRenderer
 
         FillHeader(ws, quotation);
         FillItemRows(ws, quotation);
+        FillSummaryTotals(ws, FirstSampleRow + quotation.Lines.Count, quotation);
 
         using var ms = new MemoryStream();
         workbook.SaveAs(ms);
@@ -96,6 +102,12 @@ public class QuotationExcelRenderer : IQuotationExcelRenderer
             ws.Cell(summaryRow, 4).SetValue(0);
             ws.Cell(summaryRow, 7).SetValue(0);
         }
+    }
+
+    private static void FillSummaryTotals(IXLWorksheet ws, int summaryRow, QuotationDto q)
+    {
+        ws.Cell(summaryRow + AdvancePaymentRowOffset, 7).SetValue((double)q.AdvancePayment);
+        ws.Cell(summaryRow + RemainingBalanceRowOffset, 7).SetValue((double)(q.Total - q.AdvancePayment));
     }
 
     private static void FillItemRow(IXLWorksheet ws, int row, int index, QuotationLineDto line)

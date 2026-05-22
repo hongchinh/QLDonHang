@@ -45,6 +45,7 @@ public class AppDbContext : DbContext, IAppDbContext
     public DbSet<QuotationActivity> QuotationActivities => Set<QuotationActivity>();
 
     public DbSet<SystemBranding> SystemBranding => Set<SystemBranding>();
+    public DbSet<QuotationSystemSettings> QuotationSystemSettings => Set<QuotationSystemSettings>();
 
     public DbSet<Notification> Notifications => Set<Notification>();
 

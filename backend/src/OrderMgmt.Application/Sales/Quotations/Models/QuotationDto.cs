@@ -7,6 +7,7 @@ public enum QuotationAction
 {
     Send = 1,
     Confirm = 2,
+    AccountingConfirm = 3,
     Cancel = 9,
 }
 
@@ -40,6 +41,7 @@ public class QuotationDto
     public decimal TaxRate { get; set; }
     public decimal TaxAmount { get; set; }
     public decimal Total { get; set; }
+    public decimal AdvancePayment { get; set; }
 
     // Cost / profit fields are redacted to null when the caller lacks
     // `quotations.view_cost`. Treat null as "not authorized to see", not "zero".
@@ -51,6 +53,9 @@ public class QuotationDto
     public Guid? ConfirmedByUserId { get; set; }
     public string? ConfirmedByName { get; set; }
     public DateTime? CancelledAt { get; set; }
+    public DateTime? AccountingConfirmedAt { get; set; }
+    public Guid? AccountingConfirmedByUserId { get; set; }
+    public string? AccountingConfirmedByName { get; set; }
     public string? InternalNote { get; set; }
 
     public bool CanEdit { get; set; }
@@ -117,6 +122,7 @@ public class QuotationListItemDto
     public decimal? GrossProfit { get; set; }
     public QuotationStatus Status { get; set; }
     public DateTime? ConfirmedAt { get; set; }
+    public DateTime? AccountingConfirmedAt { get; set; }
     public Guid OwnerUserId { get; set; }
     public string? OwnerFullName { get; set; }
     public bool IsOwnerDeleted { get; set; }
@@ -156,6 +162,7 @@ public class UpsertQuotationRequest
     public decimal TaxRate { get; set; }
     public decimal Discount { get; set; }
     public decimal Freight { get; set; }
+    public decimal AdvancePayment { get; set; }
     public string? InternalNote { get; set; }
 
     public IReadOnlyList<UpsertQuotationLineRequest> Lines { get; set; } = Array.Empty<UpsertQuotationLineRequest>();
