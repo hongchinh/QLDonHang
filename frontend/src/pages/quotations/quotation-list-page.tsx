@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import {
   flexRender,
   getCoreRowModel,
@@ -39,6 +39,7 @@ import { toast } from '@/lib/use-toast';
 import { getErrorMessage } from '@/lib/api-client';
 import { StatusPill } from './components/status-pill';
 import { ListFooter } from './components/list-footer';
+import { QuotationDateFilter } from './components/quotation-date-filter';
 import { parseOwnerIds } from './utils/owner-ids';
 
 const PAGE_SIZE_OPTIONS = [10, 20, 50, 100] as const;
@@ -50,10 +51,11 @@ const STATUS_OPTIONS: ReadonlyArray<{ value: QuotationStatus; label: string }> =
   { value: 'Draft', label: 'Nháp' },
   { value: 'Sent', label: 'Đã gửi' },
   { value: 'Confirmed', label: 'Đã xác nhận' },
+  { value: 'AccountingConfirmed', label: 'KT xác nhận' },
   { value: 'Cancelled', label: 'Đã hủy' },
 ];
 const VALID_STATUSES: ReadonlySet<QuotationStatus> = new Set(STATUS_OPTIONS.map((o) => o.value));
-const DEFAULT_ACTIVE_STATUSES: ReadonlyArray<QuotationStatus> = ['Draft', 'Sent', 'Confirmed'];
+const DEFAULT_ACTIVE_STATUSES: ReadonlyArray<QuotationStatus> = ['Draft', 'Sent', 'Confirmed', 'AccountingConfirmed'];
 
 function moneyHeader(label: string) {
   return <div className="text-right">{label}</div>;
@@ -92,8 +94,9 @@ export function QuotationListPage() {
   const [page, setPage] = useSearchParamNumber('page', 1);
   const [sizeParam, setSizeParam] = useSearchParamNumber('size', DEFAULT_PAGE_SIZE);
   const [statusParam, setStatusParam] = useSearchParamString('status');
-  const [fromDate, setFromDate] = useSearchParamString('from');
-  const [toDate, setToDate] = useSearchParamString('to');
+  const [fromDate] = useSearchParamString('from');
+  const [toDate] = useSearchParamString('to');
+  const [, setDateRangeParams] = useSearchParams();
   const [ownerIdsParam, setOwnerIdsParam] = useSearchParamString('ownerUserIds');
   const debouncedSearch = useDebouncedValue(search, 300);
   const hasViewAll = useAuthStore((s) => s.hasPermission('quotations.view_all'));
@@ -151,6 +154,7 @@ export function QuotationListPage() {
       discount: data?.aggregates?.discount ?? 0,
       freight: data?.aggregates?.freight ?? 0,
       total: data?.aggregates?.total ?? 0,
+      advancePayment: data?.aggregates?.advancePayment ?? 0,
       totalCost: canViewCost
         ? data?.aggregates?.totalCost ?? items.reduce((sum, item) => sum + (item.totalCost ?? 0), 0)
         : null,
@@ -189,6 +193,11 @@ export function QuotationListPage() {
         header: () => moneyHeader('Tổng tiền'),
         accessorKey: 'total',
         cell: ({ row }) => moneyCell(row.original.total),
+      },
+      {
+        header: () => moneyHeader('Tạm ứng'),
+        accessorKey: 'advancePayment',
+        cell: ({ row }) => moneyCell(row.original.advancePayment),
       },
       ...(canViewCost
         ? [
@@ -406,19 +415,18 @@ export function QuotationListPage() {
               />
             )}
 
-            <Input
-              type="date"
-              value={fromDate}
-              onChange={(e) => { setFromDate(e.target.value); if (page !== 1) setPage(1); }}
-              className="w-44"
-              aria-label="Từ ngày"
-            />
-            <Input
-              type="date"
-              value={toDate}
-              onChange={(e) => { setToDate(e.target.value); if (page !== 1) setPage(1); }}
-              className="w-44"
-              aria-label="Đến ngày"
+            <QuotationDateFilter
+              from={fromDate}
+              to={toDate}
+              onChange={(f, t) => {
+                setDateRangeParams((prev) => {
+                  const out = new URLSearchParams(prev);
+                  if (!f) out.delete('from'); else out.set('from', f);
+                  if (!t) out.delete('to'); else out.set('to', t);
+                  out.delete('page');
+                  return out;
+                }, { replace: true });
+              }}
             />
           </div>
 

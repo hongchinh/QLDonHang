@@ -83,6 +83,7 @@ export function ListFooter({
         <span className="font-semibold text-foreground">
           Tổng <Money value={aggregates.total} loading={loading} errored={errored} strong />
         </span>
+        {' • '}Tạm ứng <Money value={aggregates.advancePayment} loading={loading} errored={errored} />
       </div>
       <div className="flex items-center gap-2">
         <Select value={String(pageSize)} onValueChange={(v) => onPageSizeChange(Number(v))}>

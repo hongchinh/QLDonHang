@@ -283,6 +283,47 @@ public class QuotationListFilterTests : QuotationTestBase
         response.Data.Aggregates.Subtotal.Should().Be(200m);
     }
 
+    [Fact]
+    public async Task List_item_includes_advance_payment_field()
+    {
+        var req = BuildRequest();
+        req.AdvancePayment = 500_000m;
+        var res = await _client.PostAsJsonAsync("/api/quotations", req);
+        res.EnsureSuccessStatusCode();
+        var created = await res.Content.ReadFromJsonAsync<ApiResponse<QuotationDto>>(TestJson.Options);
+        var id = created!.Data!.Id;
+
+        var listRes = await _client.GetFromJsonAsync<ApiResponse<QuotationListResult>>(
+            "/api/quotations?pageSize=100", TestJson.Options);
+
+        listRes!.Data!.Items.Should()
+            .ContainSingle(x => x.Id == id)
+            .Which.AdvancePayment.Should().Be(500_000m);
+    }
+
+    [Fact]
+    public async Task List_aggregates_sum_advance_payment()
+    {
+        var req1 = BuildRequest();
+        req1.AdvancePayment = 200_000m;
+        req1.TaxRate = 0;
+        req1.Discount = 0;
+        req1.Freight = 0;
+        (await _client.PostAsJsonAsync("/api/quotations", req1)).EnsureSuccessStatusCode();
+
+        var req2 = BuildRequest();
+        req2.AdvancePayment = 300_000m;
+        req2.TaxRate = 0;
+        req2.Discount = 0;
+        req2.Freight = 0;
+        (await _client.PostAsJsonAsync("/api/quotations", req2)).EnsureSuccessStatusCode();
+
+        var listRes = await _client.GetFromJsonAsync<ApiResponse<QuotationListResult>>(
+            "/api/quotations?status=Draft&pageSize=100", TestJson.Options);
+
+        listRes!.Data!.Aggregates.AdvancePayment.Should().Be(500_000m);
+    }
+
     private async Task<Guid> GetUserIdAsync(string username)
     {
         using var scope = _factory.Services.CreateScope();

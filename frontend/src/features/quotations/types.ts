@@ -91,6 +91,7 @@ export interface QuotationListItem {
   discount: number;
   freight: number;
   total: number;
+  advancePayment: number;
   totalCost?: number | null;
   grossProfit?: number | null;
   status: QuotationStatus;
@@ -109,6 +110,7 @@ export interface QuotationListAggregates {
   discount: number;
   freight: number;
   total: number;
+  advancePayment: number;
   totalCost?: number | null;
   grossProfit?: number | null;
 }

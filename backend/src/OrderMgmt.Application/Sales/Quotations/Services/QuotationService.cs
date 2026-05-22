@@ -199,6 +199,7 @@ public class QuotationService : IQuotationService
                 Discount = g.Sum(q => q.Discount),
                 Freight  = g.Sum(q => q.Freight),
                 Total    = g.Sum(q => q.Total),
+                AdvancePayment = g.Sum(q => q.AdvancePayment),
                 TotalCost = canViewCost ? g.Sum(q => q.TotalCost) : null,
                 GrossProfit = canViewCost ? g.Sum(q => q.GrossProfit) : null,
             })
@@ -231,6 +232,7 @@ public class QuotationService : IQuotationService
                 Discount = q.Discount,
                 Freight = q.Freight,
                 Total = q.Total,
+                AdvancePayment = q.AdvancePayment,
                 TotalCost = canViewCost ? q.TotalCost : null,
                 GrossProfit = canViewCost ? q.GrossProfit : null,
                 Status = q.Status,
