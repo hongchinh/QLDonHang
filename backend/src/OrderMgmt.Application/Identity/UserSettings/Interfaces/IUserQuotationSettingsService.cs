@@ -1,4 +1,5 @@
 using OrderMgmt.Application.Identity.UserSettings.Models;
+using OrderMgmt.Application.Sales.Quotations.Models;
 
 namespace OrderMgmt.Application.Identity.UserSettings.Interfaces;
 
@@ -10,4 +11,17 @@ public interface IUserQuotationSettingsService
     Task<UserQuotationSettingsDto> UploadTemplateAsync(UploadedFile file, CancellationToken ct = default);
     Task<UserQuotationSettingsDto> DeleteTemplateAsync(CancellationToken ct = default);
     Task<(Stream Stream, string FileName)?> GetCurrentUserTemplateStreamAsync(CancellationToken ct = default);
+
+    Task<UserQuotationSettingsDto> UploadHandoverTemplateAsync(
+        UploadedFile file,
+        QuotationTemplateType type,
+        CancellationToken ct = default);
+
+    Task<UserQuotationSettingsDto> DeleteHandoverTemplateAsync(
+        QuotationTemplateType type,
+        CancellationToken ct = default);
+
+    Task<(Stream Stream, string FileName)?> GetCurrentUserHandoverTemplateStreamAsync(
+        QuotationTemplateType type,
+        CancellationToken ct = default);
 }

@@ -5,6 +5,7 @@ using OrderMgmt.Application.Common.Interfaces;
 using OrderMgmt.Application.Identity.UserSettings.Interfaces;
 using OrderMgmt.Application.Identity.UserSettings.Models;
 using OrderMgmt.Application.Sales.Quotations.Interfaces;
+using OrderMgmt.Application.Sales.Quotations.Models;
 using OrderMgmt.Domain.Common;
 using OrderMgmt.Domain.Entities.Identity;
 
@@ -169,6 +170,144 @@ public class UserQuotationSettingsService : IUserQuotationSettingsService
             TemplateFileName = settings.TemplateFileName,
             TemplateOriginalName = settings.TemplateOriginalName,
             TemplateUploadedAt = settings.TemplateUploadedAt,
+            HandoverWithPriceTemplateFileName = settings.HandoverWithPriceTemplateFileName,
+            HandoverWithPriceTemplateOriginalName = settings.HandoverWithPriceTemplateOriginalName,
+            HandoverWithPriceTemplateUploadedAt = settings.HandoverWithPriceTemplateUploadedAt,
+            HandoverNoPriceTemplateFileName = settings.HandoverNoPriceTemplateFileName,
+            HandoverNoPriceTemplateOriginalName = settings.HandoverNoPriceTemplateOriginalName,
+            HandoverNoPriceTemplateUploadedAt = settings.HandoverNoPriceTemplateUploadedAt,
         };
+    }
+
+    public async Task<UserQuotationSettingsDto> UploadHandoverTemplateAsync(
+        UploadedFile file,
+        QuotationTemplateType type,
+        CancellationToken ct = default)
+    {
+        var userId = _currentUser.UserId
+            ?? throw new UnauthorizedAccessException("User not authenticated.");
+
+        TemplateUploadValidator.Validate(file, _uploadOptions.CurrentValue);
+
+        var dir = _pathResolver.GetUserTemplatesDirectory();
+        var (fileName, fieldUpdater) = type switch
+        {
+            QuotationTemplateType.HandoverWithPrice =>
+                ($"{userId}_handover_with_price.xlsx",
+                (Action<UserQuotationSettings, string, DateTimeOffset>)((s, fn, at) =>
+                {
+                    s.HandoverWithPriceTemplateFileName = fn;
+                    s.HandoverWithPriceTemplateOriginalName = Path.GetFileName(file.FileName);
+                    s.HandoverWithPriceTemplateUploadedAt = at;
+                })),
+            QuotationTemplateType.HandoverNoPrice =>
+                ($"{userId}_handover_no_price.xlsx",
+                (Action<UserQuotationSettings, string, DateTimeOffset>)((s, fn, at) =>
+                {
+                    s.HandoverNoPriceTemplateFileName = fn;
+                    s.HandoverNoPriceTemplateOriginalName = Path.GetFileName(file.FileName);
+                    s.HandoverNoPriceTemplateUploadedAt = at;
+                })),
+            _ => throw new ArgumentOutOfRangeException(nameof(type)),
+        };
+
+        var finalPath = Path.Combine(dir, fileName);
+        var tempPath = finalPath + ".tmp";
+
+        using (var source = file.OpenReadStream())
+        using (var dest = new FileStream(tempPath, FileMode.Create, FileAccess.Write, FileShare.None))
+        {
+            await source.CopyToAsync(dest, ct);
+        }
+        if (File.Exists(finalPath)) File.Delete(finalPath);
+        File.Move(tempPath, finalPath);
+
+        var settings = await EnsureSettingsAsync(userId, ct);
+        fieldUpdater(settings, fileName, _clock.UtcNow);
+        await _db.SaveChangesAsync(ct);
+
+        return await ToDtoAsync(settings, ct);
+    }
+
+    public async Task<UserQuotationSettingsDto> DeleteHandoverTemplateAsync(
+        QuotationTemplateType type,
+        CancellationToken ct = default)
+    {
+        var userId = _currentUser.UserId
+            ?? throw new UnauthorizedAccessException("User not authenticated.");
+
+        var settings = await EnsureSettingsAsync(userId, ct);
+        var dir = _pathResolver.GetUserTemplatesDirectory();
+
+        var (fileName, fieldClearer) = type switch
+        {
+            QuotationTemplateType.HandoverWithPrice =>
+                (settings.HandoverWithPriceTemplateFileName,
+                (Action<UserQuotationSettings>)(s =>
+                {
+                    s.HandoverWithPriceTemplateFileName = null;
+                    s.HandoverWithPriceTemplateOriginalName = null;
+                    s.HandoverWithPriceTemplateUploadedAt = null;
+                })),
+            QuotationTemplateType.HandoverNoPrice =>
+                (settings.HandoverNoPriceTemplateFileName,
+                (Action<UserQuotationSettings>)(s =>
+                {
+                    s.HandoverNoPriceTemplateFileName = null;
+                    s.HandoverNoPriceTemplateOriginalName = null;
+                    s.HandoverNoPriceTemplateUploadedAt = null;
+                })),
+            _ => throw new ArgumentOutOfRangeException(nameof(type)),
+        };
+
+        if (!string.IsNullOrWhiteSpace(fileName))
+        {
+            var filePath = Path.Combine(dir, fileName);
+            if (File.Exists(filePath)) File.Delete(filePath);
+        }
+        fieldClearer(settings);
+        await _db.SaveChangesAsync(ct);
+
+        return await ToDtoAsync(settings, ct);
+    }
+
+    public async Task<(Stream Stream, string FileName)?> GetCurrentUserHandoverTemplateStreamAsync(
+        QuotationTemplateType type,
+        CancellationToken ct = default)
+    {
+        var userId = _currentUser.UserId
+            ?? throw new UnauthorizedAccessException("User not authenticated.");
+
+        var settings = await _db.UserQuotationSettings
+            .AsNoTracking()
+            .Where(s => s.UserId == userId)
+            .Select(s => new
+            {
+                s.HandoverWithPriceTemplateFileName,
+                s.HandoverWithPriceTemplateOriginalName,
+                s.HandoverNoPriceTemplateFileName,
+                s.HandoverNoPriceTemplateOriginalName,
+            })
+            .FirstOrDefaultAsync(ct);
+
+        var (fileName, originalName) = type switch
+        {
+            QuotationTemplateType.HandoverWithPrice =>
+                (settings?.HandoverWithPriceTemplateFileName,
+                 settings?.HandoverWithPriceTemplateOriginalName),
+            QuotationTemplateType.HandoverNoPrice =>
+                (settings?.HandoverNoPriceTemplateFileName,
+                 settings?.HandoverNoPriceTemplateOriginalName),
+            _ => throw new ArgumentOutOfRangeException(nameof(type)),
+        };
+
+        if (string.IsNullOrWhiteSpace(fileName)) return null;
+
+        var dir = _pathResolver.GetUserTemplatesDirectory();
+        var path = Path.Combine(dir, fileName);
+        if (!File.Exists(path)) return null;
+
+        var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read);
+        return (stream, originalName ?? fileName);
     }
 }
