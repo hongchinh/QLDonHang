@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using OrderMgmt.Application.Common.Models;
 using OrderMgmt.Application.Identity.UserSettings.Interfaces;
 using OrderMgmt.Application.Identity.UserSettings.Models;
+using OrderMgmt.Application.Sales.Quotations.Models;
 
 namespace OrderMgmt.WebApi.Controllers;
 
@@ -17,6 +18,14 @@ public class MeQuotationSettingsController : ApiControllerBase
         _service = service;
     }
 
+    private static QuotationTemplateType ParseTemplateType(string? type) => type?.ToLowerInvariant() switch
+    {
+        null or "" or "quotation" => QuotationTemplateType.Quotation,
+        "handover-with-price" => QuotationTemplateType.HandoverWithPrice,
+        "handover-no-price" => QuotationTemplateType.HandoverNoPrice,
+        _ => throw new BadHttpRequestException($"Unknown template type: '{type}'"),
+    };
+
     [HttpGet]
     [ProducesResponseType(typeof(ApiResponse<UserQuotationSettingsDto>), StatusCodes.Status200OK)]
     public async Task<ActionResult<ApiResponse<UserQuotationSettingsDto>>> GetMine(CancellationToken ct)
@@ -27,25 +36,51 @@ public class MeQuotationSettingsController : ApiControllerBase
     [RequestSizeLimit(6 * 1024 * 1024)]
     [ProducesResponseType(typeof(ApiResponse<UserQuotationSettingsDto>), StatusCodes.Status200OK)]
     public async Task<ActionResult<ApiResponse<UserQuotationSettingsDto>>> UploadTemplate(
-        IFormFile file, CancellationToken ct)
+        IFormFile file,
+        [FromQuery] string? type,
+        CancellationToken ct)
     {
         var uploaded = new UploadedFile(
             file.FileName,
             file.ContentType,
             file.Length,
             () => file.OpenReadStream());
-        return Success(await _service.UploadTemplateAsync(uploaded, ct));
+
+        var templateType = ParseTemplateType(type);
+
+        if (templateType == QuotationTemplateType.Quotation)
+            return Success(await _service.UploadTemplateAsync(uploaded, ct));
+        else
+            return Success(await _service.UploadHandoverTemplateAsync(uploaded, templateType, ct));
     }
 
     [HttpDelete("template")]
     [ProducesResponseType(typeof(ApiResponse<UserQuotationSettingsDto>), StatusCodes.Status200OK)]
-    public async Task<ActionResult<ApiResponse<UserQuotationSettingsDto>>> DeleteTemplate(CancellationToken ct)
-        => Success(await _service.DeleteTemplateAsync(ct));
+    public async Task<ActionResult<ApiResponse<UserQuotationSettingsDto>>> DeleteTemplate(
+        [FromQuery] string? type,
+        CancellationToken ct)
+    {
+        var templateType = ParseTemplateType(type);
+
+        if (templateType == QuotationTemplateType.Quotation)
+            return Success(await _service.DeleteTemplateAsync(ct));
+        else
+            return Success(await _service.DeleteHandoverTemplateAsync(templateType, ct));
+    }
 
     [HttpGet("template")]
-    public async Task<IActionResult> DownloadTemplate(CancellationToken ct)
+    public async Task<IActionResult> DownloadTemplate(
+        [FromQuery] string? type,
+        CancellationToken ct)
     {
-        var result = await _service.GetCurrentUserTemplateStreamAsync(ct);
+        var templateType = ParseTemplateType(type);
+
+        (Stream Stream, string FileName)? result;
+        if (templateType == QuotationTemplateType.Quotation)
+            result = await _service.GetCurrentUserTemplateStreamAsync(ct);
+        else
+            result = await _service.GetCurrentUserHandoverTemplateStreamAsync(templateType, ct);
+
         if (result is null) return NotFound();
         return File(
             result.Value.Stream,
