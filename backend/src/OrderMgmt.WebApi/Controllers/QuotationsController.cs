@@ -108,6 +108,38 @@ public class QuotationsController : ApiControllerBase
         return File(bytes, "application/pdf", fileName);
     }
 
+    [HttpGet("{id:guid}/handover-with-price/excel")]
+    [HasPermission(Permissions.Quotations.Print)]
+    public async Task<IActionResult> HandoverWithPriceExcel(Guid id, CancellationToken ct)
+    {
+        var (bytes, fileName) = await _quotations.RenderHandoverExcelAsync(id, withPrice: true, ct);
+        return File(bytes, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", fileName);
+    }
+
+    [HttpGet("{id:guid}/handover-with-price/pdf")]
+    [HasPermission(Permissions.Quotations.Print)]
+    public async Task<IActionResult> HandoverWithPricePdf(Guid id, CancellationToken ct)
+    {
+        var (bytes, fileName) = await _quotations.RenderHandoverPdfAsync(id, withPrice: true, ct);
+        return File(bytes, "application/pdf", fileName);
+    }
+
+    [HttpGet("{id:guid}/handover-no-price/excel")]
+    [HasPermission(Permissions.Quotations.Print)]
+    public async Task<IActionResult> HandoverNoPriceExcel(Guid id, CancellationToken ct)
+    {
+        var (bytes, fileName) = await _quotations.RenderHandoverExcelAsync(id, withPrice: false, ct);
+        return File(bytes, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", fileName);
+    }
+
+    [HttpGet("{id:guid}/handover-no-price/pdf")]
+    [HasPermission(Permissions.Quotations.Print)]
+    public async Task<IActionResult> HandoverNoPricePdf(Guid id, CancellationToken ct)
+    {
+        var (bytes, fileName) = await _quotations.RenderHandoverPdfAsync(id, withPrice: false, ct);
+        return File(bytes, "application/pdf", fileName);
+    }
+
     [HttpPost("{id:guid}/clone")]
     [HasPermission(Permissions.Quotations.Create)]
     [ProducesResponseType(typeof(ApiResponse<QuotationDto>), StatusCodes.Status200OK)]

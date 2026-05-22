@@ -17,4 +17,6 @@ public interface IQuotationService
     Task<QuotationDto> CloneAsync(Guid id, CancellationToken ct = default);
     Task<(byte[] Excel, string FileName)> RenderExcelAsync(Guid id, CancellationToken ct = default);
     Task<(byte[] Pdf, string FileName)> RenderPdfAsync(Guid id, CancellationToken ct = default);
+    Task<(byte[] Excel, string FileName)> RenderHandoverExcelAsync(Guid id, bool withPrice, CancellationToken ct = default);
+    Task<(byte[] Pdf, string FileName)> RenderHandoverPdfAsync(Guid id, bool withPrice, CancellationToken ct = default);
 }

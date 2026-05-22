@@ -40,6 +40,7 @@ public class QuotationService : IQuotationService
     private readonly IQuotationSpreadsheetPdfConverter _pdfConverter;
     private readonly IOptionsMonitor<FeatureOptions> _features;
     private readonly IQuotationExportPathResolver _templatePathResolver;
+    private readonly IHandoverExcelRenderer _handoverRenderer;
 
     public QuotationService(
         IAppDbContext db,
@@ -48,7 +49,8 @@ public class QuotationService : IQuotationService
         IQuotationExcelRenderer excelRenderer,
         IQuotationSpreadsheetPdfConverter pdfConverter,
         IOptionsMonitor<FeatureOptions> features,
-        IQuotationExportPathResolver templatePathResolver)
+        IQuotationExportPathResolver templatePathResolver,
+        IHandoverExcelRenderer handoverRenderer)
     {
         _db = db;
         _clock = clock;
@@ -57,6 +59,7 @@ public class QuotationService : IQuotationService
         _pdfConverter = pdfConverter;
         _features = features;
         _templatePathResolver = templatePathResolver;
+        _handoverRenderer = handoverRenderer;
     }
 
     private IQueryable<Quotation> ApplyOwnerScope(IQueryable<Quotation> query)
@@ -552,6 +555,33 @@ public class QuotationService : IQuotationService
         var excelBytes = await _excelRenderer.RenderAsync(dto, templatePath, ct);
         var pdfBytes = await _pdfConverter.ConvertAsync(excelBytes, ct);
         return (pdfBytes, $"BaoGia_{dto.Code}.pdf");
+    }
+
+    public async Task<(byte[] Excel, string FileName)> RenderHandoverExcelAsync(
+        Guid id, bool withPrice, CancellationToken ct = default)
+    {
+        var dto = await GetAsync(id, ct);
+        var type = withPrice
+            ? QuotationTemplateType.HandoverWithPrice
+            : QuotationTemplateType.HandoverNoPrice;
+        var templatePath = await _templatePathResolver.ResolveHandoverTemplatePathAsync(
+            dto.OwnerUserId, type, ct);
+        var bytes = await _handoverRenderer.RenderAsync(dto, templatePath, withPrice, ct);
+        return (bytes, $"BieuBanBanGiao_{dto.Code}.xlsx");
+    }
+
+    public async Task<(byte[] Pdf, string FileName)> RenderHandoverPdfAsync(
+        Guid id, bool withPrice, CancellationToken ct = default)
+    {
+        var dto = await GetAsync(id, ct);
+        var type = withPrice
+            ? QuotationTemplateType.HandoverWithPrice
+            : QuotationTemplateType.HandoverNoPrice;
+        var templatePath = await _templatePathResolver.ResolveHandoverTemplatePathAsync(
+            dto.OwnerUserId, type, ct);
+        var excelBytes = await _handoverRenderer.RenderAsync(dto, templatePath, withPrice, ct);
+        var pdfBytes = await _pdfConverter.ConvertAsync(excelBytes, ct);
+        return (pdfBytes, $"BieuBanBanGiao_{dto.Code}.pdf");
     }
 
     public async Task<QuotationDto> TransitionAsync(Guid id, QuotationAction action, CancellationToken ct = default)
