@@ -120,7 +120,7 @@ export function SalesRevenuePage() {
                       key={it.saleUserId}
                       className="cursor-pointer hover:bg-muted/50"
                       onClick={() =>
-                        navigate(`/reports/sales-revenue/${it.saleUserId}?from=${from}&to=${to}`)
+                        navigate(`/reports/sales-revenue/${it.saleUserId}?${new URLSearchParams({ from, to }).toString()}`)
                       }
                     >
                       <TableCell>

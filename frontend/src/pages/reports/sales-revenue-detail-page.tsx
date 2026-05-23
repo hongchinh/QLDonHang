@@ -95,7 +95,7 @@ export function SalesRevenueDetailPage() {
                   <TableBody>
                     {items.map((item, idx) => (
                       <TableRow
-                        key={`${item.quotationId}-${idx}`}
+                        key={`${item.quotationId}-${item.productName}-${idx}`}
                         className="cursor-pointer hover:bg-muted/50"
                         onClick={() => navigate(`/quotations/${item.quotationId}`)}
                       >
