@@ -27,7 +27,6 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
@@ -295,7 +294,6 @@ export function QuotationListPage() {
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
-                  <DropdownMenuLabel className="text-xs text-muted-foreground">Công cụ</DropdownMenuLabel>
                   <Can permission="quotations.update">
                     <DropdownMenuItem
                       disabled={!canSend}
@@ -340,7 +338,6 @@ export function QuotationListPage() {
                   </Can>
                   <Can permission="quotations.print">
                     <DropdownMenuSeparator />
-                    <DropdownMenuLabel className="text-xs text-muted-foreground">In PDF</DropdownMenuLabel>
                     <DropdownMenuItem
                       onClick={() => {
                         openHandoverPdf(q.id, true).catch((err) =>
@@ -360,7 +357,6 @@ export function QuotationListPage() {
                       <Printer className="mr-2 h-4 w-4 text-indigo-600" /> Biên bản bàn giao (không tiền)
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
-                    <DropdownMenuLabel className="text-xs text-muted-foreground">Excel</DropdownMenuLabel>
                     <DropdownMenuItem
                       onClick={() => {
                         downloadHandoverExcel(q.id, q.code, true).catch((err) =>
