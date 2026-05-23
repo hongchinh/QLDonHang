@@ -27,6 +27,8 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -293,6 +295,7 @@ export function QuotationListPage() {
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
+                  <DropdownMenuLabel className="text-xs text-muted-foreground">Công cụ</DropdownMenuLabel>
                   <Can permission="quotations.update">
                     <DropdownMenuItem
                       disabled={!canSend}
@@ -325,53 +328,6 @@ export function QuotationListPage() {
                       <Copy className="mr-2 h-4 w-4 text-violet-600" /> Nhân bản
                     </DropdownMenuItem>
                   </Can>
-                  <Can permission="quotations.print">
-                    <DropdownMenuItem
-                      onClick={() => {
-                        downloadPdf(q.id, q.code).catch((err) =>
-                          toast({ variant: 'destructive', title: 'Không tải được PDF', description: getErrorMessage(err) }),
-                        );
-                      }}
-                    >
-                      <Printer className="mr-2 h-4 w-4 text-indigo-600" /> In PDF
-                    </DropdownMenuItem>
-                    <DropdownMenuItem
-                      onClick={() => {
-                        openHandoverPdf(q.id, true).catch((err) =>
-                          toast({ variant: 'destructive', title: 'Không mở được PDF', description: getErrorMessage(err) }),
-                        );
-                      }}
-                    >
-                      <Printer className="mr-2 h-4 w-4 text-indigo-600" /> In biên bản bàn giao (có tiền)
-                    </DropdownMenuItem>
-                    <DropdownMenuItem
-                      onClick={() => {
-                        openHandoverPdf(q.id, false).catch((err) =>
-                          toast({ variant: 'destructive', title: 'Không mở được PDF', description: getErrorMessage(err) }),
-                        );
-                      }}
-                    >
-                      <Printer className="mr-2 h-4 w-4 text-indigo-600" /> In biên bản bàn giao (không tiền)
-                    </DropdownMenuItem>
-                    <DropdownMenuItem
-                      onClick={() => {
-                        downloadHandoverExcel(q.id, q.code, true).catch((err) =>
-                          toast({ variant: 'destructive', title: 'Không tải được Excel', description: getErrorMessage(err) }),
-                        );
-                      }}
-                    >
-                      <FileSpreadsheet className="mr-2 h-4 w-4 text-emerald-700" /> Excel biên bản bàn giao (có tiền)
-                    </DropdownMenuItem>
-                    <DropdownMenuItem
-                      onClick={() => {
-                        downloadHandoverExcel(q.id, q.code, false).catch((err) =>
-                          toast({ variant: 'destructive', title: 'Không tải được Excel', description: getErrorMessage(err) }),
-                        );
-                      }}
-                    >
-                      <FileSpreadsheet className="mr-2 h-4 w-4 text-emerald-700" /> Excel biên bản bàn giao (không tiền)
-                    </DropdownMenuItem>
-                  </Can>
                   <Can permission="quotations.update">
                     <DropdownMenuItem
                       className="text-destructive focus:text-destructive"
@@ -380,6 +336,48 @@ export function QuotationListPage() {
                       onClick={() => setPendingTransition({ item: q, action: 'Cancel' })}
                     >
                       <Ban className="mr-2 h-4 w-4 text-red-600" /> Hủy
+                    </DropdownMenuItem>
+                  </Can>
+                  <Can permission="quotations.print">
+                    <DropdownMenuSeparator />
+                    <DropdownMenuLabel className="text-xs text-muted-foreground">In PDF</DropdownMenuLabel>
+                    <DropdownMenuItem
+                      onClick={() => {
+                        openHandoverPdf(q.id, true).catch((err) =>
+                          toast({ variant: 'destructive', title: 'Không mở được PDF', description: getErrorMessage(err) }),
+                        );
+                      }}
+                    >
+                      <Printer className="mr-2 h-4 w-4 text-indigo-600" /> Biên bản bàn giao (có tiền)
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={() => {
+                        openHandoverPdf(q.id, false).catch((err) =>
+                          toast({ variant: 'destructive', title: 'Không mở được PDF', description: getErrorMessage(err) }),
+                        );
+                      }}
+                    >
+                      <Printer className="mr-2 h-4 w-4 text-indigo-600" /> Biên bản bàn giao (không tiền)
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuLabel className="text-xs text-muted-foreground">Excel</DropdownMenuLabel>
+                    <DropdownMenuItem
+                      onClick={() => {
+                        downloadHandoverExcel(q.id, q.code, true).catch((err) =>
+                          toast({ variant: 'destructive', title: 'Không tải được Excel', description: getErrorMessage(err) }),
+                        );
+                      }}
+                    >
+                      <FileSpreadsheet className="mr-2 h-4 w-4 text-emerald-700" /> Biên bản bàn giao (có tiền)
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={() => {
+                        downloadHandoverExcel(q.id, q.code, false).catch((err) =>
+                          toast({ variant: 'destructive', title: 'Không tải được Excel', description: getErrorMessage(err) }),
+                        );
+                      }}
+                    >
+                      <FileSpreadsheet className="mr-2 h-4 w-4 text-emerald-700" /> Biên bản bàn giao (không tiền)
                     </DropdownMenuItem>
                   </Can>
                 </DropdownMenuContent>
