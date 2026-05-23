@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<title>Approach A Final — Cả hai panels</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: #f1f5f9;
+    padding: 24px;
+    color: #0f172a;
+    font-size: 13px;
+  }
+
+  h2 { font-size: 17px; font-weight: 700; }
+  .subtitle { color: #64748b; font-size: 12.5px; margin-top: 4px; }
+  .badges { display: flex; gap: 8px; margin-top: 8px; flex-wrap: wrap; }
+  .badge { display: inline-flex; align-items: center; gap: 4px; padding: 2px 10px; border-radius: 999px; font-size: 11.5px; font-weight: 600; }
+  .bg  { background:#dcfce7;color:#166534; }
+  .bb  { background:#dbeafe;color:#1e40af; }
+  .bp  { background:#f3e8ff;color:#6b21a8; }
+  .by  { background:#fef9c3;color:#854d0e; }
+
+  /* ---------- LAYOUT ---------- */
+  .form-grid { display: grid; grid-template-columns: 1fr 290px; gap: 10px; max-width: 1080px; }
+
+  /* ---------- CARD ---------- */
+  .card { background:#fff; border:1px solid #e2e8f0; border-radius:8px; overflow:hidden; box-shadow:0 1px 2px rgba(0,0,0,.06); }
+  .card-hdr {
+    display:flex; align-items:center; justify-content:space-between;
+    padding: 8px 14px;
+    border-bottom:1px solid #e2e8f0;
+    background:#fafbfc;
+    min-height: 38px;
+  }
+  .card-title { font-size:13.5px; font-weight:700; color:#0f172a; }
+  .hist-btn {
+    display:inline-flex; align-items:center; gap:5px;
+    padding:3px 9px; font-size:11.5px; font-weight:500; color:#64748b;
+    background:#fff; border:1px solid #e2e8f0; border-radius:5px; cursor:pointer;
+  }
+
+  /* ---------- LEFT FORM ---------- */
+  .form-body { padding: 9px 14px 10px; }
+  .fr {
+    display:grid; align-items:center;
+    column-gap:5px; margin-bottom:5px;
+  }
+  .fr:last-child { margin-bottom:0; }
+  .r-dates    { grid-template-columns: 74px 1fr 82px 125px 68px 125px; }
+  .r-cust     { grid-template-columns: 74px 155px 68px 1fr; }
+  .r-addr     { grid-template-columns: 74px 1fr; }
+  .r-deliv    { grid-template-columns: 74px 1fr 74px 125px 52px 108px; }
+  .r-notes    { grid-template-columns: 74px 1fr 74px 1fr; }
+
+  .lbl { font-size:12px; color:#64748b; text-align:right; padding-right:2px; white-space:nowrap; }
+  .req { color:#ef4444; }
+  .inp {
+    height:28px; border:1px solid #d1d5db; border-radius:5px;
+    padding:0 7px; font-size:12.5px; color:#374151;
+    display:flex; align-items:center; justify-content:space-between;
+  }
+  .inp.ro { background:#f8fafc; border-style:dashed; border-color:#e2e8f0; color:#94a3b8; }
+  .inp-ico { color:#b0bec5; font-size:10px; flex-shrink:0; }
+
+  .cust-wrap { display:flex; align-items:center; gap:2px; }
+  .cust-wrap .inp { flex:1; }
+  .ic { width:20px;height:20px; border:1px solid #e2e8f0; border-radius:4px; background:#f8fafc; display:flex;align-items:center;justify-content:center; font-size:11px;color:#64748b;cursor:pointer;flex-shrink:0; }
+
+  /* ---------- RIGHT: TỔNG CỘNG (compact) ---------- */
+  .tot-body { padding: 9px 12px 10px; }
+
+  /* Tiền hàng */
+  .t-subtotal {
+    display:flex; justify-content:space-between; align-items:center;
+    padding-bottom: 6px;
+    border-bottom: 1px solid #f1f5f9;
+    margin-bottom: 6px;
+  }
+  .t-subtotal-lbl { font-size:12px; color:#64748b; }
+  .t-subtotal-val { font-size:13px; font-weight:600; font-variant-numeric:tabular-nums; }
+
+  /* Adjust grid: CK + VC in one row, Thuế + Tiền thuế in next */
+  .t-adj-grid {
+    display:grid;
+    grid-template-columns: auto 1fr auto 1fr;
+    gap: 4px;
+    align-items:center;
+    margin-bottom: 4px;
+  }
+  .t-tax-grid {
+    display:grid;
+    grid-template-columns: auto 72px auto 1fr;
+    gap: 4px;
+    align-items:center;
+    margin-bottom: 6px;
+  }
+  .t-field-lbl {
+    font-size:11px; color:#94a3b8; white-space:nowrap; padding-right:2px; text-align:right;
+  }
+  .t-inp {
+    height:26px; border:1px solid #d1d5db; border-radius:4px;
+    padding:0 6px; font-size:12px; text-align:right;
+    display:flex; align-items:center; justify-content:flex-end;
+    font-variant-numeric:tabular-nums; color:#374151;
+  }
+  .t-inp.ro { background:#f8fafc; border-style:dashed; border-color:#e2e8f0; color:#94a3b8; }
+
+  /* Grand total */
+  .t-grand {
+    border-top:2px solid #1e3a5f;
+    padding-top:7px;
+    display:flex;
+    align-items:baseline;
+    justify-content:space-between;
+    margin-bottom: 2px;
+  }
+  .t-grand-lbl { font-size:13px; font-weight:700; }
+  .t-grand-val { font-size:16px; font-weight:800; color:#1e3a5f; font-variant-numeric:tabular-nums; }
+  .t-meta { font-size:10.5px; color:#94a3b8; text-align:right; margin-bottom:6px; }
+
+  /* Tạm ứng */
+  .t-advance {
+    display:flex; align-items:center; justify-content:space-between;
+    border-top:1px solid #f1f5f9; padding-top:6px;
+  }
+  .t-advance-lbl { font-size:12px; color:#64748b; }
+  .t-advance-inp {
+    height:26px; border:1px solid #d1d5db; border-radius:4px;
+    padding:0 8px; font-size:12.5px; min-width:90px;
+    display:flex; align-items:center; justify-content:flex-end;
+    font-variant-numeric:tabular-nums; color:#374151;
+  }
+
+  /* ---------- RULER ---------- */
+  .ruler-wrap { display:flex; align-items:stretch; gap:6px; max-width:1080px; margin-top:10px; }
+  .ruler-left { width:24px; display:flex; flex-direction:column; align-items:center; justify-content:center; position:relative; }
+  .ruler-left::before, .ruler-left::after {
+    content:''; position:absolute; left:50%; transform:translateX(-50%);
+    width:6px; height:1.5px; background:#6366f1;
+  }
+  .ruler-left::before { top:0; }
+  .ruler-left::after  { bottom:0; }
+  .ruler-left span { writing-mode:vertical-rl; transform:rotate(180deg); font-size:10px; font-weight:700; color:#6366f1; white-space:nowrap; }
+  .ruler-line { width:1.5px; background:#6366f1; position:absolute; top:0; bottom:0; left:50%; transform:translateX(-50%); }
+
+  /* ---------- BEFORE/AFTER ---------- */
+  .ba-section { max-width:1080px; margin-top:20px; }
+  .ba-section h3 { font-size:13px; font-weight:700; margin-bottom:10px; color:#374151; }
+  .ba-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+  .ba-panel { border:1px solid #e2e8f0; border-radius:8px; overflow:hidden; }
+  .ba-panel-hdr { padding:8px 12px; background:#f8fafc; border-bottom:1px solid #e2e8f0; font-size:11.5px; font-weight:600; color:#64748b; }
+  .ba-panel-body { padding:10px 12px; }
+
+  /* OLD totals */
+  .old-row { display:grid; grid-template-columns:64px 1fr; align-items:center; gap:6px; margin-bottom:10px; }
+  .old-row:last-child { margin-bottom:0; }
+  .old-lbl { font-size:12px; color:#64748b; }
+  .old-lbl.em { color:#0f172a; font-weight:600; }
+  .old-val { font-size:12.5px; font-weight:600; font-variant-numeric:tabular-nums; }
+  .old-2col { display:grid; grid-template-columns:1fr 1fr; gap:4px; }
+  .old-metric { }
+  .old-metric-lbl { font-size:11px; color:#94a3b8; margin-bottom:2px; }
+  .old-metric-inp { height:32px; border:1px solid #d1d5db; border-radius:5px; padding:0 8px; font-size:12.5px; text-align:right; display:flex; align-items:center; justify-content:flex-end; color:#374151; font-variant-numeric:tabular-nums; }
+  .old-metric-inp.ro { background:#f8fafc; border-style:dashed; color:#94a3b8; }
+  .old-divider { border:none; border-top:2px solid #1e3a5f; margin:8px 0; }
+
+  /* Change summary */
+  .changes { max-width:1080px; margin-top:16px; display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+  .change-card { background:#fff; border:1px solid #e2e8f0; border-radius:8px; padding:12px 14px; }
+  .change-card h4 { font-size:12px; font-weight:700; margin-bottom:8px; display:flex; align-items:center; gap:6px; }
+  .dot { width:8px;height:8px;border-radius:50%;flex-shrink:0; }
+  .change-card ul { list-style:none; }
+  .change-card ul li { font-size:11.5px; color:#475569; padding:3px 0; border-bottom:1px solid #f8fafc; display:flex; justify-content:space-between; gap:8px; }
+  .change-card ul li:last-child { border-bottom:none; }
+  .li-old { color:#94a3b8; text-decoration:line-through; font-variant-numeric:tabular-nums; }
+  .li-new { color:#166534; font-weight:600; font-variant-numeric:tabular-nums; }
+</style>
+</head>
+<body>
+
+<h2>Approach A Final — Tối ưu cả hai panels</h2>
+<p class="subtitle">Thông tin chung (Approach A) + Tổng cộng (compact) — chiều cao tối thiểu</p>
+<div class="badges">
+  <span class="badge bg">Thông tin chung: ~230px</span>
+  <span class="badge bb">Tổng cộng: ~210px</span>
+  <span class="badge bp">Row height: ~230px (giảm ~80px)</span>
+  <span class="badge by">Chi tiết hàng hoá: +80px</span>
+</div>
+
+<br>
+
+<!-- MOCKUP chính -->
+<div class="form-grid">
+
+  <!-- LEFT: Thông tin chung -->
+  <div class="card">
+    <div class="card-hdr">
+      <span class="card-title">Thông tin chung</span>
+      <button class="hist-btn">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        Lịch sử
+      </button>
+    </div>
+    <div class="form-body">
+      <!-- Row 1: 3 dates -->
+      <div class="fr r-dates">
+        <span class="lbl">Ngày báo giá <span class="req">*</span></span>
+        <div class="inp">22/05/2026 <span class="inp-ico">▾</span></div>
+        <span class="lbl">Ngày doanh thu</span>
+        <div class="inp ro">Chưa ghi nhận</div>
+        <span class="lbl">Ngày giao</span>
+        <div class="inp">23/05/2026 <span class="inp-ico">▾</span></div>
+      </div>
+      <!-- Row 2: Customer -->
+      <div class="fr r-cust">
+        <span class="lbl">Mã KH <span class="req">*</span></span>
+        <div class="cust-wrap">
+          <div class="inp">KH-TEST-001</div>
+          <span class="ic">×</span><span class="ic">+</span>
+        </div>
+        <span class="lbl">Tên KH</span>
+        <div class="inp">Test Customer</div>
+      </div>
+      <!-- Row 3: Address -->
+      <div class="fr r-addr">
+        <span class="lbl">Địa chỉ giao</span>
+        <div class="inp">Warehouse A, Hanoi</div>
+      </div>
+      <!-- Row 4: Delivery -->
+      <div class="fr r-deliv">
+        <span class="lbl">Người nhận</span>
+        <div class="inp">Nguyen Test</div>
+        <span class="lbl">Điện thoại</span>
+        <div class="inp">0900000001</div>
+        <span class="lbl">Số xe</span>
+        <div class="inp">Xe khác</div>
+      </div>
+      <!-- Row 5: Notes -->
+      <div class="fr r-notes">
+        <span class="lbl">Ghi chú GH</span>
+        <div class="inp"></div>
+        <span class="lbl">Ghi chú NB</span>
+        <div class="inp"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- RIGHT: Tổng cộng compact -->
+  <div class="card">
+    <div class="card-hdr">
+      <span class="card-title">Tổng cộng</span>
+    </div>
+    <div class="tot-body">
+
+      <!-- Tiền hàng -->
+      <div class="t-subtotal">
+        <span class="t-subtotal-lbl">Tiền hàng</span>
+        <span class="t-subtotal-val">2.366</span>
+      </div>
+
+      <!-- CK + VC — inline labels, no section header -->
+      <div class="t-adj-grid">
+        <span class="t-field-lbl">CK</span>
+        <div class="t-inp">0</div>
+        <span class="t-field-lbl">VC</span>
+        <div class="t-inp">0</div>
+      </div>
+
+      <!-- Thuế % + Tiền thuế -->
+      <div class="t-tax-grid">
+        <span class="t-field-lbl">Thuế %</span>
+        <div class="t-inp">0</div>
+        <span class="t-field-lbl">Tiền thuế</span>
+        <div class="t-inp ro">0</div>
+      </div>
+
+      <!-- Grand total -->
+      <div class="t-grand">
+        <span class="t-grand-lbl">Tổng cộng</span>
+        <span class="t-grand-val">2.366</span>
+      </div>
+      <div class="t-meta">Giá vốn: 0 &nbsp;·&nbsp; LN gộp: 2.366</div>
+
+      <!-- Tạm ứng -->
+      <div class="t-advance">
+        <span class="t-advance-lbl">Tạm ứng</span>
+        <div class="t-advance-inp">0</div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- ======================== BEFORE / AFTER ======================== -->
+<div class="ba-section">
+  <h3>Tổng cộng — Trước vs Sau</h3>
+  <div class="ba-grid">
+
+    <!-- BEFORE -->
+    <div class="ba-panel">
+      <div class="ba-panel-hdr">Trước — cấu trúc cũ (~280px content)</div>
+      <div class="ba-panel-body">
+        <div class="old-row">
+          <span class="old-lbl">Tiền hàng</span>
+          <span class="old-val">2.366</span>
+        </div>
+        <div class="old-row">
+          <span class="old-lbl">Điều chỉnh</span>
+          <div class="old-2col">
+            <div class="old-metric">
+              <div class="old-metric-lbl">CK</div>
+              <div class="old-metric-inp">0</div>
+            </div>
+            <div class="old-metric">
+              <div class="old-metric-lbl">VC</div>
+              <div class="old-metric-inp">0</div>
+            </div>
+          </div>
+        </div>
+        <div class="old-row">
+          <span class="old-lbl">Thuế</span>
+          <div style="display:grid;grid-template-columns:56px 1fr;gap:6px;align-items:end">
+            <div class="old-metric">
+              <div class="old-metric-lbl">Thuế %</div>
+              <div class="old-metric-inp">0</div>
+            </div>
+            <div style="text-align:right">
+              <div class="old-metric-lbl">Tiền thuế</div>
+              <div style="font-size:12.5px;font-weight:600;font-variant-numeric:tabular-nums">0</div>
+            </div>
+          </div>
+        </div>
+        <hr class="old-divider">
+        <div class="old-row" style="margin-bottom:4px">
+          <span class="old-lbl em">Tổng cộng</span>
+          <div style="text-align:right">
+            <span style="font-size:15px;font-weight:800;color:#1e3a5f;font-variant-numeric:tabular-nums">2.366</span>
+            <div style="font-size:10.5px;color:#94a3b8;margin-top:2px">Giá vốn: 0 · LN gộp: 2.366</div>
+          </div>
+        </div>
+        <div class="old-row">
+          <span class="old-lbl">Tạm ứng</span>
+          <div class="old-metric-inp" style="height:32px">0</div>
+        </div>
+        <div style="margin-top:6px;padding:6px 8px;background:#fff3cd;border-radius:4px;font-size:11px;color:#856404">
+          ⚠ Vấn đề: "Điều chỉnh" và "Thuế" là section labels chiếm row riêng. Label trong EditableMetric (CK, VC, Thuế%) thêm ~16px mỗi input. Tổng cộng dư ~50-60px.
+        </div>
+      </div>
+    </div>
+
+    <!-- AFTER -->
+    <div class="ba-panel">
+      <div class="ba-panel-hdr">Sau — compact (~180px content)</div>
+      <div class="ba-panel-body">
+        <!-- Replicate the right panel here too for direct comparison -->
+        <div class="t-subtotal" style="margin-bottom:6px;padding-bottom:6px;border-bottom:1px solid #f1f5f9">
+          <span class="t-subtotal-lbl">Tiền hàng</span>
+          <span class="t-subtotal-val">2.366</span>
+        </div>
+        <div class="t-adj-grid" style="margin-bottom:4px">
+          <span class="t-field-lbl">CK</span>
+          <div class="t-inp">0</div>
+          <span class="t-field-lbl">VC</span>
+          <div class="t-inp">0</div>
+        </div>
+        <div class="t-tax-grid" style="margin-bottom:6px">
+          <span class="t-field-lbl">Thuế %</span>
+          <div class="t-inp">0</div>
+          <span class="t-field-lbl">Tiền thuế</span>
+          <div class="t-inp ro">0</div>
+        </div>
+        <div class="t-grand" style="margin-bottom:2px">
+          <span class="t-grand-lbl">Tổng cộng</span>
+          <span class="t-grand-val">2.366</span>
+        </div>
+        <div class="t-meta" style="margin-bottom:6px">Giá vốn: 0 &nbsp;·&nbsp; LN gộp: 2.366</div>
+        <div class="t-advance">
+          <span class="t-advance-lbl">Tạm ứng</span>
+          <div class="t-advance-inp">0</div>
+        </div>
+        <div style="margin-top:8px;padding:6px 8px;background:#f0fdf4;border-radius:4px;font-size:11px;color:#166534">
+          ✓ Bỏ section labels "Điều chỉnh"/"Thuế". CK, VC, Thuế% là inline labels nhỏ bên trái input — đủ rõ, gọn hơn 60px.
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ======================== CHANGES SUMMARY ======================== -->
+<div class="changes">
+  <div class="change-card">
+    <h4><span class="dot" style="background:#3b82f6"></span>Thông tin chung — thay đổi</h4>
+    <ul>
+      <li><span>Tab bar (Thông tin chung | Lịch sử)</span><span class="li-old">→ xoá</span></li>
+      <li><span>Thay bằng button "Lịch sử" trong header</span><span class="li-new">+0px (cùng hàng)</span></li>
+      <li><span>Input height</span><span><span class="li-old">h-9 (36px)</span> → <span class="li-new">h-7 (28px)</span></span></li>
+      <li><span>CardHeader padding</span><span><span class="li-old">py-4 (16px)</span> → <span class="li-new">py-2 (8px)</span></span></li>
+      <li><span>CardContent padding</span><span><span class="li-old">p-6 (24px)</span> → <span class="li-new">py-[9px] px-[14px]</span></span></li>
+      <li><span>Row gap (form fields)</span><span><span class="li-old">gap-2 (8px)</span> → <span class="li-new">5px</span></span></li>
+      <li><span>Tổng tiết kiệm</span><span class="li-new">≈ −75px</span></li>
+    </ul>
+  </div>
+  <div class="change-card">
+    <h4><span class="dot" style="background:#22c55e"></span>Tổng cộng — thay đổi</h4>
+    <ul>
+      <li><span>Section label "Điều chỉnh" (row riêng)</span><span class="li-old">→ xoá</span></li>
+      <li><span>Section label "Thuế" (row riêng)</span><span class="li-old">→ xoá</span></li>
+      <li><span>Label trên EditableMetric (CK, VC, Thuế%)</span><span class="li-old">→ xoá</span></li>
+      <li><span>Thay bằng inline label bên trái input</span><span class="li-new">CK [inp] VC [inp]</span></li>
+      <li><span>Input height (CK/VC/Thuế)</span><span><span class="li-old">h-8 (32px)</span> → <span class="li-new">h-[26px]</span></span></li>
+      <li><span>justify-between → natural height</span><span class="li-new">không stretch nữa</span></li>
+      <li><span>CardContent padding</span><span><span class="li-old">p-6</span> → <span class="li-new">p-3</span></span></li>
+      <li><span>Tổng tiết kiệm</span><span class="li-new">≈ −70px min-content</span></li>
+    </ul>
+  </div>
+</div>
+
+<div style="max-width:1080px;margin-top:16px;background:#f0fdf4;border:1px solid #86efac;border-radius:8px;padding:12px 16px">
+  <div style="font-size:13px;font-weight:700;color:#166534">Tổng kết — Nếu ổn, trả lời trong terminal để implement</div>
+  <div style="font-size:12px;color:#15803d;margin-top:4px">Row (Thông tin chung + Tổng cộng): ~310px → ~230px · Phần Chi tiết hàng hóa được thêm ~80px chiều cao visible.</div>
+</div>
+
+</body>
+</html>

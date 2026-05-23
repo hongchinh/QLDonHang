@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<title>Thead Color Mockup</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: #f1f5f9;
+    padding: 24px;
+    color: #0f172a;
+    font-size: 13px;
+  }
+  h2 { font-size: 16px; font-weight: 700; margin-bottom: 4px; }
+  .subtitle { font-size: 12px; color: #64748b; margin-bottom: 20px; }
+  .section { margin-bottom: 24px; max-width: 1080px; }
+  .compare-label {
+    font-size: 11px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: .06em; color: #64748b; margin-bottom: 6px;
+  }
+
+  /* ── Card shell ── */
+  .card {
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 1px 2px rgba(0,0,0,.06);
+  }
+
+  /* ── Heading (giữ nguyên — không phải subject) ── */
+  .line-items-heading {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px 16px;
+    padding: 14px 14px 10px;
+    border-bottom: 1px solid #e2e8f0;
+  }
+  .heading-title { font-size: 14px; font-weight: 700; }
+  .heading-totals { display: flex; flex-wrap: wrap; gap: 14px; }
+  .heading-totals strong { font-size: 13px; white-space: nowrap; font-variant-numeric: tabular-nums; }
+
+  /* ── Shared table base ── */
+  .accounting-grid {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12.5px;
+  }
+  .accounting-grid th,
+  .accounting-grid td {
+    border-right: 1px solid #e2e8f0;
+    border-bottom: 1px solid #e2e8f0;
+    padding: 0;
+    height: 34px;
+    background: #fff;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .accounting-grid td {
+    padding: 0 8px;
+    text-align: center;
+    color: #374151;
+    font-variant-numeric: tabular-nums;
+  }
+  .accounting-grid tr:hover td { background: #f8fafc; }
+  .accounting-grid tr:last-child td { border-bottom: none; }
+
+  /* ── BEFORE: brand-blue thead (#005bac) ── */
+  .thead-before th {
+    background: #005bac;
+    color: #fff;
+    font-weight: 600;
+    text-align: center;
+    padding: 8px 6px;
+    border-right-color: rgba(255,255,255,.12);
+    border-bottom-color: transparent;
+    font-size: 12.5px;
+  }
+
+  /* ── AFTER: light-blue-tint thead (#eff6ff) ── */
+  .thead-after th {
+    background: #eff6ff;
+    color: #1e3a5f;
+    font-weight: 700;
+    text-align: center;
+    padding: 8px 6px;
+    border-right-color: #bfdbfe;
+    border-bottom-color: #bfdbfe;
+    font-size: 12.5px;
+  }
+
+  /* row-no column */
+  .row-no { width: 40px; }
+  .col-ma  { width: 80px; }
+  .col-ten { text-align: left !important; padding-left: 8px !important; }
+  .col-dvt { width: 52px; }
+  .col-dim { width: 160px; }
+  .col-sl  { width: 70px; }
+  .col-gbs { width: 90px; }
+  .col-tbs { width: 90px; }
+  .col-gbn { width: 90px; }
+  .col-tbn { width: 90px; }
+  .col-ln  { width: 80px; }
+</style>
+</head>
+<body>
+
+<h2>Mockup: Thead màu Light Blue Tint</h2>
+<p class="subtitle">Đổi thead từ navy <code>#005bac</code> → light blue <code>#eff6ff</code> để đồng nhất với header "Thông tin chung" và "Tổng cộng"</p>
+
+<!-- BEFORE -->
+<div class="section">
+  <div class="compare-label">Trước — Thead: #005bac · chữ trắng (hiện tại)</div>
+  <div class="card">
+    <div class="line-items-heading">
+      <span class="heading-title">Chi tiết hàng hóa</span>
+      <div class="heading-totals">
+        <strong>Tổng thành tiền bán: 2.366 đ</strong>
+        <strong style="color:#94a3b8">Tổng thành tiền nhập: 0 đ</strong>
+        <strong style="color:#16a34a">Tổng lợi nhuận: 2.366 đ</strong>
+      </div>
+    </div>
+    <div style="overflow-x:auto">
+      <table class="accounting-grid">
+        <thead class="thead-before">
+          <tr>
+            <th class="row-no">#</th>
+            <th class="col-ma">Mã hàng</th>
+            <th class="col-ten">Tên hàng</th>
+            <th class="col-dvt">ĐVT</th>
+            <th class="col-dim">D × R × Dày × Tấm</th>
+            <th class="col-sl">SL</th>
+            <th class="col-gbs">Đơn giá bán</th>
+            <th class="col-tbs">Thành tiền bán</th>
+            <th class="col-gbn">Đơn giá nhập</th>
+            <th class="col-tbn">Thành tiền nhập</th>
+            <th class="col-ln">Lợi nhuận</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="row-no" style="color:#94a3b8;font-weight:600">1</td>
+            <td class="col-ma">h1</td>
+            <td class="col-ten" style="text-align:left;padding-left:8px">Art Hươu Cổ Loa CX1</td>
+            <td class="col-dvt">m²</td>
+            <td class="col-dim">22 × 22 × Dày × 22</td>
+            <td class="col-sl">0.010648</td>
+            <td class="col-gbs">222.220</td>
+            <td class="col-tbs">2.366</td>
+            <td class="col-gbn"></td>
+            <td class="col-tbn"></td>
+            <td class="col-ln"></td>
+          </tr>
+          <tr>
+            <td class="row-no" style="color:#cbd5e1;font-weight:600">2</td>
+            <td></td><td></td><td></td><td></td><td></td>
+            <td></td><td></td><td></td><td></td><td></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- AFTER -->
+<div class="section">
+  <div class="compare-label">Sau — Thead: #eff6ff · chữ navy #1e3a5f (đề xuất)</div>
+  <div class="card">
+    <div class="line-items-heading">
+      <span class="heading-title">Chi tiết hàng hóa</span>
+      <div class="heading-totals">
+        <strong>Tổng thành tiền bán: 2.366 đ</strong>
+        <strong style="color:#94a3b8">Tổng thành tiền nhập: 0 đ</strong>
+        <strong style="color:#16a34a">Tổng lợi nhuận: 2.366 đ</strong>
+      </div>
+    </div>
+    <div style="overflow-x:auto">
+      <table class="accounting-grid">
+        <thead class="thead-after">
+          <tr>
+            <th class="row-no">#</th>
+            <th class="col-ma">Mã hàng</th>
+            <th class="col-ten">Tên hàng</th>
+            <th class="col-dvt">ĐVT</th>
+            <th class="col-dim">D × R × Dày × Tấm</th>
+            <th class="col-sl">SL</th>
+            <th class="col-gbs">Đơn giá bán</th>
+            <th class="col-tbs">Thành tiền bán</th>
+            <th class="col-gbn">Đơn giá nhập</th>
+            <th class="col-tbn">Thành tiền nhập</th>
+            <th class="col-ln">Lợi nhuận</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="row-no" style="color:#94a3b8;font-weight:600">1</td>
+            <td class="col-ma">h1</td>
+            <td class="col-ten" style="text-align:left;padding-left:8px">Art Hươu Cổ Loa CX1</td>
+            <td class="col-dvt">m²</td>
+            <td class="col-dim">22 × 22 × Dày × 22</td>
+            <td class="col-sl">0.010648</td>
+            <td class="col-gbs">222.220</td>
+            <td class="col-tbs">2.366</td>
+            <td class="col-gbn"></td>
+            <td class="col-tbn"></td>
+            <td class="col-ln"></td>
+          </tr>
+          <tr>
+            <td class="row-no" style="color:#cbd5e1;font-weight:600">2</td>
+            <td></td><td></td><td></td><td></td><td></td>
+            <td></td><td></td><td></td><td></td><td></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<div style="max-width:1080px;padding:10px 14px;background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;font-size:12px;color:#1e3a5f;line-height:1.6">
+  <strong>Thay đổi dự kiến:</strong><br>
+  <code>control-tokens.css</code> → <code>--qldh-brand-header: #eff6ff</code> · <code>--qldh-brand-header-foreground: #1e3a5f</code><br>
+  <code>line-items-grid.css</code> → <code>.accounting-grid th</code>: đổi <code>border-right-color</code> từ <code>rgba(255,255,255,.12)</code> → <code>#bfdbfe</code>
+</div>
+
+</body>
+</html>

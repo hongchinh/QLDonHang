@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<title>Header Colors</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: #f1f5f9;
+    padding: 24px;
+    color: #0f172a;
+    font-size: 13px;
+  }
+
+  h2 { font-size: 16px; font-weight: 700; margin-bottom: 4px; }
+  .subtitle { font-size: 12px; color: #64748b; margin-bottom: 20px; }
+
+  /* Option cards */
+  .options-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+    max-width: 1100px;
+  }
+
+  /* selectable card wrapper */
+  .opt {
+    background: #fff;
+    border: 2px solid #e2e8f0;
+    border-radius: 10px;
+    overflow: hidden;
+    cursor: pointer;
+    transition: border-color 0.15s, box-shadow 0.15s;
+  }
+  .opt:hover { border-color: #93c5fd; box-shadow: 0 0 0 3px #dbeafe; }
+  .opt.selected { border-color: #3b82f6; box-shadow: 0 0 0 3px #bfdbfe; }
+
+  /* opt meta */
+  .opt-meta {
+    padding: 10px 12px 12px;
+    border-top: 1px solid #f1f5f9;
+  }
+  .opt-name { font-size: 12.5px; font-weight: 700; margin-bottom: 2px; }
+  .opt-desc { font-size: 11px; color: #64748b; }
+  .opt-tag  { display: inline-flex; align-items: center; gap: 4px; margin-top: 5px; padding: 2px 7px; border-radius: 999px; font-size: 10.5px; font-weight: 600; }
+
+  /* mini form preview */
+  .preview-wrap {
+    padding: 10px;
+    background: #f8fafc;
+    display: grid;
+    grid-template-columns: 1fr 120px;
+    gap: 6px;
+  }
+
+  /* card shell */
+  .mini-card {
+    border: 1px solid #e2e8f0;
+    border-radius: 7px;
+    overflow: hidden;
+    background: #fff;
+    font-size: 11.5px;
+  }
+  /* header — height fixed at 36px (same for both) */
+  .mini-hdr {
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 10px;
+    border-bottom: 1px solid rgba(0,0,0,.08);
+  }
+  .mini-hdr-title { font-weight: 700; font-size: 12px; }
+  .mini-hist-btn {
+    display: inline-flex; align-items: center; gap: 3px;
+    padding: 2px 7px; border-radius: 4px; font-size: 10px;
+    border: 1px solid rgba(0,0,0,.15); cursor: pointer;
+  }
+  /* body */
+  .mini-body { padding: 7px 8px; }
+  .mini-row { display: flex; align-items: center; gap: 4px; margin-bottom: 4px; }
+  .mini-lbl { font-size: 10px; color: #94a3b8; min-width: 52px; text-align: right; }
+  .mini-inp { flex:1; height: 18px; border: 1px solid #d1d5db; border-radius: 3px; background:#fff; }
+  .mini-row:last-child { margin-bottom: 0; }
+
+  .mini-total-body { padding: 7px 8px; }
+  .mini-trow { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; font-size: 10.5px; }
+  .mini-trow:last-child { margin-bottom: 0; }
+  .mini-tlbl { color: #94a3b8; }
+  .mini-tval { font-weight: 600; font-variant-numeric: tabular-nums; }
+  .mini-grand { border-top: 2px solid currentColor; margin-top: 4px; padding-top: 4px; }
+
+  /* ─── OPTION THEMES ─── */
+
+  /* A: Brand blue (app nav color) */
+  .theme-a .mini-hdr { background: hsl(212,78%,36%); border-color: hsl(212,78%,30%); }
+  .theme-a .mini-hdr-title { color: #fff; }
+  .theme-a .mini-hist-btn { color: rgba(255,255,255,.85); border-color: rgba(255,255,255,.3); background: rgba(255,255,255,.1); }
+
+  /* B: Light blue tint */
+  .theme-b .mini-hdr { background: #eff6ff; border-color: #bfdbfe; }
+  .theme-b .mini-hdr-title { color: #1e3a5f; }
+  .theme-b .mini-hist-btn { color: #3b82f6; border-color: #93c5fd; background: #fff; }
+
+  /* C: Muted slate (neutral) */
+  .theme-c .mini-hdr { background: #f1f5f9; border-color: #e2e8f0; }
+  .theme-c .mini-hdr-title { color: #1e293b; }
+  .theme-c .mini-hist-btn { color: #64748b; border-color: #cbd5e1; background: #fff; }
+
+  /* D: Soft teal/emerald accent */
+  .theme-d .mini-hdr { background: #f0fdf4; border-color: #bbf7d0; }
+  .theme-d .mini-hdr-title { color: #14532d; }
+  .theme-d .mini-hist-btn { color: #16a34a; border-color: #86efac; background: #fff; }
+
+  /* E: Deep navy (darker than A) */
+  .theme-e .mini-hdr { background: #1e3a5f; border-color: #1e3a5f; }
+  .theme-e .mini-hdr-title { color: #fff; }
+  .theme-e .mini-hist-btn { color: rgba(255,255,255,.8); border-color: rgba(255,255,255,.25); background: rgba(255,255,255,.08); }
+
+  /* F: Amber/warm */
+  .theme-f .mini-hdr { background: #fffbeb; border-color: #fde68a; }
+  .theme-f .mini-hdr-title { color: #78350f; }
+  .theme-f .mini-hist-btn { color: #d97706; border-color: #fbbf24; background: #fff; }
+
+  /* badges */
+  .recommended { background: #dbeafe; color: #1e40af; }
+  .neutral     { background: #f1f5f9; color: #475569; }
+  .bold        { background: #ede9fe; color: #5b21b6; }
+
+  /* selected checkmark */
+  .opt.selected::before {
+    content: '✓';
+    position: absolute;
+    top: 8px; right: 10px;
+    font-size: 13px;
+    color: #3b82f6;
+    font-weight: 700;
+  }
+  .opt { position: relative; }
+</style>
+</head>
+<body>
+
+<h2>Chọn màu header: Thông tin chung + Tổng cộng</h2>
+<p class="subtitle">Cả hai header cùng màu + cùng chiều cao 36px. Click để chọn.</p>
+
+<div class="options-grid">
+
+  <!-- A: Brand blue -->
+  <div class="opt theme-a" onclick="select(this,'a')">
+    <div class="preview-wrap">
+      <div class="mini-card">
+        <div class="mini-hdr">
+          <span class="mini-hdr-title">Thông tin chung</span>
+          <span class="mini-hist-btn">⏰ Lịch sử</span>
+        </div>
+        <div class="mini-body">
+          <div class="mini-row"><span class="mini-lbl">Ngày BG</span><div class="mini-inp"></div><span class="mini-lbl">Ngày giao</span><div class="mini-inp"></div></div>
+          <div class="mini-row"><span class="mini-lbl">Mã KH</span><div class="mini-inp"></div><span class="mini-lbl">Tên KH</span><div class="mini-inp"></div></div>
+          <div class="mini-row"><span class="mini-lbl">Địa chỉ</span><div class="mini-inp" style="flex:2"></div></div>
+        </div>
+      </div>
+      <div class="mini-card">
+        <div class="mini-hdr">
+          <span class="mini-hdr-title">Tổng cộng</span>
+        </div>
+        <div class="mini-total-body">
+          <div class="mini-trow"><span class="mini-tlbl">Tiền hàng</span><span class="mini-tval">2.366</span></div>
+          <div class="mini-trow"><span class="mini-tlbl">CK</span><div style="height:16px;width:40px;border:1px solid #d1d5db;border-radius:2px"></div><span class="mini-tlbl" style="margin-left:4px">VC</span><div style="height:16px;width:40px;border:1px solid #d1d5db;border-radius:2px"></div></div>
+          <div class="mini-trow mini-grand" style="color:hsl(212,78%,36%)"><span class="mini-tval" style="font-size:12px">Tổng cộng</span><span class="mini-tval" style="font-size:13px">2.366</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="opt-meta">
+      <div class="opt-name">A — Brand Blue</div>
+      <div class="opt-desc">Màu app header <code>hsl(212,78%,36%)</code>. Chữ trắng. Nhất quán với top nav.</div>
+      <span class="opt-tag recommended">★ Recommended</span>
+    </div>
+  </div>
+
+  <!-- B: Light blue tint -->
+  <div class="opt theme-b" onclick="select(this,'b')">
+    <div class="preview-wrap">
+      <div class="mini-card">
+        <div class="mini-hdr">
+          <span class="mini-hdr-title">Thông tin chung</span>
+          <span class="mini-hist-btn">⏰ Lịch sử</span>
+        </div>
+        <div class="mini-body">
+          <div class="mini-row"><span class="mini-lbl">Ngày BG</span><div class="mini-inp"></div><span class="mini-lbl">Ngày giao</span><div class="mini-inp"></div></div>
+          <div class="mini-row"><span class="mini-lbl">Mã KH</span><div class="mini-inp"></div><span class="mini-lbl">Tên KH</span><div class="mini-inp"></div></div>
+          <div class="mini-row"><span class="mini-lbl">Địa chỉ</span><div class="mini-inp" style="flex:2"></div></div>
+        </div>
+      </div>
+      <div class="mini-card">
+        <div class="mini-hdr">
+          <span class="mini-hdr-title">Tổng cộng</span>
+        </div>
+        <div class="mini-total-body">
+          <div class="mini-trow"><span class="mini-tlbl">Tiền hàng</span><span class="mini-tval">2.366</span></div>
+          <div class="mini-trow"><span class="mini-tlbl">CK</span><div style="height:16px;width:40px;border:1px solid #d1d5db;border-radius:2px"></div><span class="mini-tlbl" style="margin-left:4px">VC</span><div style="height:16px;width:40px;border:1px solid #d1d5db;border-radius:2px"></div></div>
+          <div class="mini-trow mini-grand" style="color:#1e3a5f"><span class="mini-tval" style="font-size:12px">Tổng cộng</span><span class="mini-tval" style="font-size:13px">2.366</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="opt-meta">
+      <div class="opt-name">B — Light Blue Tint</div>
+      <div class="opt-desc">Nền xanh nhạt <code>#eff6ff</code>, chữ navy đậm. Nhẹ, modern, ít tương phản hơn A.</div>
+      <span class="opt-tag neutral">Subtle</span>
+    </div>
+  </div>
+
+  <!-- C: Muted slate -->
+  <div class="opt theme-c" onclick="select(this,'c')">
+    <div class="preview-wrap">
+      <div class="mini-card">
+        <div class="mini-hdr">
+          <span class="mini-hdr-title">Thông tin chung</span>
+          <span class="mini-hist-btn">⏰ Lịch sử</span>
+        </div>
+        <div class="mini-body">
+          <div class="mini-row"><span class="mini-lbl">Ngày BG</span><div class="mini-inp"></div><span class="mini-lbl">Ngày giao</span><div class="mini-inp"></div></div>
+          <div class="mini-row"><span class="mini-lbl">Mã KH</span><div class="mini-inp"></div><span class="mini-lbl">Tên KH</span><div class="mini-inp"></div></div>
+          <div class="mini-row"><span class="mini-lbl">Địa chỉ</span><div class="mini-inp" style="flex:2"></div></div>
+        </div>
+      </div>
+      <div class="mini-card">
+        <div class="mini-hdr">
+          <span class="mini-hdr-title">Tổng cộng</span>
+        </div>
+        <div class="mini-total-body">
+          <div class="mini-trow"><span class="mini-tlbl">Tiền hàng</span><span class="mini-tval">2.366</span></div>
+          <div class="mini-trow"><span class="mini-tlbl">CK</span><div style="height:16px;width:40px;border:1px solid #d1d5db;border-radius:2px"></div><span class="mini-tlbl" style="margin-left:4px">VC</span><div style="height:16px;width:40px;border:1px solid #d1d5db;border-radius:2px"></div></div>
+          <div class="mini-trow mini-grand" style="color:#1e293b"><span class="mini-tval" style="font-size:12px">Tổng cộng</span><span class="mini-tval" style="font-size:13px">2.366</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="opt-meta">
+      <div class="opt-name">C — Muted Slate</div>
+      <div class="opt-desc">Nền xám nhạt <code>#f1f5f9</code> (shadcn <code>muted</code>), chữ đen. Cực kỳ subtle — hơi khác white nền card.</div>
+      <span class="opt-tag neutral">Minimal</span>
+    </div>
+  </div>
+
+  <!-- D: Deep navy -->
+  <div class="opt theme-e" onclick="select(this,'e')">
+    <div class="preview-wrap">
+      <div class="mini-card">
+        <div class="mini-hdr">
+          <span class="mini-hdr-title">Thông tin chung</span>
+          <span class="mini-hist-btn">⏰ Lịch sử</span>
+        </div>
+        <div class="mini-body">
+          <div class="mini-row"><span class="mini-lbl">Ngày BG</span><div class="mini-inp"></div><span class="mini-lbl">Ngày giao</span><div class="mini-inp"></div></div>
+          <div class="mini-row"><span class="mini-lbl">Mã KH</span><div class="mini-inp"></div><span class="mini-lbl">Tên KH</span><div class="mini-inp"></div></div>
+          <div class="mini-row"><span class="mini-lbl">Địa chỉ</span><div class="mini-inp" style="flex:2"></div></div>
+        </div>
+      </div>
+      <div class="mini-card">
+        <div class="mini-hdr">
+          <span class="mini-hdr-title">Tổng cộng</span>
+        </div>
+        <div class="mini-total-body">
+          <div class="mini-trow"><span class="mini-tlbl">Tiền hàng</span><span class="mini-tval">2.366</span></div>
+          <div class="mini-trow"><span class="mini-tlbl">CK</span><div style="height:16px;width:40px;border:1px solid #d1d5db;border-radius:2px"></div><span class="mini-tlbl" style="margin-left:4px">VC</span><div style="height:16px;width:40px;border:1px solid #d1d5db;border-radius:2px"></div></div>
+          <div class="mini-trow mini-grand" style="color:#1e3a5f"><span class="mini-tval" style="font-size:12px">Tổng cộng</span><span class="mini-tval" style="font-size:13px">2.366</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="opt-meta">
+      <div class="opt-name">D — Deep Navy</div>
+      <div class="opt-desc">Nền navy đậm <code>#1e3a5f</code>, chữ trắng. Mạnh mẽ, sang trọng hơn A — nhưng nặng hơn.</div>
+      <span class="opt-tag bold">Bold</span>
+    </div>
+  </div>
+
+  <!-- E: Blue 600 (primary) -->
+  <div class="opt" onclick="select(this,'f')" style="--hdr-bg:#2563eb;--hdr-border:#1d4ed8;--hdr-txt:#fff;--btn-c:rgba(255,255,255,.8);--btn-b:rgba(255,255,255,.3);--btn-bg:rgba(255,255,255,.1)">
+    <div class="preview-wrap">
+      <div class="mini-card">
+        <div class="mini-hdr" style="background:#2563eb;border-color:#1d4ed8">
+          <span class="mini-hdr-title" style="color:#fff">Thông tin chung</span>
+          <span class="mini-hist-btn" style="color:rgba(255,255,255,.8);border-color:rgba(255,255,255,.3);background:rgba(255,255,255,.1)">⏰ Lịch sử</span>
+        </div>
+        <div class="mini-body">
+          <div class="mini-row"><span class="mini-lbl">Ngày BG</span><div class="mini-inp"></div><span class="mini-lbl">Ngày giao</span><div class="mini-inp"></div></div>
+          <div class="mini-row"><span class="mini-lbl">Mã KH</span><div class="mini-inp"></div><span class="mini-lbl">Tên KH</span><div class="mini-inp"></div></div>
+          <div class="mini-row"><span class="mini-lbl">Địa chỉ</span><div class="mini-inp" style="flex:2"></div></div>
+        </div>
+      </div>
+      <div class="mini-card">
+        <div class="mini-hdr" style="background:#2563eb;border-color:#1d4ed8">
+          <span class="mini-hdr-title" style="color:#fff">Tổng cộng</span>
+        </div>
+        <div class="mini-total-body">
+          <div class="mini-trow"><span class="mini-tlbl">Tiền hàng</span><span class="mini-tval">2.366</span></div>
+          <div class="mini-trow"><span class="mini-tlbl">CK</span><div style="height:16px;width:40px;border:1px solid #d1d5db;border-radius:2px"></div><span class="mini-tlbl" style="margin-left:4px">VC</span><div style="height:16px;width:40px;border:1px solid #d1d5db;border-radius:2px"></div></div>
+          <div class="mini-trow mini-grand" style="color:#2563eb"><span class="mini-tval" style="font-size:12px">Tổng cộng</span><span class="mini-tval" style="font-size:13px">2.366</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="opt-meta">
+      <div class="opt-name">E — Primary Blue 600</div>
+      <div class="opt-desc">Nền primary <code>#2563eb</code>, chữ trắng. Sáng và energetic hơn A một chút.</div>
+      <span class="opt-tag neutral">Vibrant</span>
+    </div>
+  </div>
+
+  <!-- F: Slate 100 conservative -->
+  <div class="opt theme-f" onclick="select(this,'g')">
+    <div class="preview-wrap">
+      <div class="mini-card">
+        <div class="mini-hdr">
+          <span class="mini-hdr-title">Thông tin chung</span>
+          <span class="mini-hist-btn">⏰ Lịch sử</span>
+        </div>
+        <div class="mini-body">
+          <div class="mini-row"><span class="mini-lbl">Ngày BG</span><div class="mini-inp"></div><span class="mini-lbl">Ngày giao</span><div class="mini-inp"></div></div>
+          <div class="mini-row"><span class="mini-lbl">Mã KH</span><div class="mini-inp"></div><span class="mini-lbl">Tên KH</span><div class="mini-inp"></div></div>
+          <div class="mini-row"><span class="mini-lbl">Địa chỉ</span><div class="mini-inp" style="flex:2"></div></div>
+        </div>
+      </div>
+      <div class="mini-card">
+        <div class="mini-hdr">
+          <span class="mini-hdr-title">Tổng cộng</span>
+        </div>
+        <div class="mini-total-body">
+          <div class="mini-trow"><span class="mini-tlbl">Tiền hàng</span><span class="mini-tval">2.366</span></div>
+          <div class="mini-trow"><span class="mini-tlbl">CK</span><div style="height:16px;width:40px;border:1px solid #d1d5db;border-radius:2px"></div><span class="mini-tlbl" style="margin-left:4px">VC</span><div style="height:16px;width:40px;border:1px solid #d1d5db;border-radius:2px"></div></div>
+          <div class="mini-trow mini-grand" style="color:#78350f"><span class="mini-tval" style="font-size:12px">Tổng cộng</span><span class="mini-tval" style="font-size:13px">2.366</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="opt-meta">
+      <div class="opt-name">F — Amber Warm</div>
+      <div class="opt-desc">Nền vàng ấm <code>#fffbeb</code>, chữ nâu đậm. Khác biệt hoàn toàn — warm tone, dễ phân biệt với content.</div>
+      <span class="opt-tag" style="background:#fef3c7;color:#92400e">Warm</span>
+    </div>
+  </div>
+
+</div>
+
+<div style="margin-top:16px;max-width:1100px;padding:10px 14px;background:#fff;border:1px solid #e2e8f0;border-radius:8px;font-size:11.5px;color:#64748b">
+  <strong style="color:#374151">Lưu ý về chiều cao:</strong> Cả hai header sẽ được fix <code>h-9</code> (36px) — đảm bảo bằng nhau dù "Tổng cộng" không có button bên phải.
+  <br>Recommendation: <strong style="color:#1e40af">A — Brand Blue</strong> vì đồng bộ với top navigation bar, tạo visual hierarchy rõ ràng cho "vùng meta-info" của form.
+</div>
+
+<script>
+function select(el, id) {
+  document.querySelectorAll('.opt').forEach(o => o.classList.remove('selected'));
+  el.classList.add('selected');
+  // record for companion
+  if (window.__companion) window.__companion.select(id);
+}
+// integrate with visual companion helper if present
+document.addEventListener('DOMContentLoaded', () => {
+  if (typeof toggleSelect === 'function') {
+    document.querySelectorAll('.opt').forEach(el => {
+      el.setAttribute('data-choice', el.dataset.choice || '');
+    });
+  }
+});
+</script>
+</body>
+</html>

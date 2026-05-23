@@ -217,9 +217,11 @@
   flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
-  gap: 10px 16px;
-  padding: 14px 14px 10px;
-  border-bottom: 1px solid hsl(var(--border));
+  gap: 6px 16px;
+  min-height: 36px;
+  padding: 0 14px;
+  background: #eff6ff;
+  border-bottom: 1px solid #bfdbfe;
 }
 
 .line-items-heading h3 {

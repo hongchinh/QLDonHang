@@ -1,0 +1,653 @@
+<style>
+  .compare-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+    margin-top: 16px;
+  }
+  .form-card {
+    border: 1.5px solid #e2e8f0;
+    border-radius: 8px;
+    background: #fff;
+    overflow: hidden;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-size: 13px;
+    color: #1a202c;
+  }
+  .form-card.selected-highlight {
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 2px #bfdbfe;
+  }
+  .card-header {
+    padding: 10px 16px;
+    border-bottom: 1px solid #e2e8f0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: #f8fafc;
+  }
+  .card-title { font-weight: 700; font-size: 14px; color: #0f172a; }
+  .tab-bar {
+    display: flex;
+    gap: 0;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    overflow: hidden;
+  }
+  .tab-btn {
+    padding: 4px 12px;
+    font-size: 12px;
+    font-weight: 500;
+    background: #fff;
+    color: #64748b;
+    border: none;
+    cursor: pointer;
+  }
+  .tab-btn.active {
+    background: #1e3a5f;
+    color: #fff;
+  }
+  .history-icon-btn {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 8px;
+    font-size: 11px;
+    color: #64748b;
+    border: 1px solid #e2e8f0;
+    border-radius: 5px;
+    background: #fff;
+    cursor: pointer;
+  }
+  .card-body { padding: 10px 16px; }
+  .card-body-sm { padding: 8px 12px; }
+
+  /* Current layout grid */
+  .form-row {
+    display: grid;
+    align-items: center;
+    margin-bottom: 8px;
+  }
+  .form-row:last-child { margin-bottom: 0; }
+  .row-3col { grid-template-columns: 60px 1fr 70px 1fr 60px 1fr; gap: 4px; }
+  .row-2col { grid-template-columns: 60px 1fr 60px 1fr; gap: 4px; }
+  .row-customer { grid-template-columns: 60px 140px 60px 1fr; gap: 4px; }
+  .row-full { grid-template-columns: 60px 1fr; gap: 4px; }
+
+  .lbl {
+    font-size: 12px;
+    color: #64748b;
+    text-align: right;
+    padding-right: 4px;
+    white-space: nowrap;
+  }
+  .lbl .req { color: #ef4444; }
+  .inp {
+    height: 32px;
+    border: 1px solid #d1d5db;
+    border-radius: 5px;
+    padding: 0 8px;
+    font-size: 12.5px;
+    color: #374151;
+    background: #fff;
+    display: flex;
+    align-items: center;
+  }
+  .inp-sm {
+    height: 28px;
+    border: 1px solid #d1d5db;
+    border-radius: 5px;
+    padding: 0 6px;
+    font-size: 12px;
+    color: #374151;
+    background: #fff;
+    display: flex;
+    align-items: center;
+  }
+  .inp-readonly {
+    background: #f8fafc;
+    color: #94a3b8;
+    border-style: dashed;
+  }
+  .inp-date { gap: 4px; justify-content: space-between; }
+  .inp-date::after { content: '📅'; font-size: 11px; opacity: 0.5; }
+
+  .cust-btns { display: flex; align-items: center; gap: 2px; }
+  .cust-btn {
+    width: 24px; height: 24px; border-radius: 4px; border: 1px solid #e2e8f0;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px; cursor: pointer; color: #64748b; background: #f8fafc;
+  }
+
+  /* Compact approach B */
+  .row-5col { grid-template-columns: 55px 1fr 55px 80px 55px 80px; gap: 4px; }
+  .row-compact-customer { grid-template-columns: 55px 130px auto 55px 1fr; gap: 4px; }
+  .row-2col-b { grid-template-columns: 55px 1fr 55px 1fr; gap: 4px; }
+  .row-full-b { grid-template-columns: 55px 1fr; gap: 4px; }
+
+  /* Approach C - ultra compact strips */
+  .info-strip {
+    display: flex;
+    gap: 0;
+    border-bottom: 1px solid #e2e8f0;
+    padding: 6px 12px;
+    background: #f8fafc;
+    align-items: center;
+    font-size: 12px;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  .strip-item { display: flex; align-items: center; gap: 4px; }
+  .strip-lbl { color: #94a3b8; font-size: 11px; }
+  .strip-val { color: #374151; font-weight: 500; }
+  .strip-inp {
+    height: 26px; border: 1px solid #d1d5db; border-radius: 4px;
+    padding: 0 6px; font-size: 12px; color: #374151; background: #fff;
+    min-width: 90px; display: flex; align-items: center;
+  }
+  .strip-sep { color: #e2e8f0; }
+
+  /* Totals panel */
+  .totals-card {
+    border: 1.5px solid #e2e8f0;
+    border-radius: 8px;
+    background: #fff;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-size: 13px;
+    overflow: hidden;
+  }
+  .totals-header {
+    padding: 10px 14px;
+    border-bottom: 1px solid #e2e8f0;
+    font-weight: 700;
+    font-size: 14px;
+    background: #f8fafc;
+  }
+  .totals-body { padding: 10px 14px; }
+  .total-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 3px 0;
+  }
+  .total-lbl { color: #64748b; font-size: 12px; }
+  .total-val { font-weight: 600; color: #1a202c; font-size: 13px; }
+  .total-row.grand {
+    border-top: 2px solid #1e3a5f;
+    margin-top: 4px;
+    padding-top: 8px;
+  }
+  .total-row.grand .total-lbl { font-weight: 700; color: #1a202c; font-size: 14px; }
+  .total-row.grand .total-val { font-size: 16px; color: #1e3a5f; }
+  .total-sub { font-size: 10px; color: #94a3b8; text-align: right; }
+  .total-inp-row {
+    display: grid;
+    grid-template-columns: 40px 1fr 40px 1fr;
+    gap: 4px;
+    align-items: center;
+    padding: 3px 0;
+  }
+  .total-inp {
+    height: 26px; border: 1px solid #d1d5db; border-radius: 4px;
+    padding: 0 6px; font-size: 12px; text-align: right; background: #fff;
+    display: flex; align-items: center; justify-content: flex-end; color: #374151;
+  }
+  .total-inp-row .total-lbl { font-size: 11px; }
+  .totals-divider { height: 1px; background: #e2e8f0; margin: 4px 0; }
+
+  /* Approach C - super compact totals */
+  .total-grid-2col {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0 12px;
+  }
+  .total-field {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 3px 0;
+    border-bottom: 1px solid #f1f5f9;
+  }
+  .total-field:last-child { border-bottom: none; }
+  .total-field .lbl { font-size: 11px; color: #94a3b8; }
+  .total-field .val { font-size: 12px; font-weight: 600; color: #374151; }
+  .total-field .val-inp {
+    height: 24px; border: 1px solid #d1d5db; border-radius: 4px;
+    padding: 0 5px; font-size: 12px; text-align: right; min-width: 60px;
+    display: flex; align-items: center; justify-content: flex-end;
+  }
+
+  .height-badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 600;
+    margin-left: 8px;
+  }
+  .badge-current { background: #fef3c7; color: #92400e; }
+  .badge-a { background: #dcfce7; color: #166534; }
+  .badge-b { background: #dbeafe; color: #1e40af; }
+  .badge-c { background: #f3e8ff; color: #6b21a8; }
+
+  .approach-header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 10px;
+    gap: 8px;
+  }
+  .approach-label {
+    font-weight: 700;
+    font-size: 13px;
+    color: #0f172a;
+  }
+
+  .layout-wrapper {
+    display: grid;
+    grid-template-columns: 1fr 280px;
+    gap: 10px;
+  }
+  .layout-wrapper-sm {
+    display: grid;
+    grid-template-columns: 1fr 260px;
+    gap: 8px;
+  }
+</style>
+
+<h2>So sánh Layout: Thông tin chung + Tổng cộng</h2>
+<p class="subtitle">Chọn approach nào bạn thích nhất (có thể chọn nhiều)</p>
+
+<!-- CURRENT STATE -->
+<div class="section">
+  <div class="approach-header">
+    <span class="approach-label">Hiện tại</span>
+    <span class="height-badge badge-current">~310px</span>
+  </div>
+  <div class="layout-wrapper">
+    <div class="form-card">
+      <div class="card-header">
+        <span class="card-title">Thông tin chung</span>
+        <div class="tab-bar">
+          <button class="tab-btn active">Thông tin chung</button>
+          <button class="tab-btn">Lịch sử</button>
+        </div>
+      </div>
+      <div class="card-body">
+        <div class="form-row row-3col">
+          <span class="lbl">Ngày báo giá <span class="req">*</span></span>
+          <div class="inp inp-date">22/05/2026</div>
+          <span class="lbl">Ngày doanh thu</span>
+          <div class="inp inp-readonly">Chưa ghi nhận</div>
+          <span class="lbl">Ngày giao</span>
+          <div class="inp inp-date">23/05/2026</div>
+        </div>
+        <div class="form-row row-customer">
+          <span class="lbl">Mã KH <span class="req">*</span></span>
+          <div style="display:flex;align-items:center;gap:3px">
+            <div class="inp" style="flex:1">KH-TEST-001</div>
+            <div class="cust-btns">
+              <span class="cust-btn">×</span>
+              <span class="cust-btn">+</span>
+            </div>
+          </div>
+          <span class="lbl">Tên KH</span>
+          <div class="inp">Test Customer</div>
+        </div>
+        <div class="form-row row-full">
+          <span class="lbl">Địa chỉ giao</span>
+          <div class="inp">Warehouse A, Hanoi</div>
+        </div>
+        <div class="form-row row-3col">
+          <span class="lbl">Người nhận</span>
+          <div class="inp">Nguyen Test</div>
+          <span class="lbl">Điện thoại</span>
+          <div class="inp">0900000001</div>
+          <span class="lbl">Số xe</span>
+          <div class="inp">Xe khác</div>
+        </div>
+        <div class="form-row row-2col">
+          <span class="lbl">Ghi chú GH</span>
+          <div class="inp"></div>
+          <span class="lbl">Ghi chú NB</span>
+          <div class="inp"></div>
+        </div>
+      </div>
+    </div>
+    <div class="totals-card">
+      <div class="totals-header">Tổng cộng</div>
+      <div class="totals-body">
+        <div class="total-row">
+          <span class="total-lbl">Tiền hàng</span>
+          <span class="total-val">2.366</span>
+        </div>
+        <div class="totals-divider"></div>
+        <div class="total-inp-row">
+          <span class="total-lbl">CK</span>
+          <div class="total-inp">0</div>
+          <span class="total-lbl">VC</span>
+          <div class="total-inp">0</div>
+        </div>
+        <div class="total-row" style="margin-top:2px">
+          <span class="total-lbl">Điều chỉnh</span>
+        </div>
+        <div class="totals-divider"></div>
+        <div class="total-inp-row">
+          <span class="total-lbl">Thuế %</span>
+          <div class="total-inp">0</div>
+          <span class="total-lbl">Tiền thuế</span>
+          <div class="total-inp" style="background:#f8fafc;border-style:dashed">0</div>
+        </div>
+        <div class="total-row grand">
+          <span class="total-lbl">Tổng cộng</span>
+          <span class="total-val">2.366</span>
+        </div>
+        <div class="total-sub">Giá vốn: 0 &nbsp; LN gộp: 2.366</div>
+        <div class="totals-divider" style="margin-top:6px"></div>
+        <div class="total-inp-row">
+          <span class="total-lbl">Tạm ứng</span>
+          <div class="total-inp">0</div>
+          <span></span><span></span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- APPROACH A -->
+<div class="section" style="margin-top:24px">
+  <div class="cards">
+    <div class="card" data-choice="a" onclick="toggleSelect(this)">
+      <div class="card-image">
+        <div class="approach-header" style="margin-bottom:8px">
+          <span class="approach-label">Approach A — Compact Tab</span>
+          <span class="height-badge badge-a">~240px · tiết kiệm 70px</span>
+        </div>
+        <div class="layout-wrapper-sm">
+          <div class="form-card">
+            <div class="card-header" style="padding:7px 14px">
+              <span class="card-title" style="font-size:13px">Thông tin chung</span>
+              <button class="history-icon-btn">🕐 Lịch sử</button>
+            </div>
+            <div class="card-body-sm">
+              <div class="form-row row-3col" style="margin-bottom:6px">
+                <span class="lbl">Ngày báo giá <span class="req">*</span></span>
+                <div class="inp-sm inp-date">22/05/2026</div>
+                <span class="lbl">Ngày DT</span>
+                <div class="inp-sm inp-readonly">Chưa GN</div>
+                <span class="lbl">Ngày giao</span>
+                <div class="inp-sm inp-date">23/05/2026</div>
+              </div>
+              <div class="form-row row-customer" style="margin-bottom:6px">
+                <span class="lbl">Mã KH <span class="req">*</span></span>
+                <div style="display:flex;align-items:center;gap:3px">
+                  <div class="inp-sm" style="flex:1">KH-TEST-001</div>
+                  <span class="cust-btn" style="width:20px;height:20px;font-size:10px">×</span>
+                  <span class="cust-btn" style="width:20px;height:20px;font-size:10px">+</span>
+                </div>
+                <span class="lbl">Tên KH</span>
+                <div class="inp-sm">Test Customer</div>
+              </div>
+              <div class="form-row row-full" style="margin-bottom:6px">
+                <span class="lbl">Địa chỉ giao</span>
+                <div class="inp-sm">Warehouse A, Hanoi</div>
+              </div>
+              <div class="form-row row-3col" style="margin-bottom:6px">
+                <span class="lbl">Người nhận</span>
+                <div class="inp-sm">Nguyen Test</div>
+                <span class="lbl">ĐT</span>
+                <div class="inp-sm">0900000001</div>
+                <span class="lbl">Số xe</span>
+                <div class="inp-sm">Xe khác</div>
+              </div>
+              <div class="form-row row-2col" style="margin-bottom:0">
+                <span class="lbl">GC GH</span>
+                <div class="inp-sm"></div>
+                <span class="lbl">GC NB</span>
+                <div class="inp-sm"></div>
+              </div>
+            </div>
+          </div>
+          <div class="totals-card">
+            <div class="totals-header" style="padding:7px 12px;font-size:13px">Tổng cộng</div>
+            <div class="totals-body" style="padding:8px 12px">
+              <div class="total-row">
+                <span class="total-lbl">Tiền hàng</span>
+                <span class="total-val">2.366</span>
+              </div>
+              <div style="height:1px;background:#f1f5f9;margin:4px 0"></div>
+              <div style="display:grid;grid-template-columns:30px 1fr 8px 30px 1fr;gap:3px;align-items:center;padding:3px 0">
+                <span style="font-size:11px;color:#94a3b8">CK</span>
+                <div class="total-inp" style="height:24px;font-size:12px">0</div>
+                <span></span>
+                <span style="font-size:11px;color:#94a3b8">VC</span>
+                <div class="total-inp" style="height:24px;font-size:12px">0</div>
+              </div>
+              <div style="height:1px;background:#f1f5f9;margin:4px 0"></div>
+              <div style="display:grid;grid-template-columns:30px 50px 8px 1fr 1fr;gap:3px;align-items:center;padding:3px 0">
+                <span style="font-size:11px;color:#94a3b8">Thuế</span>
+                <div class="total-inp" style="height:24px;font-size:12px">0%</div>
+                <span></span>
+                <span style="font-size:11px;color:#94a3b8;text-align:right">Tiền thuế</span>
+                <div class="total-inp" style="height:24px;font-size:12px;background:#f8fafc;border-style:dashed">0</div>
+              </div>
+              <div style="border-top:2px solid #1e3a5f;margin-top:5px;padding-top:6px;display:flex;justify-content:space-between;align-items:baseline">
+                <span style="font-weight:700;font-size:13px">Tổng cộng</span>
+                <span style="font-weight:800;font-size:15px;color:#1e3a5f">2.366</span>
+              </div>
+              <div style="font-size:10px;color:#94a3b8;text-align:right;margin-bottom:4px">GV: 0 · LN gộp: 2.366</div>
+              <div style="height:1px;background:#f1f5f9;margin:4px 0"></div>
+              <div style="display:flex;justify-content:space-between;align-items:center;padding:3px 0">
+                <span style="font-size:12px;color:#64748b">Tạm ứng</span>
+                <div class="total-inp" style="height:24px;font-size:12px;min-width:70px">0</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="card-body">
+        <h3>A — Compact Tab</h3>
+        <p>Giữ 5 rows, nhưng: chuyển "Lịch sử" thành icon button nhỏ gọn, input height 28px, padding giảm. Label ngắn hơn (ĐT, GC GH). Dễ implement nhất.</p>
+      </div>
+    </div>
+
+    <div class="card" data-choice="b" onclick="toggleSelect(this)">
+      <div class="card-image">
+        <div class="approach-header" style="margin-bottom:8px">
+          <span class="approach-label">Approach B — Reorganized 4 Rows</span>
+          <span class="height-badge badge-b">~200px · tiết kiệm 110px</span>
+        </div>
+        <div class="layout-wrapper-sm">
+          <div class="form-card">
+            <div class="card-header" style="padding:7px 14px">
+              <span class="card-title" style="font-size:13px">Thông tin chung</span>
+              <button class="history-icon-btn">🕐 Lịch sử</button>
+            </div>
+            <div class="card-body-sm">
+              <!-- Row 1: 3 dates in one row -->
+              <div class="form-row" style="grid-template-columns:60px 1fr 70px 1fr 60px 1fr;gap:4px;margin-bottom:5px">
+                <span class="lbl">Ngày BG <span class="req">*</span></span>
+                <div class="inp-sm inp-date">22/05/2026</div>
+                <span class="lbl">Ngày DT</span>
+                <div class="inp-sm inp-readonly">Chưa GN</div>
+                <span class="lbl">Ngày giao</span>
+                <div class="inp-sm inp-date">23/05/2026</div>
+              </div>
+              <!-- Row 2: KH + address -->
+              <div class="form-row" style="grid-template-columns:60px 130px auto 60px 1fr;gap:4px;margin-bottom:5px;align-items:center">
+                <span class="lbl">Mã KH <span class="req">*</span></span>
+                <div style="display:flex;align-items:center;gap:2px">
+                  <div class="inp-sm" style="flex:1;min-width:90px">KH-TEST-001</div>
+                  <span class="cust-btn" style="width:20px;height:20px;font-size:10px">×</span>
+                  <span class="cust-btn" style="width:20px;height:20px;font-size:10px">+</span>
+                </div>
+                <span class="lbl">Địa chỉ</span>
+                <div class="inp-sm" style="grid-column:span 2">Warehouse A, Hanoi</div>
+              </div>
+              <!-- Row 3: Tên KH + Người nhận + ĐT + Số xe -->
+              <div class="form-row" style="grid-template-columns:60px 1fr 60px 1fr 40px 90px;gap:4px;margin-bottom:5px">
+                <span class="lbl">Tên KH</span>
+                <div class="inp-sm">Test Customer</div>
+                <span class="lbl">Người nhận</span>
+                <div class="inp-sm">Nguyen Test</div>
+                <span class="lbl">Số xe</span>
+                <div class="inp-sm">Xe khác</div>
+              </div>
+              <!-- Row 4: ĐT + notes -->
+              <div class="form-row" style="grid-template-columns:60px 100px 60px 1fr 60px 1fr;gap:4px;margin-bottom:0">
+                <span class="lbl">Điện thoại</span>
+                <div class="inp-sm">0900000001</div>
+                <span class="lbl">GC GH</span>
+                <div class="inp-sm"></div>
+                <span class="lbl">GC NB</span>
+                <div class="inp-sm"></div>
+              </div>
+            </div>
+          </div>
+          <div class="totals-card">
+            <div class="totals-header" style="padding:7px 12px;font-size:13px">Tổng cộng</div>
+            <div class="totals-body" style="padding:8px 12px">
+              <div class="total-row">
+                <span class="total-lbl">Tiền hàng</span>
+                <span class="total-val">2.366</span>
+              </div>
+              <div style="height:1px;background:#f1f5f9;margin:4px 0"></div>
+              <div style="display:grid;grid-template-columns:30px 1fr 8px 30px 1fr;gap:3px;align-items:center;padding:2px 0">
+                <span style="font-size:11px;color:#94a3b8">CK</span>
+                <div class="total-inp" style="height:24px;font-size:12px">0</div>
+                <span></span>
+                <span style="font-size:11px;color:#94a3b8">VC</span>
+                <div class="total-inp" style="height:24px;font-size:12px">0</div>
+              </div>
+              <div style="display:grid;grid-template-columns:30px 50px 8px 1fr 1fr;gap:3px;align-items:center;padding:2px 0">
+                <span style="font-size:11px;color:#94a3b8">Thuế</span>
+                <div class="total-inp" style="height:24px;font-size:12px">0%</div>
+                <span></span>
+                <span style="font-size:11px;color:#94a3b8;text-align:right">Tiền thuế</span>
+                <div class="total-inp" style="height:24px;font-size:12px;background:#f8fafc;border-style:dashed">0</div>
+              </div>
+              <div style="border-top:2px solid #1e3a5f;margin-top:5px;padding-top:6px;display:flex;justify-content:space-between;align-items:baseline">
+                <span style="font-weight:700;font-size:13px">Tổng cộng</span>
+                <span style="font-weight:800;font-size:15px;color:#1e3a5f">2.366</span>
+              </div>
+              <div style="font-size:10px;color:#94a3b8;text-align:right;margin-bottom:4px">GV: 0 · LN gộp: 2.366</div>
+              <div style="height:1px;background:#f1f5f9;margin:4px 0"></div>
+              <div style="display:flex;justify-content:space-between;align-items:center;padding:2px 0">
+                <span style="font-size:12px;color:#64748b">Tạm ứng</span>
+                <div class="total-inp" style="height:24px;font-size:12px;min-width:70px">0</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="card-body">
+        <h3>B — 4 Rows Reorganized</h3>
+        <p>Mã KH + Địa chỉ giao cùng hàng. Tên KH + Người nhận + Số xe cùng hàng. Điện thoại + 2 ghi chú cùng hàng. Compact hơn nhiều.</p>
+      </div>
+    </div>
+
+    <div class="card" data-choice="c" onclick="toggleSelect(this)">
+      <div class="card-image">
+        <div class="approach-header" style="margin-bottom:8px">
+          <span class="approach-label">Approach C — Info Strip + 3 Rows</span>
+          <span class="height-badge badge-c">~175px · tiết kiệm 135px</span>
+        </div>
+        <div class="layout-wrapper-sm">
+          <div class="form-card">
+            <div class="card-header" style="padding:7px 14px">
+              <span class="card-title" style="font-size:13px">Thông tin chung</span>
+              <button class="history-icon-btn">🕐 Lịch sử</button>
+            </div>
+            <!-- Date strip -->
+            <div class="info-strip">
+              <div class="strip-item">
+                <span class="strip-lbl">Ngày BG</span>
+                <div class="strip-inp">22/05/2026</div>
+              </div>
+              <span class="strip-sep">·</span>
+              <div class="strip-item">
+                <span class="strip-lbl">Ngày giao</span>
+                <div class="strip-inp">23/05/2026</div>
+              </div>
+              <span class="strip-sep">·</span>
+              <div class="strip-item">
+                <span class="strip-lbl">Ngày DT</span>
+                <span class="strip-val" style="color:#94a3b8;font-size:11px">Chưa ghi nhận</span>
+              </div>
+            </div>
+            <div class="card-body-sm">
+              <!-- Row 1: KH + Địa chỉ -->
+              <div class="form-row" style="grid-template-columns:55px 130px auto 55px 1fr;gap:4px;margin-bottom:5px;align-items:center">
+                <span class="lbl">Mã KH <span class="req">*</span></span>
+                <div style="display:flex;align-items:center;gap:2px">
+                  <div class="inp-sm" style="flex:1">KH-TEST-001</div>
+                  <span class="cust-btn" style="width:18px;height:18px;font-size:10px">×</span>
+                  <span class="cust-btn" style="width:18px;height:18px;font-size:10px">+</span>
+                </div>
+                <span class="lbl">Địa chỉ</span>
+                <div class="inp-sm" style="grid-column:span 2">Warehouse A, Hanoi</div>
+              </div>
+              <!-- Row 2: Tên KH + Người nhận + ĐT + Số xe -->
+              <div class="form-row" style="grid-template-columns:55px 1fr 55px 1fr 40px 85px;gap:4px;margin-bottom:5px">
+                <span class="lbl">Tên KH</span>
+                <div class="inp-sm">Test Customer</div>
+                <span class="lbl">Người nhận</span>
+                <div class="inp-sm">Nguyen Test</div>
+                <span class="lbl">Số xe</span>
+                <div class="inp-sm">Xe khác</div>
+              </div>
+              <!-- Row 3: ĐT + notes -->
+              <div class="form-row" style="grid-template-columns:55px 100px 55px 1fr 55px 1fr;gap:4px;margin-bottom:0">
+                <span class="lbl">ĐT</span>
+                <div class="inp-sm">0900000001</div>
+                <span class="lbl">GC GH</span>
+                <div class="inp-sm"></div>
+                <span class="lbl">GC NB</span>
+                <div class="inp-sm"></div>
+              </div>
+            </div>
+          </div>
+          <div class="totals-card">
+            <div class="totals-header" style="padding:7px 12px;font-size:13px">Tổng cộng</div>
+            <div class="totals-body" style="padding:6px 12px">
+              <div style="display:flex;justify-content:space-between;align-items:center;padding:2px 0">
+                <span style="font-size:12px;color:#64748b">Tiền hàng</span>
+                <span style="font-weight:700;font-size:13px">2.366</span>
+              </div>
+              <div class="total-grid-2col" style="margin:4px 0">
+                <div class="total-field">
+                  <span class="lbl" style="font-size:11px">CK</span>
+                  <div class="val-inp" style="height:22px;border:1px solid #d1d5db;border-radius:3px;padding:0 5px;font-size:12px;display:flex;align-items:center;justify-content:flex-end">0</div>
+                </div>
+                <div class="total-field">
+                  <span class="lbl" style="font-size:11px">VC</span>
+                  <div class="val-inp" style="height:22px;border:1px solid #d1d5db;border-radius:3px;padding:0 5px;font-size:12px;display:flex;align-items:center;justify-content:flex-end">0</div>
+                </div>
+                <div class="total-field">
+                  <span class="lbl" style="font-size:11px">Thuế %</span>
+                  <div class="val-inp" style="height:22px;border:1px solid #d1d5db;border-radius:3px;padding:0 5px;font-size:12px;display:flex;align-items:center;justify-content:flex-end">0</div>
+                </div>
+                <div class="total-field">
+                  <span class="lbl" style="font-size:11px">Tiền thuế</span>
+                  <div class="val-inp" style="height:22px;border:1px dashed #e2e8f0;border-radius:3px;padding:0 5px;font-size:12px;background:#f8fafc;display:flex;align-items:center;justify-content:flex-end">0</div>
+                </div>
+              </div>
+              <div style="border-top:2px solid #1e3a5f;padding-top:5px;display:flex;justify-content:space-between;align-items:baseline">
+                <span style="font-weight:700;font-size:13px">Tổng cộng</span>
+                <span style="font-weight:800;font-size:15px;color:#1e3a5f">2.366</span>
+              </div>
+              <div style="font-size:10px;color:#94a3b8;text-align:right;margin-bottom:3px">GV: 0 · LN: 2.366</div>
+              <div style="display:flex;justify-content:space-between;align-items:center;padding:3px 0;border-top:1px solid #f1f5f9;margin-top:2px">
+                <span style="font-size:12px;color:#64748b">Tạm ứng</span>
+                <div style="height:22px;border:1px solid #d1d5db;border-radius:3px;padding:0 6px;font-size:12px;min-width:65px;display:flex;align-items:center;justify-content:flex-end">0</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="card-body">
+        <h3>C — Info Strip + 3 Rows</h3>
+        <p>Ngày tháng thành "meta strip" mỏng ngang. 3 rows chính cho các field còn lại. Compact nhất — nhưng dates ít nổi bật hơn.</p>
+      </div>
+    </div>
+  </div>
+</div>

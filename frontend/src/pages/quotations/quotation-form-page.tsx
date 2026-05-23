@@ -678,7 +678,7 @@ function QuotationFormInner({
         <div className="grid gap-4 lg:grid-cols-[1fr_320px] items-stretch">
           <Card>
             <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'general' | 'history')}>
-              <CardHeader className="flex flex-row items-center justify-between gap-3 space-y-0 border-b p-1 px-3">
+              <CardHeader className="flex flex-row items-center justify-between gap-3 space-y-0 border-b p-1 px-3 h-9 bg-blue-50">
                 <CardTitle>Thông tin chung</CardTitle>
                 {isEdit && (
                   <Button
