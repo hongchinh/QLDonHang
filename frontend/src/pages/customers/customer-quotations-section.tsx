@@ -109,6 +109,7 @@ export function CustomerQuotationsSection({ customerId }: CustomerQuotationsSect
       subtotal: data?.aggregates?.subtotal ?? 0,
       discount: data?.aggregates?.discount ?? 0,
       freight: data?.aggregates?.freight ?? 0,
+      advancePayment: data?.aggregates?.advancePayment ?? 0,
       total: data?.aggregates?.total ?? 0,
       totalCost: canViewCost
         ? data?.aggregates?.totalCost ?? items.reduce((sum, item) => sum + (item.totalCost ?? 0), 0)
