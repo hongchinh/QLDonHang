@@ -47,6 +47,7 @@ public class SalesRevenueLineItemDto
 
     public string ProductName { get; set; } = default!;
     public string? Specification { get; set; }
+    public string UnitName { get; set; } = default!;
     public decimal Quantity { get; set; }
     public decimal UnitPrice { get; set; }
     public decimal LineTotal { get; set; }

@@ -175,6 +175,22 @@ public class SalesRevenueLineItemsTests : QuotationTestBase
         await AuthenticateAsync("admin", "Admin@123");
     }
 
+    [Fact]
+    public async Task LineItems_Returns400_WhenFromGreaterThanTo()
+    {
+        var resp = await _client.GetAsync(
+            $"/api/reports/sales-revenue/{Guid.NewGuid()}/lines?from=2026-05-20&to=2026-05-01");
+        ((int)resp.StatusCode).Should().Be(400);
+    }
+
+    [Fact]
+    public async Task LineItems_Returns400_WhenRangeExceeds366Days()
+    {
+        var resp = await _client.GetAsync(
+            $"/api/reports/sales-revenue/{Guid.NewGuid()}/lines?from=2025-01-01&to=2026-02-02");
+        ((int)resp.StatusCode).Should().Be(400);
+    }
+
     private async Task<QuotationDto> CreateAndConfirmAsync(UpsertQuotationRequest? req = null)
     {
         var create = await _client.PostAsJsonAsync("/api/quotations", req ?? BuildRequest());

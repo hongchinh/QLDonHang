@@ -12,5 +12,6 @@ export function useSalesRevenueDetail(
     queryKey: salesRevenueDetailKeys.lines(saleUserId ?? '', params),
     queryFn: () => salesRevenueDetailApi.getLines(saleUserId!, params),
     enabled: enabled && !!saleUserId,
+    staleTime: 5 * 60 * 1000,
   });
 }

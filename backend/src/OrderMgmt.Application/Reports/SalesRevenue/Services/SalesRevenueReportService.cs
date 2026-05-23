@@ -25,8 +25,6 @@ public class SalesRevenueReportService : ISalesRevenueReportService
 
         var quotations = _db.Quotations.AsNoTracking()
             .Where(q => q.Status == QuotationStatus.Confirmed
-                && q.CancelledAt == null
-                && q.ConfirmedAt != null
                 && q.ConfirmedAt >= fromUtc
                 && q.ConfirmedAt < toExclusiveUtc);
 
@@ -92,8 +90,6 @@ public class SalesRevenueReportService : ISalesRevenueReportService
         var quotations = await _db.Quotations
             .AsNoTracking()
             .Where(q => q.Status == QuotationStatus.Confirmed
-                && q.CancelledAt == null
-                && q.ConfirmedAt != null
                 && q.ConfirmedAt >= fromUtc
                 && q.ConfirmedAt < toExclusiveUtc
                 && q.OwnerUserId == saleUserId)
@@ -121,6 +117,7 @@ public class SalesRevenueReportService : ISalesRevenueReportService
                     IsFirstLineOfQuotation   = i == 0,
                     ProductName              = line.ProductName,
                     Specification            = line.Specification,
+                    UnitName                 = line.UnitName,
                     Quantity                 = line.Quantity,
                     UnitPrice                = line.UnitPrice,
                     LineTotal                = line.LineTotal,

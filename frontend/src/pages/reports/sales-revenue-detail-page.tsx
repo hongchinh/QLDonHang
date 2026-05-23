@@ -1,4 +1,4 @@
-import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
+import { useNavigate, useParams, useSearchParams, useLocation } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   Table,
@@ -25,11 +25,14 @@ export function SalesRevenueDetailPage() {
   const { saleUserId } = useParams<{ saleUserId: string }>();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
+  const location = useLocation();
+  const saleName = (location.state as { saleName?: string } | null)?.saleName;
 
   const from = searchParams.get('from') ?? '';
   const to = searchParams.get('to') ?? '';
+  const hasParams = Boolean(from && to && saleUserId);
 
-  const query = useSalesRevenueDetail(saleUserId, { from, to }, Boolean(from && to && saleUserId));
+  const query = useSalesRevenueDetail(saleUserId, { from, to }, hasParams);
 
   const items: SalesRevenueLineItemDto[] = query.data ?? [];
   const hasCost = items.some((i) => i.unitCost !== null);
@@ -46,12 +49,20 @@ export function SalesRevenueDetailPage() {
             Quay lại
           </Button>
           <div>
-            <h1 className="text-2xl font-bold">Chi tiết doanh thu</h1>
+            <h1 className="text-2xl font-bold">
+              Chi tiết doanh thu{saleName ? ` — ${saleName}` : ''}
+            </h1>
             <p className="text-sm text-muted-foreground">
               {from && to ? `${formatDate(from)} – ${formatDate(to)}` : ''}
             </p>
           </div>
         </div>
+
+        {!hasParams && (
+          <div className="rounded-md border border-muted bg-muted/30 p-4 text-sm text-muted-foreground">
+            Vui lòng truy cập trang này từ báo cáo doanh thu theo sale.
+          </div>
+        )}
 
         <Card>
           <CardHeader>
@@ -75,10 +86,9 @@ export function SalesRevenueDetailPage() {
                       <TableHead>Ngày BG</TableHead>
                       <TableHead>Ngày XN</TableHead>
                       <TableHead>Khách hàng</TableHead>
-                      <TableHead>Địa chỉ</TableHead>
-                      <TableHead>Điện thoại</TableHead>
                       <TableHead>Hàng hóa</TableHead>
-                      <TableHead>Kích thước</TableHead>
+                      <TableHead>Quy cách</TableHead>
+                      <TableHead>ĐVT</TableHead>
                       <TableHead className="text-right">SL</TableHead>
                       <TableHead className="text-right">Đơn giá</TableHead>
                       <TableHead className="text-right">Số tiền</TableHead>
@@ -86,17 +96,19 @@ export function SalesRevenueDetailPage() {
                       {hasCost && (
                         <>
                           <TableHead className="text-right">ĐG nhập</TableHead>
-                          <TableHead className="text-right">Thành tiền nhập</TableHead>
+                          <TableHead className="text-right">TT nhập</TableHead>
                           <TableHead className="text-right">Lợi nhuận</TableHead>
                         </>
                       )}
+                      <TableHead>Địa chỉ</TableHead>
+                      <TableHead>Điện thoại</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {items.map((item, idx) => (
                       <TableRow
                         key={`${item.quotationId}-${item.productName}-${idx}`}
-                        className="cursor-pointer hover:bg-muted/50"
+                        className={`cursor-pointer hover:bg-muted/50${item.isFirstLineOfQuotation && idx > 0 ? ' border-t-2 border-border' : ''}`}
                         onClick={() => navigate(`/quotations/${item.quotationId}`)}
                       >
                         <TableCell>
@@ -111,33 +123,34 @@ export function SalesRevenueDetailPage() {
                         <TableCell>
                           {item.isFirstLineOfQuotation ? item.customerName : ''}
                         </TableCell>
+                        <TableCell>{item.productName}</TableCell>
+                        <TableCell>{item.specification ?? ''}</TableCell>
+                        <TableCell>{item.unitName}</TableCell>
+                        <TableCell className="text-right tabular-nums">{moneyFmt.format(item.quantity)}</TableCell>
+                        <TableCell className="text-right tabular-nums">{moneyFmt.format(item.unitPrice)}</TableCell>
+                        <TableCell className="text-right tabular-nums">{moneyFmt.format(item.lineTotal)}</TableCell>
+                        <TableCell className="text-right tabular-nums">
+                          {item.isFirstLineOfQuotation ? moneyFmt.format(item.freight) : ''}
+                        </TableCell>
+                        {hasCost && (
+                          <>
+                            <TableCell className="text-right tabular-nums">
+                              {item.unitCost !== null ? moneyFmt.format(item.unitCost) : ''}
+                            </TableCell>
+                            <TableCell className="text-right tabular-nums">
+                              {item.lineCost !== null ? moneyFmt.format(item.lineCost) : ''}
+                            </TableCell>
+                            <TableCell className="text-right tabular-nums">
+                              {item.lineProfit !== null ? moneyFmt.format(item.lineProfit) : ''}
+                            </TableCell>
+                          </>
+                        )}
                         <TableCell>
                           {item.isFirstLineOfQuotation ? (item.customerAddress ?? '') : ''}
                         </TableCell>
                         <TableCell>
                           {item.isFirstLineOfQuotation ? (item.contactPhone ?? '') : ''}
                         </TableCell>
-                        <TableCell>{item.productName}</TableCell>
-                        <TableCell>{item.specification ?? ''}</TableCell>
-                        <TableCell className="text-right">{moneyFmt.format(item.quantity)}</TableCell>
-                        <TableCell className="text-right">{moneyFmt.format(item.unitPrice)}</TableCell>
-                        <TableCell className="text-right">{moneyFmt.format(item.lineTotal)}</TableCell>
-                        <TableCell className="text-right">
-                          {item.isFirstLineOfQuotation ? moneyFmt.format(item.freight) : ''}
-                        </TableCell>
-                        {hasCost && (
-                          <>
-                            <TableCell className="text-right">
-                              {item.unitCost !== null ? moneyFmt.format(item.unitCost) : ''}
-                            </TableCell>
-                            <TableCell className="text-right">
-                              {item.lineCost !== null ? moneyFmt.format(item.lineCost) : ''}
-                            </TableCell>
-                            <TableCell className="text-right">
-                              {item.lineProfit !== null ? moneyFmt.format(item.lineProfit) : ''}
-                            </TableCell>
-                          </>
-                        )}
                       </TableRow>
                     ))}
                   </TableBody>
