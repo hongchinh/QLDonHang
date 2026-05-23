@@ -26,3 +26,33 @@ public class SalesRevenueReportDto
     public decimal GrandTotalGross { get; set; }
     public decimal GrandTotalNet { get; set; }
 }
+
+public class SalesRevenueLineItemsRequest
+{
+    public DateTime From { get; set; }
+    public DateTime To { get; set; }
+}
+
+public class SalesRevenueLineItemDto
+{
+    public Guid QuotationId { get; set; }
+    public string QuotationCode { get; set; } = default!;
+    public DateOnly QuotationDate { get; set; }
+    public DateTime? ConfirmedAt { get; set; }
+    public string CustomerName { get; set; } = default!;
+    public string? CustomerAddress { get; set; }
+    public string? ContactPhone { get; set; }
+    public decimal Freight { get; set; }
+    public bool IsFirstLineOfQuotation { get; set; }
+
+    public string ProductName { get; set; } = default!;
+    public string? Specification { get; set; }
+    public decimal Quantity { get; set; }
+    public decimal UnitPrice { get; set; }
+    public decimal LineTotal { get; set; }
+
+    // Null when caller lacks quotations.view_cost
+    public decimal? UnitCost { get; set; }
+    public decimal? LineCost { get; set; }
+    public decimal? LineProfit { get; set; }
+}

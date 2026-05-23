@@ -16,17 +16,20 @@ public class ReportsController : ApiControllerBase
     private readonly IVehicleRevenueReportService _vehicleRevenue;
     private readonly IValidator<SalesRevenueReportRequest> _salesRevenueValidator;
     private readonly IValidator<VehicleRevenueReportRequest> _vehicleRevenueValidator;
+    private readonly IValidator<SalesRevenueLineItemsRequest> _salesRevenueLineItemsValidator;
 
     public ReportsController(
         ISalesRevenueReportService salesRevenue,
         IVehicleRevenueReportService vehicleRevenue,
         IValidator<SalesRevenueReportRequest> salesRevenueValidator,
-        IValidator<VehicleRevenueReportRequest> vehicleRevenueValidator)
+        IValidator<VehicleRevenueReportRequest> vehicleRevenueValidator,
+        IValidator<SalesRevenueLineItemsRequest> salesRevenueLineItemsValidator)
     {
         _salesRevenue = salesRevenue;
         _vehicleRevenue = vehicleRevenue;
         _salesRevenueValidator = salesRevenueValidator;
         _vehicleRevenueValidator = vehicleRevenueValidator;
+        _salesRevenueLineItemsValidator = salesRevenueLineItemsValidator;
     }
 
     [HttpGet("sales-revenue")]
@@ -36,6 +39,17 @@ public class ReportsController : ApiControllerBase
     {
         await _salesRevenueValidator.ValidateAndThrowAsync(request, ct);
         return Success(await _salesRevenue.GetAsync(request, ct));
+    }
+
+    [HttpGet("sales-revenue/{saleUserId:guid}/lines")]
+    [HasPermission(Permissions.Reports.Revenue)]
+    public async Task<ActionResult<ApiResponse<List<SalesRevenueLineItemDto>>>> SalesRevenueLines(
+        Guid saleUserId,
+        [FromQuery] SalesRevenueLineItemsRequest request,
+        CancellationToken ct)
+    {
+        await _salesRevenueLineItemsValidator.ValidateAndThrowAsync(request, ct);
+        return Success(await _salesRevenue.GetLineItemsAsync(saleUserId, request, ct));
     }
 
     [HttpGet("vehicle-revenue")]
