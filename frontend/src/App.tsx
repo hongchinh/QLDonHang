@@ -26,6 +26,7 @@ import { RolesMatrixPage } from '@/pages/admin/roles-matrix-page';
 import { RevenuePage } from '@/pages/reports/revenue-page';
 import { SalesPerformancePage } from '@/pages/reports/sales-performance-page';
 import { SalesRevenuePage } from '@/pages/reports/sales-revenue-page';
+import { SalesRevenueDetailPage } from '@/pages/reports/sales-revenue-detail-page';
 import { VehicleRevenuePage } from '@/pages/reports/vehicle-revenue-page';
 import { ForbiddenPage, NotFoundPage } from '@/pages/error-pages';
 
@@ -196,6 +197,14 @@ export function App() {
                     element={
                       <ProtectedRoute permission="reports.revenue">
                         <SalesRevenuePage />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="sales-revenue/:saleUserId"
+                    element={
+                      <ProtectedRoute permission="reports.revenue">
+                        <SalesRevenueDetailPage />
                       </ProtectedRoute>
                     }
                   />

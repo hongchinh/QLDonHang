@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -36,6 +37,7 @@ function todayIso(): string {
 const moneyFmt = new Intl.NumberFormat('vi-VN');
 
 export function SalesRevenuePage() {
+  const navigate = useNavigate();
   const [from, setFrom] = useState(startOfMonthIso());
   const [to, setTo] = useState(todayIso());
   const [saleUserId, setSaleUserId] = useState<string | undefined>(undefined);
@@ -114,7 +116,13 @@ export function SalesRevenuePage() {
                 </TableHeader>
                 <TableBody>
                   {query.data.items.map((it) => (
-                    <TableRow key={it.saleUserId}>
+                    <TableRow
+                      key={it.saleUserId}
+                      className="cursor-pointer hover:bg-muted/50"
+                      onClick={() =>
+                        navigate(`/reports/sales-revenue/${it.saleUserId}?from=${from}&to=${to}`)
+                      }
+                    >
                       <TableCell>
                         {it.saleName}
                         {it.isSaleDeleted && (
