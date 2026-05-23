@@ -543,7 +543,7 @@ public class QuotationService : IQuotationService
     public async Task<(byte[] Excel, string FileName)> RenderExcelAsync(Guid id, CancellationToken ct = default)
     {
         var dto = await GetAsync(id, ct);
-        var templatePath = await _templatePathResolver.ResolveTemplatePathAsync(dto.OwnerUserId, ct);
+        var templatePath = await _templatePathResolver.ResolveTemplatePathAsync(_currentUser.UserId!.Value, ct);
         var bytes = await _excelRenderer.RenderAsync(dto, templatePath, ct);
         return (bytes, $"BaoGia_{dto.Code}.xlsx");
     }
@@ -551,7 +551,7 @@ public class QuotationService : IQuotationService
     public async Task<(byte[] Pdf, string FileName)> RenderPdfAsync(Guid id, CancellationToken ct = default)
     {
         var dto = await GetAsync(id, ct);
-        var templatePath = await _templatePathResolver.ResolveTemplatePathAsync(dto.OwnerUserId, ct);
+        var templatePath = await _templatePathResolver.ResolveTemplatePathAsync(_currentUser.UserId!.Value, ct);
         var excelBytes = await _excelRenderer.RenderAsync(dto, templatePath, ct);
         var pdfBytes = await _pdfConverter.ConvertAsync(excelBytes, ct);
         return (pdfBytes, $"BaoGia_{dto.Code}.pdf");
