@@ -77,12 +77,19 @@ function moneyCell(value?: number | null) {
   return <span className="block text-right tabular-nums">{formatNullableCurrency(value)}</span>;
 }
 
-async function downloadPdf(id: string, code: string) {
+async function openQuotationPdf(id: string) {
   const blob = await quotationsApi.downloadPdf(id);
+  const url = URL.createObjectURL(blob);
+  window.open(url, '_blank', 'noopener,noreferrer');
+  window.setTimeout(() => URL.revokeObjectURL(url), 60_000);
+}
+
+async function downloadQuotationExcel(id: string, code: string) {
+  const blob = await quotationsApi.downloadExcel(id);
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  a.download = `BaoGia_${code}.pdf`;
+  a.download = `BaoGia_${code}.xlsx`;
   document.body.appendChild(a);
   a.click();
   a.remove();
@@ -340,6 +347,15 @@ export function QuotationListPage() {
                     <DropdownMenuSeparator />
                     <DropdownMenuItem
                       onClick={() => {
+                        openQuotationPdf(q.id).catch((err) =>
+                          toast({ variant: 'destructive', title: 'Không mở được PDF', description: getErrorMessage(err) }),
+                        );
+                      }}
+                    >
+                      <Printer className="mr-2 h-4 w-4 text-indigo-600" /> Báo giá
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={() => {
                         openHandoverPdf(q.id, true).catch((err) =>
                           toast({ variant: 'destructive', title: 'Không mở được PDF', description: getErrorMessage(err) }),
                         );
@@ -357,6 +373,15 @@ export function QuotationListPage() {
                       <Printer className="mr-2 h-4 w-4 text-indigo-600" /> Biên bản bàn giao (không tiền)
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
+                    <DropdownMenuItem
+                      onClick={() => {
+                        downloadQuotationExcel(q.id, q.code).catch((err) =>
+                          toast({ variant: 'destructive', title: 'Không tải được Excel', description: getErrorMessage(err) }),
+                        );
+                      }}
+                    >
+                      <FileSpreadsheet className="mr-2 h-4 w-4 text-emerald-700" /> Báo giá
+                    </DropdownMenuItem>
                     <DropdownMenuItem
                       onClick={() => {
                         downloadHandoverExcel(q.id, q.code, true).catch((err) =>
