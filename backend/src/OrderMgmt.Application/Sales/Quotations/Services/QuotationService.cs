@@ -565,7 +565,7 @@ public class QuotationService : IQuotationService
             ? QuotationTemplateType.HandoverWithPrice
             : QuotationTemplateType.HandoverNoPrice;
         var templatePath = await _templatePathResolver.ResolveHandoverTemplatePathAsync(
-            dto.OwnerUserId, type, ct);
+            _currentUser.UserId!.Value, type, ct);
         var bytes = await _handoverRenderer.RenderAsync(dto, templatePath, withPrice, ct);
         return (bytes, $"BieuBanBanGiao_{dto.Code}.xlsx");
     }
@@ -578,7 +578,7 @@ public class QuotationService : IQuotationService
             ? QuotationTemplateType.HandoverWithPrice
             : QuotationTemplateType.HandoverNoPrice;
         var templatePath = await _templatePathResolver.ResolveHandoverTemplatePathAsync(
-            dto.OwnerUserId, type, ct);
+            _currentUser.UserId!.Value, type, ct);
         var excelBytes = await _handoverRenderer.RenderAsync(dto, templatePath, withPrice, ct);
         var pdfBytes = await _pdfConverter.ConvertAsync(excelBytes, ct);
         return (pdfBytes, $"BieuBanBanGiao_{dto.Code}.pdf");
