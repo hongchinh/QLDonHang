@@ -6,7 +6,7 @@ import {
   useReactTable,
   type ColumnDef,
 } from '@tanstack/react-table';
-import { Plus, Pencil, Printer, Ban, Search, Copy, MoreHorizontal, Send, CheckCircle2, BadgeCheck, Loader2 } from 'lucide-react';
+import { Plus, Pencil, Printer, Ban, Search, Copy, MoreHorizontal, Send, CheckCircle2, BadgeCheck, Loader2, FileSpreadsheet } from 'lucide-react';
 import {
   useQuotations,
   useTransitionQuotation,
@@ -82,6 +82,29 @@ async function downloadPdf(id: string, code: string) {
   const a = document.createElement('a');
   a.href = url;
   a.download = `BaoGia_${code}.pdf`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+}
+
+async function openHandoverPdf(id: string, withPrice: boolean) {
+  const blob = withPrice
+    ? await quotationsApi.downloadHandoverWithPricePdf(id)
+    : await quotationsApi.downloadHandoverNoPricePdf(id);
+  const url = URL.createObjectURL(blob);
+  window.open(url, '_blank', 'noopener,noreferrer');
+  window.setTimeout(() => URL.revokeObjectURL(url), 60_000);
+}
+
+async function downloadHandoverExcel(id: string, code: string, withPrice: boolean) {
+  const blob = withPrice
+    ? await quotationsApi.downloadHandoverWithPriceExcel(id)
+    : await quotationsApi.downloadHandoverNoPriceExcel(id);
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `BieuBanBanGiao_${code}.xlsx`;
   document.body.appendChild(a);
   a.click();
   a.remove();
@@ -311,6 +334,42 @@ export function QuotationListPage() {
                       }}
                     >
                       <Printer className="mr-2 h-4 w-4 text-indigo-600" /> In PDF
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={() => {
+                        openHandoverPdf(q.id, true).catch((err) =>
+                          toast({ variant: 'destructive', title: 'Không mở được PDF', description: getErrorMessage(err) }),
+                        );
+                      }}
+                    >
+                      <Printer className="mr-2 h-4 w-4 text-indigo-600" /> In biên bản bàn giao (có tiền)
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={() => {
+                        openHandoverPdf(q.id, false).catch((err) =>
+                          toast({ variant: 'destructive', title: 'Không mở được PDF', description: getErrorMessage(err) }),
+                        );
+                      }}
+                    >
+                      <Printer className="mr-2 h-4 w-4 text-indigo-600" /> In biên bản bàn giao (không tiền)
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={() => {
+                        downloadHandoverExcel(q.id, q.code, true).catch((err) =>
+                          toast({ variant: 'destructive', title: 'Không tải được Excel', description: getErrorMessage(err) }),
+                        );
+                      }}
+                    >
+                      <FileSpreadsheet className="mr-2 h-4 w-4 text-emerald-700" /> Excel biên bản bàn giao (có tiền)
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={() => {
+                        downloadHandoverExcel(q.id, q.code, false).catch((err) =>
+                          toast({ variant: 'destructive', title: 'Không tải được Excel', description: getErrorMessage(err) }),
+                        );
+                      }}
+                    >
+                      <FileSpreadsheet className="mr-2 h-4 w-4 text-emerald-700" /> Excel biên bản bàn giao (không tiền)
                     </DropdownMenuItem>
                   </Can>
                   <Can permission="quotations.update">
