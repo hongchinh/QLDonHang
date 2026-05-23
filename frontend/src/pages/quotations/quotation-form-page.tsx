@@ -10,6 +10,7 @@ import {
   CheckCircle2,
   ChevronDown,
   CirclePlus,
+  Clock,
   Copy,
   FileSpreadsheet,
   Loader2,
@@ -55,7 +56,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Tabs, TabsContent } from '@/components/ui/tabs';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { ButtonLoader } from '@/components/ui/button-loader';
 import { Can } from '@/components/auth/can';
@@ -275,6 +276,8 @@ function QuotationFormInner({
   const activitiesQuery = useQuotationActivities(initial?.id, isEdit && !!initial?.id);
   const revenueDateText = formatRevenueDate(initial?.confirmedAt);
 
+  const [activeTab, setActiveTab] = useState<'general' | 'history'>('general');
+
   const [selectedCustomerView, setSelectedCustomerView] = useState<{ id: string; code: string; name: string } | null>(
     () =>
       initialSelectedCustomer
@@ -395,10 +398,10 @@ function QuotationFormInner({
     if (!initial) return;
     try {
       const cloned = await clone.mutateAsync(initial.id);
-      toast({ variant: 'success', title: 'Đã clone báo giá', description: cloned.code });
+      toast({ variant: 'success', title: 'Đã nhân bản báo giá', description: cloned.code });
       navigateInner(`/quotations/${cloned.id}`);
     } catch (err) {
-      toast({ variant: 'destructive', title: 'Không thể clone', description: getErrorMessage(err) });
+      toast({ variant: 'destructive', title: 'Không thể nhân bản', description: getErrorMessage(err) });
     }
   }
 
@@ -576,7 +579,7 @@ function QuotationFormInner({
                 aria-busy={pendingButtonAction === 'clone' || clone.isPending}
               >
                 {pendingButtonAction === 'clone' || clone.isPending ? <ButtonLoader className="mr-2" /> : <Copy className="mr-2 h-4 w-4 text-violet-600" />}
-                {pendingButtonAction === 'clone' || clone.isPending ? 'Đang clone...' : 'Clone'}
+                {pendingButtonAction === 'clone' || clone.isPending ? 'Đang nhân bản...' : 'Nhân bản'}
               </Button>
             </Can>
             <DropdownMenu>
@@ -636,7 +639,7 @@ function QuotationFormInner({
       {isEdit && initial && !initial.canEdit && (
         <div className="rounded-md border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900">
           {initial.isOwnerDeleted
-            ? 'Chủ sở hữu báo giá đã ngừng hoạt động — chỉ có thể clone.'
+            ? 'Chủ sở hữu báo giá đã ngừng hoạt động — chỉ có thể nhân bản.'
             : initial.status === 'Cancelled'
             ? 'Báo giá đã huỷ — không thể chỉnh sửa.'
             : `Báo giá đang ở trạng thái ${initial.status} — cấu hình khoá của bạn không cho phép sửa.`}
@@ -648,16 +651,16 @@ function QuotationFormInner({
               onClick={() => {
                 clone.mutate(initial.id, {
                   onSuccess: (cloned) => {
-                    toast({ variant: 'success', title: 'Đã clone báo giá', description: cloned.code });
+                    toast({ variant: 'success', title: 'Đã nhân bản báo giá', description: cloned.code });
                     navigateInner(`/quotations/${cloned.id}`);
                   },
-                  onError: (err) => toast({ variant: 'destructive', title: 'Clone thất bại', description: getErrorMessage(err) }),
+                  onError: (err) => toast({ variant: 'destructive', title: 'Nhân bản thất bại', description: getErrorMessage(err) }),
                 });
               }}
               disabled={clone.isPending}
             >
               {clone.isPending && <ButtonLoader className="mr-2" />}
-              {clone.isPending ? 'Đang clone...' : 'Clone'}
+              {clone.isPending ? 'Đang nhân bản...' : 'Nhân bản'}
             </Button>
           )}
         </div>
@@ -674,25 +677,31 @@ function QuotationFormInner({
       >
         <div className="grid gap-4 lg:grid-cols-[1fr_320px] items-stretch">
           <Card>
-            <Tabs defaultValue="general">
-              <CardHeader className="flex flex-row items-center justify-between gap-3 space-y-0">
+            <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'general' | 'history')}>
+              <CardHeader className="flex flex-row items-center justify-between gap-3 space-y-0 border-b p-1 px-3">
                 <CardTitle>Thông tin chung</CardTitle>
                 {isEdit && (
-                  <TabsList>
-                    <TabsTrigger value="general">Thông tin chung</TabsTrigger>
-                    <TabsTrigger value="history">Lịch sử</TabsTrigger>
-                  </TabsList>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="h-7 gap-1.5 px-2.5 text-xs text-muted-foreground"
+                    onClick={() => setActiveTab(activeTab === 'general' ? 'history' : 'general')}
+                  >
+                    <Clock className="h-3.5 w-3.5" />
+                    {activeTab === 'general' ? 'Lịch sử' : '← Thông tin chung'}
+                  </Button>
                 )}
               </CardHeader>
               <TabsContent value="general" className="mt-0">
-                <CardContent className="space-y-3" onKeyDown={handleGeneralInfoKeyDown}>
+                <CardContent className="space-y-[6px] px-4 pt-2 pb-3" onKeyDown={handleGeneralInfoKeyDown}>
               <div className="form-inline-grid form-cols-3">
                 <Label htmlFor="quotationDate" className="field-label required">Ngày báo giá</Label>
                 <Input
                   id="quotationDate"
                   type="date"
                   {...form.register('quotationDate')}
-                  className="max-w-[200px]"
+                  className="h-7 max-w-[200px]"
                 />
                 <Label htmlFor="revenueDate" className="field-label">Ngày doanh thu</Label>
                 <div>
@@ -701,7 +710,7 @@ function QuotationFormInner({
                     value={revenueDateText}
                     readOnly
                     tabIndex={-1}
-                    className="max-w-[200px] bg-muted text-muted-foreground"
+                    className="h-7 max-w-[200px] bg-muted text-muted-foreground"
                   />
                   {initial?.accountingConfirmedAt && (
                     <p className="mt-1 text-xs text-muted-foreground">
@@ -715,7 +724,7 @@ function QuotationFormInner({
                   id="deliveryDate"
                   type="date"
                   {...form.register('deliveryDate')}
-                  className="max-w-[200px]"
+                  className="h-7 max-w-[200px]"
                 />
                 {form.formState.errors.quotationDate && (
                   <p className="field-message field-message-code text-destructive">
@@ -743,6 +752,7 @@ function QuotationFormInner({
                 <Label htmlFor="customerName" className="field-label">Tên KH</Label>
                 <Input
                   id="customerName"
+                  className="h-7"
                   {...form.register('customerName', {
                     onBlur: (e) => {
                       if (!e.target.value.trim() && selectedCustomerView) {
@@ -758,23 +768,23 @@ function QuotationFormInner({
 
               <div className="form-inline-grid">
                 <Label htmlFor="deliveryAddress" className="field-label">Địa chỉ giao</Label>
-                <Input id="deliveryAddress" {...form.register('deliveryAddress')} />
+                <Input id="deliveryAddress" className="h-7" {...form.register('deliveryAddress')} />
               </div>
 
               <div className="form-inline-grid form-cols-3">
                 <Label htmlFor="deliveryRecipient" className="field-label">Người nhận</Label>
-                <Input id="deliveryRecipient" {...form.register('deliveryRecipient')} />
+                <Input id="deliveryRecipient" className="h-7" {...form.register('deliveryRecipient')} />
                 <Label htmlFor="deliveryPhone" className="field-label">Điện thoại</Label>
-                <Input id="deliveryPhone" {...form.register('deliveryPhone')} />
+                <Input id="deliveryPhone" className="h-7" {...form.register('deliveryPhone')} />
                 <Label htmlFor="transportVehicleNumber" className="field-label">Số xe</Label>
-                <Input id="transportVehicleNumber" {...form.register('transportVehicleNumber')} />
+                <Input id="transportVehicleNumber" className="h-7" {...form.register('transportVehicleNumber')} />
               </div>
 
               <div className="form-inline-grid form-cols-2">
                 <Label htmlFor="deliveryNote" className="field-label">Ghi chú GH</Label>
-                <Input id="deliveryNote" {...form.register('deliveryNote')} />
+                <Input id="deliveryNote" className="h-7" {...form.register('deliveryNote')} />
                 <Label htmlFor="internalNote" className="field-label">Ghi chú NB</Label>
-                <Input id="internalNote" {...form.register('internalNote')} />
+                <Input id="internalNote" className="h-7" {...form.register('internalNote')} />
               </div>
                 </CardContent>
               </TabsContent>
@@ -838,8 +848,8 @@ function QuotationFormInner({
         open={confirmCloneOpen}
         onOpenChange={setConfirmCloneOpen}
         title="Có thay đổi chưa lưu"
-        description="Bạn có thay đổi chưa lưu — bản clone sẽ không bao gồm các thay đổi này. Tiếp tục?"
-        confirmLabel="Clone"
+        description="Bạn có thay đổi chưa lưu — bản nhân bản sẽ không bao gồm các thay đổi này. Tiếp tục?"
+        confirmLabel="Nhân bản"
         loading={clone.isPending}
         onConfirm={() => {
           setConfirmCloneOpen(false);
@@ -964,7 +974,7 @@ function activityLabel(action: QuotationActivityAction) {
     case 'OwnerTransferred':
       return 'Chuyển chủ sở hữu';
     case 'Cloned':
-      return 'Clone';
+      return 'Nhân bản';
   }
 }
 

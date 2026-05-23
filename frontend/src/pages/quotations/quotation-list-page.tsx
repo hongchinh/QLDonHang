@@ -291,15 +291,15 @@ export function QuotationListPage() {
                       onClick={() => {
                         clone.mutate(q.id, {
                           onSuccess: (cloned) => {
-                            toast({ variant: 'success', title: 'Đã clone báo giá', description: cloned.code });
+                            toast({ variant: 'success', title: 'Đã nhân bản báo giá', description: cloned.code });
                             navigate(`/quotations/${cloned.id}`);
                           },
                           onError: (err) =>
-                            toast({ variant: 'destructive', title: 'Không thể clone', description: getErrorMessage(err) }),
+                            toast({ variant: 'destructive', title: 'Không thể nhân bản', description: getErrorMessage(err) }),
                         });
                       }}
                     >
-                      <Copy className="mr-2 h-4 w-4 text-violet-600" /> Clone
+                      <Copy className="mr-2 h-4 w-4 text-violet-600" /> Nhân bản
                     </DropdownMenuItem>
                   </Can>
                   <Can permission="quotations.print">

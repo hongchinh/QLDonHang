@@ -72,7 +72,7 @@ Quotation status flow is `Draft -> Sent -> Confirmed -> Cancelled`.
 - List/detail operations are scoped to owner unless the user has `quotations.view_all`.
 - Users without `quotations.bypass_lock` cannot edit a quotation once it reaches their configured lock-at status.
 - Transfer actions write `QuotationOwnerHistory`.
-- Clone creates a Draft copy owned by the current user; orphan-source cloning requires `quotations.clone_orphan`.
+- Nhân bản (Clone) creates a Draft copy owned by the current user; orphan-source cloning requires `quotations.clone_orphan`.
 - Confirmed quotations store confirmation metadata and feed revenue reports.
 - Export supports Excel and PDF. Excel rendering uses ClosedXML; PDF conversion uses LibreOffice. Per-user templates are stored under `templates/users`, with fallback to `QuotationExport:TemplatePath`.
 
