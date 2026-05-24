@@ -45,7 +45,10 @@ export default defineConfig({
   resolve: { alias: { '@': path.resolve(__dirname, './src') } },
   server: {
     port: 5173,
-    proxy: { '/api': { target: 'http://localhost:5050', changeOrigin: true } },
+    proxy: {
+      '/api': { target: 'http://localhost:5050', changeOrigin: true },
+      '/hubs': { target: 'http://localhost:5050', changeOrigin: true, ws: true },
+    },
   },
   build: {
     rollupOptions: {
