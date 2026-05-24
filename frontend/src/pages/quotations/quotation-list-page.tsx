@@ -179,21 +179,16 @@ export function QuotationListPage() {
   }, [ownersQuery.data]);
 
   const allTotals = useMemo(() => {
-    const items = data?.items ?? [];
     return {
       subtotal: data?.aggregates?.subtotal ?? 0,
       discount: data?.aggregates?.discount ?? 0,
       freight: data?.aggregates?.freight ?? 0,
       total: data?.aggregates?.total ?? 0,
       advancePayment: data?.aggregates?.advancePayment ?? 0,
-      totalCost: canViewCost
-        ? data?.aggregates?.totalCost ?? items.reduce((sum, item) => sum + (item.totalCost ?? 0), 0)
-        : null,
-      grossProfit: canViewCost
-        ? data?.aggregates?.grossProfit ?? items.reduce((sum, item) => sum + (item.grossProfit ?? 0), 0)
-        : null,
+      totalCost: canViewCost ? (data?.aggregates?.totalCost ?? null) : null,
+      grossProfit: canViewCost ? (data?.aggregates?.grossProfit ?? null) : null,
     };
-  }, [canViewCost, data?.aggregates, data?.items]);
+  }, [canViewCost, data?.aggregates]);
 
   const columns = useMemo<ColumnDef<QuotationListItem>[]>(
     () => [
