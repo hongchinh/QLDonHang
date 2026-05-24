@@ -17,6 +17,8 @@ using OrderMgmt.WebApi.Configuration;
 using OrderMgmt.WebApi.Middleware;
 using OrderMgmt.WebApi.Services;
 using Serilog;
+using OrderMgmt.Application.Notifications.Interfaces;
+using OrderMgmt.WebApi.Hubs;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -47,6 +49,7 @@ builder.Services.Configure<OrderMgmt.Application.Identity.UserSettings.Models.Te
 // HTTP context & current user
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<ICurrentUser, CurrentUser>();
+builder.Services.AddScoped<IRealtimeNotifier, SignalRNotifier>();
 builder.Services.Configure<AuthCookieOptions>(builder.Configuration.GetSection(AuthCookieOptions.SectionName));
 
 // Fail fast if cross-site cookie config is inconsistent. SameSite=None requires Secure=true,
@@ -84,6 +87,23 @@ builder.Services.AddOptions<JwtBearerOptions>(JwtBearerDefaults.AuthenticationSc
             ValidAudience = jwt.Audience,
             IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwt.Secret)),
             ClockSkew = TimeSpan.FromSeconds(30),
+        };
+    });
+
+builder.Services.AddOptions<JwtBearerOptions>(JwtBearerDefaults.AuthenticationScheme)
+    .PostConfigure(options =>
+    {
+        options.Events ??= new JwtBearerEvents();
+        var existing = options.Events.OnMessageReceived;
+        options.Events.OnMessageReceived = async ctx =>
+        {
+            if (existing is not null) await existing(ctx);
+            var token = ctx.Request.Query["access_token"];
+            if (!string.IsNullOrEmpty(token) &&
+                ctx.HttpContext.Request.Path.StartsWithSegments("/hubs/notifications"))
+            {
+                ctx.Token = token;
+            }
         };
     });
 
@@ -158,6 +178,8 @@ builder.Services.AddControllers()
         o.JsonSerializerOptions.Converters.Add(new System.Text.Json.Serialization.JsonStringEnumConverter());
     });
 
+builder.Services.AddSignalR();
+
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
 {
@@ -210,6 +232,7 @@ app.UseAuthorization();
 app.UseRateLimiter();
 
 app.MapControllers();
+app.MapHub<NotificationHub>("/hubs/notifications");
 // AllowAnonymous: the global FallbackPolicy requires auth by default. Root + health
 // probes need to be reachable without a token.
 app.MapGet("/", () => app.Environment.IsDevelopment()
