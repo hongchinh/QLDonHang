@@ -1,6 +1,6 @@
 import { precacheAndRoute, cleanupOutdatedCaches } from 'workbox-precaching'
 
-declare const self: any
+declare const self: ServiceWorkerGlobalScope
 
 precacheAndRoute(self.__WB_MANIFEST)
 cleanupOutdatedCaches()
