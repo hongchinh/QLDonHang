@@ -1,6 +1,7 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import path from 'node:path'
+import { VitePWA } from 'vite-plugin-pwa'
 
 const vendorChunks: Record<string, string> = {
   'react/': 'react',
@@ -14,18 +15,41 @@ const vendorChunks: Record<string, string> = {
 }
 
 export default defineConfig({
-  plugins: [react()],
-  resolve: {
-    alias: { '@': path.resolve(__dirname, './src') },
-  },
+  plugins: [
+    react(),
+    VitePWA({
+      registerType: 'prompt',
+      strategies: 'injectManifest',
+      injectManifest: {
+        swSrc: 'sw.js',
+        swDest: 'sw.js',
+        globDirectory: 'dist',
+        globPatterns: ['**/*.{js,css,html,svg,png,ico,json}'],
+      },
+      manifest: {
+        name: 'QL Đơn Hàng',
+        short_name: 'QLĐơnHàng',
+        description: 'Quản lý báo giá, khách hàng, hàng hóa',
+        display: 'standalone',
+        theme_color: '#1e40af',
+        background_color: '#ffffff',
+        start_url: '/',
+        icons: [
+          { src: '/icons/icon-192.png', sizes: '192x192', type: 'image/png' },
+          { src: '/icons/icon-512.png', sizes: '512x512', type: 'image/png' },
+          { src: '/icons/icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
+        ],
+      },
+      devOptions: {
+        enabled: true,
+        type: 'module',
+      },
+    }),
+  ],
+  resolve: { alias: { '@': path.resolve(__dirname, './src') } },
   server: {
     port: 5173,
-    proxy: {
-      '/api': {
-        target: 'http://localhost:5050',
-        changeOrigin: true,
-      },
-    },
+    proxy: { '/api': { target: 'http://localhost:5050', changeOrigin: true } },
   },
   build: {
     rollupOptions: {
