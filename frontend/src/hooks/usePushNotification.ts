@@ -52,7 +52,8 @@ export function usePushNotification(vapidPublicKey: string) {
       await pushApi.subscribe(json.endpoint!, json.keys!.p256dh, json.keys!.auth)
 
       setState('granted')
-    } catch {
+    } catch (e) {
+      console.error('push subscribe failed', e)
       setState('error')
     }
   }, [vapidPublicKey])

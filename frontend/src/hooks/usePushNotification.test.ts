@@ -78,4 +78,37 @@ describe('usePushNotification', () => {
 
     expect(result.current.state).toBe('granted')
   })
+
+  it('unsubscribe chuyển state về idle và gọi pushApi.unsubscribe', async () => {
+    const pushApiMod = await import('@/features/push/api')
+    vi.mocked(pushApiMod.pushApi.unsubscribe).mockResolvedValue(undefined)
+
+    // mockUnsubscribe also removes the sub from the mock manager so the
+    // useEffect that re-runs on state==='idle' won't find it and flip back to 'granted'.
+    const pushManager = stubPushManager(null)
+    const mockUnsubscribeFn = vi.fn().mockImplementation(async () => {
+      pushManager.getSubscription.mockResolvedValue(null)
+      return true
+    })
+    const existingSub = {
+      endpoint: 'https://push.example.com/sub/existing',
+      unsubscribe: mockUnsubscribeFn,
+    } as unknown as PushSubscription
+    pushManager.getSubscription.mockResolvedValue(existingSub)
+
+    stubNotificationPermission('granted')
+
+    const { result } = renderHook(() => usePushNotification('BFakeVapidKey'))
+
+    // Initial state is 'granted' since Notification.permission === 'granted'
+    expect(result.current.state).toBe('granted')
+
+    await act(async () => {
+      await result.current.unsubscribe()
+    })
+
+    expect(result.current.state).toBe('idle')
+    expect(mockUnsubscribeFn).toHaveBeenCalled()
+    expect(pushApiMod.pushApi.unsubscribe).toHaveBeenCalledWith('https://push.example.com/sub/existing')
+  })
 })
