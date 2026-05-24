@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
@@ -32,6 +33,8 @@ import { ForbiddenPage, NotFoundPage } from '@/pages/error-pages';
 import { useRegisterSW } from 'virtual:pwa-register/react';
 import { useBeforeInstallPrompt } from '@/hooks/useBeforeInstallPrompt';
 import { InstallPrompt } from '@/components/InstallPrompt';
+import { usePushNotification } from '@/hooks/usePushNotification';
+import { PushPermissionPrompt } from '@/components/PushPermissionPrompt';
 
 export function App() {
   const { canShow, install, dismiss } = useBeforeInstallPrompt();
@@ -40,9 +43,31 @@ export function App() {
     updateServiceWorker,
   } = useRegisterSW();
 
+  const PUSH_DISMISS_KEY = 'push_prompt_dismissed_until';
+  const vapidKey = import.meta.env.VITE_VAPID_PUBLIC_KEY;
+  const { state: pushState, subscribe: subscribePush } = usePushNotification(vapidKey);
+
+  const [pushDismissed, setPushDismissed] = useState(() => {
+    const until = localStorage.getItem(PUSH_DISMISS_KEY);
+    return until ? Date.now() < Number(until) : false;
+  });
+
+  const handlePushDismiss = () => {
+    const until = Date.now() + 30 * 24 * 60 * 60 * 1000;
+    localStorage.setItem(PUSH_DISMISS_KEY, String(until));
+    setPushDismissed(true);
+  };
+
   return (
     <ErrorBoundary>
       <InstallPrompt canShow={canShow} onInstall={install} onDismiss={dismiss} />
+      {!pushDismissed && (
+        <PushPermissionPrompt
+          state={pushState}
+          onEnable={subscribePush}
+          onDismiss={handlePushDismiss}
+        />
+      )}
       <QueryClientProvider client={queryClient}>
         <BrowserRouter>
           <AuthInit>
