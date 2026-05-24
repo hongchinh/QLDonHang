@@ -5,6 +5,7 @@ interface ImportMetaEnv {
   readonly VITE_API_BASE_URL?: string;
   /** @deprecated Use VITE_API_BASE_URL. Kept for backwards compatibility. */
   readonly VITE_API_BASE?: string;
+  readonly VITE_VAPID_PUBLIC_KEY: string;
 }
 
 interface ImportMeta {
