@@ -40,6 +40,7 @@ public class SalesRevenueLineItemDto
     public string QuotationCode { get; set; } = default!;
     public DateOnly QuotationDate { get; set; }
     public DateTime? ConfirmedAt { get; set; }
+    public DateTime? RevenueDate { get; set; }
     public string CustomerName { get; set; } = default!;
     public string? CustomerAddress { get; set; }
     public string? ContactPhone { get; set; }

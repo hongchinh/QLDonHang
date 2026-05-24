@@ -2,11 +2,12 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using OrderMgmt.Application.Common.Interfaces;
 using OrderMgmt.Application.Common.Options;
+using OrderMgmt.Application.Reports.Common;
 using OrderMgmt.Application.Reports.SalesRevenue.Interfaces;
 using OrderMgmt.Application.Reports.SalesRevenue.Models;
+using OrderMgmt.Application.Sales.Quotations.Models;
 using OrderMgmt.Domain.Constants;
 using OrderMgmt.Domain.Entities.Sales;
-using OrderMgmt.Domain.Enums;
 
 namespace OrderMgmt.Application.Reports.SalesRevenue.Services;
 
@@ -28,14 +29,14 @@ public class SalesRevenueReportService : ISalesRevenueReportService
 
     public async Task<SalesRevenueReportDto> GetAsync(SalesRevenueReportRequest request, CancellationToken ct = default)
     {
-        var fromUtc = DateTime.SpecifyKind(request.From.Date, DateTimeKind.Utc);
-        var toExclusiveUtc = DateTime.SpecifyKind(request.To.Date.AddDays(1), DateTimeKind.Utc);
+        var dateMode = await RevenueFilterHelper.GetDateModeAsync(_db, ct);
 
-        var quotations = ApplyScope(request.SaleUserId)
-            .Where(q => (q.Status == QuotationStatus.Confirmed || q.Status == QuotationStatus.AccountingConfirmed)
-                && q.CancelledAt == null
-                && q.ConfirmedAt >= fromUtc
-                && q.ConfirmedAt < toExclusiveUtc);
+        var fromDate = DateOnly.FromDateTime(request.From.Date);
+        var toDate = DateOnly.FromDateTime(request.To.Date);
+
+        var baseQuery = ApplyScope(request.SaleUserId);
+
+        var quotations = RevenueFilterHelper.ApplyRevenueFilter(baseQuery, dateMode, fromDate, toDate);
 
         var grouped = await quotations
             .GroupBy(q => q.OwnerUserId)
@@ -88,12 +89,18 @@ public class SalesRevenueReportService : ISalesRevenueReportService
         Guid saleUserId,
         SalesRevenueLineItemsRequest request,
         CancellationToken ct = default)
-        => await GetLineItemsCoreAsync(request.From, request.To, saleUserId, newestFirst: true, ct);
+    {
+        var dateMode = await RevenueFilterHelper.GetDateModeAsync(_db, ct);
+        return await GetLineItemsCoreAsync(request.From, request.To, saleUserId, newestFirst: true, dateMode, ct);
+    }
 
     public async Task<List<SalesRevenueLineItemDto>> GetLineItemsAsync(
         SalesRevenueLineItemsRequest request,
         CancellationToken ct = default)
-        => await GetLineItemsCoreAsync(request.From, request.To, request.SaleUserId, newestFirst: false, ct);
+    {
+        var dateMode = await RevenueFilterHelper.GetDateModeAsync(_db, ct);
+        return await GetLineItemsCoreAsync(request.From, request.To, request.SaleUserId, newestFirst: false, dateMode, ct);
+    }
 
     private IQueryable<Quotation> ApplyScope(Guid? requestedSaleUserId)
     {
@@ -118,29 +125,44 @@ public class SalesRevenueReportService : ISalesRevenueReportService
         DateTime to,
         Guid? saleUserId,
         bool newestFirst,
+        string dateMode,
         CancellationToken ct)
     {
-        var fromUtc = DateTime.SpecifyKind(from.Date, DateTimeKind.Utc);
-        var toExclusiveUtc = DateTime.SpecifyKind(to.Date.AddDays(1), DateTimeKind.Utc);
+        var fromDate = DateOnly.FromDateTime(from.Date);
+        var toDate = DateOnly.FromDateTime(to.Date);
         var canViewCost = _currentUser.HasPermission(Permissions.Quotations.ViewCost);
 
-        var query = ApplyScope(saleUserId)
-            .Where(q => (q.Status == QuotationStatus.Confirmed || q.Status == QuotationStatus.AccountingConfirmed)
-                && q.CancelledAt == null
-                && q.ConfirmedAt >= fromUtc
-                && q.ConfirmedAt < toExclusiveUtc)
-            .Include(q => q.Lines);
+        var baseQuery = ApplyScope(saleUserId);
+        var filtered = RevenueFilterHelper.ApplyRevenueFilter(baseQuery, dateMode, fromDate, toDate);
+
+        var query = filtered.Include(q => q.Lines);
 
         var ordered = newestFirst
-            ? query.OrderByDescending(q => q.ConfirmedAt).ThenBy(q => q.Id)
-            : query.OrderBy(q => q.ConfirmedAt).ThenBy(q => q.Id);
+            ? dateMode switch
+            {
+                RevenueDateField.AccountingConfirmedAt => query.OrderByDescending(q => q.AccountingConfirmedAt).ThenBy(q => q.Id),
+                RevenueDateField.ConfirmedAt => query.OrderByDescending(q => q.ConfirmedAt).ThenBy(q => q.Id),
+                _ => query.OrderByDescending(q => q.QuotationDate).ThenBy(q => q.Id),
+            }
+            : dateMode switch
+            {
+                RevenueDateField.AccountingConfirmedAt => query.OrderBy(q => q.AccountingConfirmedAt).ThenBy(q => q.Id),
+                RevenueDateField.ConfirmedAt => query.OrderBy(q => q.ConfirmedAt).ThenBy(q => q.Id),
+                _ => query.OrderBy(q => q.QuotationDate).ThenBy(q => q.Id),
+            };
 
-        var quotations = await ordered
-            .ToListAsync(ct);
+        var quotations = await ordered.ToListAsync(ct);
 
         var result = new List<SalesRevenueLineItemDto>();
         foreach (var q in quotations)
         {
+            DateTime? revenueDate = dateMode switch
+            {
+                RevenueDateField.AccountingConfirmedAt => q.AccountingConfirmedAt,
+                RevenueDateField.ConfirmedAt => q.ConfirmedAt,
+                _ => q.QuotationDate.ToDateTime(TimeOnly.MinValue, DateTimeKind.Utc),
+            };
+
             var lines = q.Lines.OrderBy(l => l.SortOrder).ToList();
             for (int i = 0; i < lines.Count; i++)
             {
@@ -151,6 +173,7 @@ public class SalesRevenueReportService : ISalesRevenueReportService
                     QuotationCode            = q.Code,
                     QuotationDate            = q.QuotationDate,
                     ConfirmedAt              = q.ConfirmedAt,
+                    RevenueDate              = revenueDate,
                     CustomerName             = q.CustomerName,
                     CustomerAddress          = q.CustomerAddress,
                     ContactPhone             = q.ContactPhone,

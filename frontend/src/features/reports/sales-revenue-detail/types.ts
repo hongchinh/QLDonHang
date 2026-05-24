@@ -3,6 +3,7 @@ export interface SalesRevenueLineItemDto {
   quotationCode: string;
   quotationDate: string;       // DateOnly → "YYYY-MM-DD"
   confirmedAt: string | null;  // DateTime? → ISO string
+  revenueDate: string | null;  // effective revenue date per system settings
   customerName: string;
   customerAddress: string | null;
   contactPhone: string | null;

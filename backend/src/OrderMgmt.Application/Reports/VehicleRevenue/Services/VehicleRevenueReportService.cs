@@ -1,7 +1,10 @@
 using Microsoft.EntityFrameworkCore;
 using OrderMgmt.Application.Common.Interfaces;
+using OrderMgmt.Application.Reports.Common;
 using OrderMgmt.Application.Reports.VehicleRevenue.Interfaces;
 using OrderMgmt.Application.Reports.VehicleRevenue.Models;
+using OrderMgmt.Application.Sales.Quotations.Models;
+using OrderMgmt.Domain.Entities.Sales;
 using OrderMgmt.Domain.Enums;
 
 namespace OrderMgmt.Application.Reports.VehicleRevenue.Services;
@@ -18,12 +21,13 @@ public class VehicleRevenueReportService : IVehicleRevenueReportService
 
     public async Task<VehicleRevenueReportDto> GetAsync(VehicleRevenueReportRequest request, CancellationToken ct = default)
     {
+        var dateMode = await RevenueFilterHelper.GetDateModeAsync(_db, ct);
         var from = request.From!.Value;
         var to = request.To!.Value;
-        var fromUtc = DateTime.SpecifyKind(from.ToDateTime(TimeOnly.MinValue), DateTimeKind.Utc);
-        var toExclusiveUtc = DateTime.SpecifyKind(to.AddDays(1).ToDateTime(TimeOnly.MinValue), DateTimeKind.Utc);
 
-        var summaryRows = await ConfirmedQuotations(fromUtc, toExclusiveUtc)
+        var scope = _db.Quotations.AsNoTracking();
+
+        var summaryRows = await RevenueFilterHelper.ApplyRevenueFilter(scope, dateMode, from, to)
             .Select(q => new
             {
                 VehicleNumber = q.TransportVehicleNumber == null || q.TransportVehicleNumber.Trim() == string.Empty
@@ -46,32 +50,64 @@ public class VehicleRevenueReportService : IVehicleRevenueReportService
 
         var chartEndMonth = new DateOnly(to.Year, to.Month, 1);
         var chartStartMonth = chartEndMonth.AddMonths(-(request.Months - 1));
-        var chartFromUtc = DateTime.SpecifyKind(chartStartMonth.ToDateTime(TimeOnly.MinValue), DateTimeKind.Utc);
-        var chartToExclusiveUtc = DateTime.SpecifyKind(chartEndMonth.AddMonths(1).ToDateTime(TimeOnly.MinValue), DateTimeKind.Utc);
+        var chartTo = chartEndMonth.AddMonths(1).AddDays(-1);
 
-        var chartAggregates = await ConfirmedQuotations(chartFromUtc, chartToExclusiveUtc)
-            .Select(q => new
-            {
-                VehicleNumber = q.TransportVehicleNumber == null || q.TransportVehicleNumber.Trim() == string.Empty
-                    ? DefaultVehicleNumber
-                    : q.TransportVehicleNumber.Trim(),
-                Year = q.ConfirmedAt!.Value.Year,
-                Month = q.ConfirmedAt!.Value.Month,
-                q.Total,
-            })
-            .GroupBy(x => new { x.VehicleNumber, x.Year, x.Month })
-            .Select(g => new
-            {
-                g.Key.VehicleNumber,
-                g.Key.Year,
-                g.Key.Month,
-                TotalRevenueGross = g.Sum(x => x.Total),
-            })
-            .ToListAsync(ct);
+        var chartFiltered = RevenueFilterHelper.ApplyRevenueFilter(scope, dateMode, chartStartMonth, chartTo);
+
+        List<(string VehicleNumber, int Year, int Month, decimal Total)> chartAggregates;
+
+        if (dateMode == RevenueDateField.AccountingConfirmedAt)
+        {
+            chartAggregates = (await chartFiltered
+                .Select(q => new
+                {
+                    VehicleNumber = q.TransportVehicleNumber == null || q.TransportVehicleNumber.Trim() == string.Empty
+                        ? DefaultVehicleNumber : q.TransportVehicleNumber.Trim(),
+                    Year = q.AccountingConfirmedAt!.Value.Year,
+                    Month = q.AccountingConfirmedAt!.Value.Month,
+                    q.Total,
+                })
+                .GroupBy(x => new { x.VehicleNumber, x.Year, x.Month })
+                .Select(g => new { g.Key.VehicleNumber, g.Key.Year, g.Key.Month, TotalRevenueGross = g.Sum(x => x.Total) })
+                .ToListAsync(ct))
+                .Select(r => (r.VehicleNumber, r.Year, r.Month, r.TotalRevenueGross)).ToList();
+        }
+        else if (dateMode == RevenueDateField.ConfirmedAt)
+        {
+            chartAggregates = (await chartFiltered
+                .Select(q => new
+                {
+                    VehicleNumber = q.TransportVehicleNumber == null || q.TransportVehicleNumber.Trim() == string.Empty
+                        ? DefaultVehicleNumber : q.TransportVehicleNumber.Trim(),
+                    Year = q.ConfirmedAt!.Value.Year,
+                    Month = q.ConfirmedAt!.Value.Month,
+                    q.Total,
+                })
+                .GroupBy(x => new { x.VehicleNumber, x.Year, x.Month })
+                .Select(g => new { g.Key.VehicleNumber, g.Key.Year, g.Key.Month, TotalRevenueGross = g.Sum(x => x.Total) })
+                .ToListAsync(ct))
+                .Select(r => (r.VehicleNumber, r.Year, r.Month, r.TotalRevenueGross)).ToList();
+        }
+        else // QuotationDate
+        {
+            chartAggregates = (await chartFiltered
+                .Select(q => new
+                {
+                    VehicleNumber = q.TransportVehicleNumber == null || q.TransportVehicleNumber.Trim() == string.Empty
+                        ? DefaultVehicleNumber : q.TransportVehicleNumber.Trim(),
+                    Year = q.QuotationDate.Year,
+                    Month = q.QuotationDate.Month,
+                    q.Total,
+                })
+                .GroupBy(x => new { x.VehicleNumber, x.Year, x.Month })
+                .Select(g => new { g.Key.VehicleNumber, g.Key.Year, g.Key.Month, TotalRevenueGross = g.Sum(x => x.Total) })
+                .ToListAsync(ct))
+                .Select(r => (r.VehicleNumber, r.Year, r.Month, r.TotalRevenueGross)).ToList();
+        }
 
         var topVehicles = chartAggregates
             .GroupBy(x => x.VehicleNumber)
-            .Select(g => new { VehicleNumber = g.Key, Total = g.Sum(x => x.TotalRevenueGross) })
+            .Select(g => new { VehicleNumber = g.Key, Total = g.Sum(x => x.Total) })
             .OrderByDescending(x => x.Total)
             .ThenBy(x => x.VehicleNumber)
             .Take(request.TopVehicles)
@@ -86,7 +122,7 @@ public class VehicleRevenueReportService : IVehicleRevenueReportService
 
         var chartLookup = chartAggregates
             .Where(x => topVehicles.Contains(x.VehicleNumber))
-            .ToDictionary(x => (x.VehicleNumber, x.Year, x.Month), x => x.TotalRevenueGross);
+            .ToDictionary(x => (x.VehicleNumber, x.Year, x.Month), x => x.Total);
 
         var monthlySeries = Enumerable.Range(0, request.Months)
             .Select(offset =>
@@ -121,11 +157,4 @@ public class VehicleRevenueReportService : IVehicleRevenueReportService
         };
     }
 
-    private IQueryable<Domain.Entities.Sales.Quotation> ConfirmedQuotations(DateTime fromUtc, DateTime toExclusiveUtc) =>
-        _db.Quotations.AsNoTracking()
-            .Where(q => q.Status == QuotationStatus.Confirmed
-                && q.CancelledAt == null
-                && q.ConfirmedAt != null
-                && q.ConfirmedAt >= fromUtc
-                && q.ConfirmedAt < toExclusiveUtc);
 }

@@ -178,7 +178,7 @@ export function RevenuePage() {
                         className={isFirst && idx > 0 ? 'border-t-2 border-border' : undefined}
                       >
                         <TableCell className="whitespace-nowrap">
-                          {isFirst ? formatDate(item.confirmedAt ?? item.quotationDate) : ''}
+                          {isFirst ? formatDate(item.revenueDate ?? item.quotationDate) : ''}
                         </TableCell>
                         <TableCell className="min-w-[12rem]">
                           {isFirst ? (item.deliveryAddress ?? item.customerAddress ?? '') : ''}
