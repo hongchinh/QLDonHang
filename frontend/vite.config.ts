@@ -20,7 +20,8 @@ export default defineConfig({
     VitePWA({
       registerType: 'prompt',
       strategies: 'injectManifest',
-      injectManifest: { swSrc: 'src/sw.ts' },
+      srcDir: 'src',
+      filename: 'sw.ts',
       manifest: {
         name: 'QL Đơn Hàng',
         short_name: 'QLĐơnHàng',
