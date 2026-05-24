@@ -24,7 +24,7 @@ Cải tiến màn hình danh sách báo giá (`/quotations`) gồm 3 tính năng
 - Aggregate query backend thêm `Sum(AdvancePayment)` — cần test với dữ liệu có và không có advance payment
 
 ## Phases
-- [ ] Phase 01 — Backend AdvancePayment (S) — `phase-01-backend-advance-payment.md`
+- [x] Phase 01 — Backend AdvancePayment (S) — `phase-01-backend-advance-payment.md`
 - [ ] Phase 02 — RangePicker shared component (M) — `phase-02-range-picker-shared.md`
 - [ ] Phase 03 — Frontend quotation list (M) — `phase-03-frontend-quotation-list.md`
 
