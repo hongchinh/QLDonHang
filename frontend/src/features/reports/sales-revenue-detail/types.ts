@@ -10,6 +10,7 @@ export interface SalesRevenueLineItemDto {
   isFirstLineOfQuotation: boolean;
   productName: string;
   specification: string | null;
+  unitName: string;
   quantity: number;
   unitPrice: number;
   lineTotal: number;
