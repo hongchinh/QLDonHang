@@ -53,7 +53,7 @@ const navGroups: NavGroup[] = [
     label: 'Setting',
     items: [
       { to: '/settings/my-quotation-settings', label: 'Cài đặt của tôi', icon: UserCog },
-      { to: '/settings/quotation', label: 'Cấu hình hệ thống', icon: Settings, permission: 'system.manage_settings' },
+      { to: '/settings', label: 'Cấu hình hệ thống', icon: Settings, permission: 'system.manage_settings' },
       { to: '/admin/users', label: 'Quản lý người dùng', icon: Users2, permission: 'user_settings.manage' },
       { to: '/admin/roles', label: 'Phân quyền', icon: ShieldCheck, permission: 'roles.view' },
     ],
