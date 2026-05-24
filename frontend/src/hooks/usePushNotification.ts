@@ -75,7 +75,7 @@ export function usePushNotification(vapidPublicKey: string) {
   return { state, subscribe, unsubscribe }
 }
 
-function urlBase64ToUint8Array(base64String: string): Uint8Array {
+function urlBase64ToUint8Array(base64String: string): Uint8Array<ArrayBuffer> {
   // Normalise URL-safe base64 to standard base64
   const base64 = base64String.replace(/-/g, '+').replace(/_/g, '/')
   // Pad to a multiple of 4 — atob requires this
@@ -88,5 +88,9 @@ function urlBase64ToUint8Array(base64String: string): Uint8Array {
   } catch {
     raw = base64String
   }
-  return Uint8Array.from([...raw].map((c) => c.charCodeAt(0)))
+  const bytes = [...raw].map((c) => c.charCodeAt(0))
+  const buffer = new ArrayBuffer(bytes.length)
+  const view = new Uint8Array(buffer)
+  bytes.forEach((b, i) => { view[i] = b })
+  return view
 }
