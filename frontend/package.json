@@ -9,9 +9,9 @@
     "preview": "vite preview",
     "lint": "eslint . --ext .ts,.tsx",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run",
-    "test:watch": "vitest",
-    "test:ui": "vitest --ui"
+    "test": "vitest run --config vitest.config.ts",
+    "test:watch": "vitest --config vitest.config.ts",
+    "test:ui": "vitest --ui --config vitest.config.ts"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.1",

@@ -1,6 +1,6 @@
-import { defineConfig } from 'vitest/config';
-import react from '@vitejs/plugin-react';
-import path from 'node:path';
+import { defineConfig } from 'vite'
+import react from '@vitejs/plugin-react'
+import path from 'node:path'
 
 const vendorChunks: Record<string, string> = {
   'react/': 'react',
@@ -11,14 +11,12 @@ const vendorChunks: Record<string, string> = {
   'react-hook-form': 'forms',
   '@hookform/': 'forms',
   zod: 'forms',
-};
+}
 
 export default defineConfig({
   plugins: [react()],
   resolve: {
-    alias: {
-      '@': path.resolve(__dirname, './src'),
-    },
+    alias: { '@': path.resolve(__dirname, './src') },
   },
   server: {
     port: 5173,
@@ -33,19 +31,13 @@ export default defineConfig({
     rollupOptions: {
       output: {
         manualChunks: (id) => {
-          if (!id.includes('node_modules')) return undefined;
+          if (!id.includes('node_modules')) return undefined
           for (const [needle, chunk] of Object.entries(vendorChunks)) {
-            if (id.includes(needle)) return chunk;
+            if (id.includes(needle)) return chunk
           }
-          return undefined;
+          return undefined
         },
       },
     },
   },
-  test: {
-    environment: 'jsdom',
-    globals: true,
-    setupFiles: ['./src/test/setup.ts'],
-    css: false,
-  },
-});
+})
