@@ -95,6 +95,7 @@ public class SalesRevenueReportService : ISalesRevenueReportService
                 && q.OwnerUserId == saleUserId)
             .Include(q => q.Lines)
             .OrderByDescending(q => q.ConfirmedAt)
+            .ThenBy(q => q.Id)
             .ToListAsync(ct);
 
         var result = new List<SalesRevenueLineItemDto>();
