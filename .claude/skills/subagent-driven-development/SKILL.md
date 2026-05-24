@@ -65,6 +65,7 @@ digraph process {
     "Read plan, extract all tasks with full text, note context, create TodoWrite" [shape=box];
     "More tasks remain?" [shape=diamond];
     "Dispatch final code reviewer subagent for entire implementation" [shape=box];
+    "Create EXECUTION-REPORT.md + archive plan folder" [shape=box];
     "Use finishing-a-development-branch" [shape=box style=filled fillcolor=lightgreen];
 
     "Read plan, extract all tasks with full text, note context, create TodoWrite" -> "Dispatch implementer subagent (./implementer-prompt.md)";
@@ -84,7 +85,8 @@ digraph process {
     "Mark task complete in TodoWrite" -> "More tasks remain?";
     "More tasks remain?" -> "Dispatch implementer subagent (./implementer-prompt.md)" [label="yes"];
     "More tasks remain?" -> "Dispatch final code reviewer subagent for entire implementation" [label="no"];
-    "Dispatch final code reviewer subagent for entire implementation" -> "Use finishing-a-development-branch";
+    "Dispatch final code reviewer subagent for entire implementation" -> "Create EXECUTION-REPORT.md + archive plan folder";
+    "Create EXECUTION-REPORT.md + archive plan folder" -> "Use finishing-a-development-branch";
 }
 ```
 
@@ -202,6 +204,20 @@ Final reviewer: All requirements met, ready to merge
 
 Done!
 ```
+
+## Completion Artifacts
+
+After all tasks pass both review stages and the final code reviewer approves:
+
+1. **Create Execution Report**
+   - File: `docs/plans/YYMMDD-HHmm-<plan-slug>/EXECUTION-REPORT.md`
+   - Include: Plan reference, Tasks completed with status, Files changed per task, Review outcomes (spec + quality), Deviations from plan (with rationale), Residual risks / follow-ups.
+
+2. **Archive Plan Folder**
+   - Move the plan folder to `docs/plans/archived/` after the execution report is created.
+
+3. **Announce Completion**
+   - Output: `Execution complete. Report archived at docs/plans/archived/YYMMDD-HHmm-<plan-slug>/EXECUTION-REPORT.md.`
 
 ## Advantages
 
