@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 import { useAuthStore } from '@/stores/auth-store';
 import { useUiStore } from '@/stores/ui-store';
+import { useNotificationHub } from '@/hooks/useNotificationHub';
 import type { Permission, Role } from '@/lib/permissions';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
@@ -65,6 +66,8 @@ export function AppLayout() {
   const sidebarCollapsed = useUiStore((s) => s.sidebarCollapsed);
   const mobileDrawerOpen = useUiStore((s) => s.mobileDrawerOpen);
   const closeMobileDrawer = useUiStore((s) => s.closeMobileDrawer);
+
+  useNotificationHub();
 
   useEffect(() => {
     closeMobileDrawer();
