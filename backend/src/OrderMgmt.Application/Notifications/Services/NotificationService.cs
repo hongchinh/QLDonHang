@@ -11,11 +11,13 @@ public class NotificationService : INotificationService
 {
     private readonly IAppDbContext _db;
     private readonly IPushSender _push;
+    private readonly IRealtimeNotifier _realtime;
 
-    public NotificationService(IAppDbContext db, IPushSender push)
+    public NotificationService(IAppDbContext db, IPushSender push, IRealtimeNotifier realtime)
     {
         _db = db;
         _push = push;
+        _realtime = realtime;
     }
 
     public async Task SendAsync(Guid userId, string type, string title, string? body, string? link, CancellationToken ct = default)
@@ -33,6 +35,7 @@ public class NotificationService : INotificationService
         await _db.SaveChangesAsync(ct);
 
         await _push.SendAsync(userId, title, body ?? string.Empty, link ?? "/", ct);
+        await _realtime.NotifyUserAsync(userId, ct);
     }
 
     public async Task<List<NotificationDto>> ListAsync(Guid userId, bool unreadOnly, int limit, CancellationToken ct = default)
