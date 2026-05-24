@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
+import { useState, type ReactNode } from 'react';
+import { BrowserRouter, Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import { queryClient } from '@/lib/query-client';
@@ -36,6 +36,11 @@ import { InstallPrompt } from '@/components/InstallPrompt';
 import { usePushNotification } from '@/hooks/usePushNotification';
 import { PushPermissionPrompt } from '@/components/PushPermissionPrompt';
 
+function RouteErrorBoundary({ children }: { children: ReactNode }) {
+  const { pathname } = useLocation();
+  return <ErrorBoundary key={pathname}>{children}</ErrorBoundary>;
+}
+
 export function App() {
   const { canShow, install, dismiss } = useBeforeInstallPrompt();
   const {
@@ -71,6 +76,7 @@ export function App() {
       <QueryClientProvider client={queryClient}>
         <BrowserRouter>
           <AuthInit>
+            <RouteErrorBoundary>
             <Routes>
               <Route path="/login" element={<LoginPage />} />
               <Route path="/403" element={<ForbiddenPage />} />
@@ -258,6 +264,7 @@ export function App() {
               <Route path="/404" element={<NotFoundPage />} />
               <Route path="*" element={<Navigate to="/404" replace />} />
             </Routes>
+            </RouteErrorBoundary>
           </AuthInit>
         </BrowserRouter>
         <Toaster />

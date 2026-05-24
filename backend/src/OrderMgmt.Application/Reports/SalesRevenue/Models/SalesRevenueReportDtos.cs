@@ -31,6 +31,7 @@ public class SalesRevenueLineItemsRequest
 {
     public DateTime From { get; set; }
     public DateTime To { get; set; }
+    public Guid? SaleUserId { get; set; }
 }
 
 public class SalesRevenueLineItemDto
@@ -42,12 +43,19 @@ public class SalesRevenueLineItemDto
     public string CustomerName { get; set; } = default!;
     public string? CustomerAddress { get; set; }
     public string? ContactPhone { get; set; }
+    public string? DeliveryAddress { get; set; }
+    public string? DeliveryPhone { get; set; }
     public decimal Freight { get; set; }
     public bool IsFirstLineOfQuotation { get; set; }
 
     public string ProductName { get; set; } = default!;
     public string? Specification { get; set; }
     public string UnitName { get; set; } = default!;
+    public decimal? Length { get; set; }
+    public decimal? Width { get; set; }
+    public decimal? Thickness { get; set; }
+    public decimal? Density { get; set; }
+    public decimal? SheetCount { get; set; }
     public decimal Quantity { get; set; }
     public decimal UnitPrice { get; set; }
     public decimal LineTotal { get; set; }

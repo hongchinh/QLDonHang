@@ -52,6 +52,16 @@ public class ReportsController : ApiControllerBase
         return Success(await _salesRevenue.GetLineItemsAsync(saleUserId, request, ct));
     }
 
+    [HttpGet("revenue-lines")]
+    [HasPermission(Permissions.Reports.Revenue)]
+    public async Task<ActionResult<ApiResponse<List<SalesRevenueLineItemDto>>>> RevenueLines(
+        [FromQuery] SalesRevenueLineItemsRequest request,
+        CancellationToken ct)
+    {
+        await _salesRevenueLineItemsValidator.ValidateAndThrowAsync(request, ct);
+        return Success(await _salesRevenue.GetLineItemsAsync(request, ct));
+    }
+
     [HttpGet("vehicle-revenue")]
     [HasPermission(Permissions.Reports.Revenue)]
     public async Task<ActionResult<ApiResponse<VehicleRevenueReportDto>>> VehicleRevenue(

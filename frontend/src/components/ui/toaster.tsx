@@ -24,7 +24,7 @@ export function Toaster() {
           className={cn(
             'group pointer-events-auto relative flex w-full items-start gap-3 overflow-hidden rounded-md p-4 pr-8 shadow-lg',
             'data-[state=open]:animate-in data-[state=closed]:animate-out data-[swipe=end]:animate-out',
-            'data-[state=closed]:fade-out-80 data-[state=open]:slide-in-from-top-full data-[state=open]:sm:slide-in-from-bottom-full',
+            'data-[state=closed]:fade-out-80 data-[state=open]:slide-in-from-top-full',
             variantClasses[t.variant ?? 'default'],
           )}
         >
@@ -44,7 +44,7 @@ export function Toaster() {
           </ToastPrimitive.Close>
         </ToastPrimitive.Root>
       ))}
-      <ToastPrimitive.Viewport className="fixed bottom-0 right-0 z-[100] flex max-h-screen w-full flex-col-reverse gap-2 p-4 sm:bottom-auto sm:right-4 sm:top-4 sm:flex-col sm:max-w-[420px]" />
+      <ToastPrimitive.Viewport className="fixed bottom-0 right-0 z-[100] flex max-h-screen w-full flex-col-reverse gap-2 p-4 sm:bottom-auto sm:right-4 sm:top-[72px] sm:flex-col sm:max-w-[420px]" />
     </ToastPrimitive.Provider>
   );
 }

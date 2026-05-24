@@ -97,17 +97,34 @@ export function HeaderNotifications() {
                 key={n.id}
                 onClick={() => handleSelect(n)}
                 className={cn(
-                  'flex w-full flex-col items-start gap-1 border-b px-3 py-2 text-left text-sm last:border-b-0 hover:bg-accent/60',
-                  !n.isRead && 'bg-blue-50',
+                  'flex w-full items-start gap-2 border-b border-l-[3px] px-3 py-2.5 text-left text-sm last:border-b-0 transition-colors hover:bg-accent/60',
+                  n.isRead
+                    ? 'border-l-transparent bg-background'
+                    : 'border-l-blue-500 bg-blue-50',
                 )}
               >
-                <span className="font-medium">{n.title}</span>
-                {n.body && (
-                  <span className="line-clamp-2 text-xs text-muted-foreground">{n.body}</span>
-                )}
-                <span className="text-[10px] text-muted-foreground">
-                  {formatDistanceToNow(new Date(n.createdAt), { addSuffix: true, locale: vi })}
-                </span>
+                <span
+                  className={cn(
+                    'mt-[5px] h-2 w-2 shrink-0 rounded-full',
+                    n.isRead ? 'bg-transparent' : 'bg-blue-500',
+                  )}
+                />
+                <div className="flex min-w-0 flex-col gap-0.5">
+                  <span
+                    className={cn(
+                      'leading-snug',
+                      n.isRead ? 'font-normal text-muted-foreground' : 'font-semibold text-foreground',
+                    )}
+                  >
+                    {n.title}
+                  </span>
+                  {n.body && (
+                    <span className="line-clamp-2 text-xs text-muted-foreground">{n.body}</span>
+                  )}
+                  <span className="text-[10px] text-muted-foreground">
+                    {formatDistanceToNow(new Date(n.createdAt), { addSuffix: true, locale: vi })}
+                  </span>
+                </div>
               </button>
             ))
           )}

@@ -72,13 +72,13 @@ public class DashboardService : IDashboardService
             .Select(g => new
             {
                 CurRevenue = g.Sum(x =>
-                    x.Status == QuotationStatus.Confirmed && x.CancelledAt == null && x.ConfirmedAt != null
+                    (x.Status == QuotationStatus.Confirmed || x.Status == QuotationStatus.AccountingConfirmed) && x.CancelledAt == null && x.ConfirmedAt != null
                     && x.ConfirmedAt >= curFromDt && x.ConfirmedAt < curToDt ? x.Total : 0m),
                 PrevRevenue = g.Sum(x =>
-                    x.Status == QuotationStatus.Confirmed && x.CancelledAt == null && x.ConfirmedAt != null
+                    (x.Status == QuotationStatus.Confirmed || x.Status == QuotationStatus.AccountingConfirmed) && x.CancelledAt == null && x.ConfirmedAt != null
                     && x.ConfirmedAt >= prevFromDt && x.ConfirmedAt < prevToDt ? x.Total : 0m),
                 TodayRevenue = g.Sum(x =>
-                    x.Status == QuotationStatus.Confirmed && x.CancelledAt == null && x.ConfirmedAt != null
+                    (x.Status == QuotationStatus.Confirmed || x.Status == QuotationStatus.AccountingConfirmed) && x.CancelledAt == null && x.ConfirmedAt != null
                     && x.ConfirmedAt >= todayDt && x.ConfirmedAt < tomorrowDt ? x.Total : 0m),
                 CurTotalCount = g.Sum(x => x.QuotationDate >= rangeFrom && x.QuotationDate <= rangeTo ? 1 : 0),
                 PrevTotalCount = g.Sum(x => x.QuotationDate >= prevFrom && x.QuotationDate <= prevTo ? 1 : 0),
@@ -101,7 +101,7 @@ public class DashboardService : IDashboardService
 
         var sparkFromDt = today.AddDays(-6).ToDateTime(TimeOnly.MinValue, DateTimeKind.Utc);
         var sparkRows = await scope
-            .Where(q => q.Status == QuotationStatus.Confirmed && q.CancelledAt == null && q.ConfirmedAt != null
+            .Where(q => (q.Status == QuotationStatus.Confirmed || q.Status == QuotationStatus.AccountingConfirmed) && q.CancelledAt == null && q.ConfirmedAt != null
                         && q.ConfirmedAt >= sparkFromDt && q.ConfirmedAt < tomorrowDt)
             .GroupBy(q => DateOnly.FromDateTime(q.ConfirmedAt!.Value))
             .Select(g => new { Date = g.Key, Revenue = g.Sum(x => x.Total), Count = g.Count() })
@@ -167,7 +167,7 @@ public class DashboardService : IDashboardService
         var toDt = to.AddDays(1).ToDateTime(TimeOnly.MinValue, DateTimeKind.Utc);
 
         var dayRows = await ApplyScope(saleUserId)
-            .Where(q => q.Status == QuotationStatus.Confirmed && q.CancelledAt == null && q.ConfirmedAt != null
+            .Where(q => (q.Status == QuotationStatus.Confirmed || q.Status == QuotationStatus.AccountingConfirmed) && q.CancelledAt == null && q.ConfirmedAt != null
                         && q.ConfirmedAt >= fromDt && q.ConfirmedAt < toDt)
             .GroupBy(q => DateOnly.FromDateTime(q.ConfirmedAt!.Value))
             .Select(g => new { Date = g.Key, Total = g.Sum(x => x.Total), Count = g.Count() })
@@ -223,7 +223,7 @@ public class DashboardService : IDashboardService
         var toDt = to.AddDays(1).ToDateTime(TimeOnly.MinValue, DateTimeKind.Utc);
 
         return await ApplyScope(saleUserId)
-            .Where(q => q.Status == QuotationStatus.Confirmed && q.CancelledAt == null && q.ConfirmedAt != null
+            .Where(q => (q.Status == QuotationStatus.Confirmed || q.Status == QuotationStatus.AccountingConfirmed) && q.CancelledAt == null && q.ConfirmedAt != null
                         && q.ConfirmedAt >= fromDt && q.ConfirmedAt < toDt)
             .GroupBy(q => new { q.CustomerId, q.CustomerName })
             .Select(g => new TopCustomerDto
@@ -246,7 +246,7 @@ public class DashboardService : IDashboardService
         var toDt = to.AddDays(1).ToDateTime(TimeOnly.MinValue, DateTimeKind.Utc);
 
         var quotationIds = ApplyScope(saleUserId)
-            .Where(q => q.Status == QuotationStatus.Confirmed && q.CancelledAt == null && q.ConfirmedAt != null
+            .Where(q => (q.Status == QuotationStatus.Confirmed || q.Status == QuotationStatus.AccountingConfirmed) && q.CancelledAt == null && q.ConfirmedAt != null
                         && q.ConfirmedAt >= fromDt && q.ConfirmedAt < toDt)
             .Select(q => q.Id);
 
@@ -396,14 +396,14 @@ public class DashboardService : IDashboardService
             {
                 UserId = g.Key,
                 Revenue = g.Sum(x =>
-                    x.Status == QuotationStatus.Confirmed && x.CancelledAt == null && x.ConfirmedAt != null
+                    (x.Status == QuotationStatus.Confirmed || x.Status == QuotationStatus.AccountingConfirmed) && x.CancelledAt == null && x.ConfirmedAt != null
                     && x.ConfirmedAt >= fromDt && x.ConfirmedAt < toDt ? x.Total : 0m),
                 ConfirmedCount = g.Sum(x =>
-                    x.Status == QuotationStatus.Confirmed && x.CancelledAt == null && x.ConfirmedAt != null
+                    (x.Status == QuotationStatus.Confirmed || x.Status == QuotationStatus.AccountingConfirmed) && x.CancelledAt == null && x.ConfirmedAt != null
                     && x.ConfirmedAt >= fromDt && x.ConfirmedAt < toDt ? 1 : 0),
                 TotalCount = g.Sum(x => x.QuotationDate >= from && x.QuotationDate <= to ? 1 : 0),
                 PrevRevenue = g.Sum(x =>
-                    x.Status == QuotationStatus.Confirmed && x.CancelledAt == null && x.ConfirmedAt != null
+                    (x.Status == QuotationStatus.Confirmed || x.Status == QuotationStatus.AccountingConfirmed) && x.CancelledAt == null && x.ConfirmedAt != null
                     && x.ConfirmedAt >= prevFromDt && x.ConfirmedAt < prevToDt ? x.Total : 0m),
             })
             .ToListAsync(ct);

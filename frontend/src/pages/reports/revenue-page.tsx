@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import {
   Select,
   SelectContent,
@@ -6,9 +6,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Table, TableBody, TableCell, TableFooter, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { toast } from '@/lib/use-toast';
 import { useAuthStore } from '@/stores/auth-store';
 import { KpiCard } from '@/features/dashboard/components/kpi-card';
@@ -22,10 +22,40 @@ import {
 } from '@/features/dashboard/hooks';
 import { useDashboardParams } from '@/features/dashboard/use-dashboard-params';
 import { useAdminUsers } from '@/features/admin-users/hooks';
+import { useRevenueLineItems } from '@/features/reports/sales-revenue-detail/hooks';
+import type { SalesRevenueLineItemDto } from '@/features/reports/sales-revenue-detail/types';
 import type { Granularity, Kpi } from '@/features/dashboard/types';
 import { formatNumber, formatVnd } from '@/features/dashboard/format';
 
 const ALL_SALES = '__all__';
+const moneyNumber = new Intl.NumberFormat('vi-VN', { maximumFractionDigits: 0 });
+const decimalNumber = new Intl.NumberFormat('vi-VN', { maximumFractionDigits: 2 });
+
+function formatDate(value: string | null | undefined): string {
+  if (!value) return '';
+  const datePart = value.slice(0, 10);
+  const [year, month, day] = datePart.split('-');
+  return year && month && day ? `${day}/${month}` : datePart;
+}
+
+function formatNullableNumber(value: number | null | undefined): string {
+  if (value === null || value === undefined) return '';
+  return decimalNumber.format(value);
+}
+
+function formatMoneyNumber(value: number | null | undefined): string {
+  if (value === null || value === undefined) return '';
+  return moneyNumber.format(value);
+}
+
+function formatProductSize(item: SalesRevenueLineItemDto): string {
+  const dimensions = [item.length, item.width, item.thickness]
+    .filter((value): value is number => value !== null && value !== undefined)
+    .map((value) => decimalNumber.format(value));
+
+  if (dimensions.length > 0) return dimensions.join(' x ');
+  return item.specification || item.productName;
+}
 
 export function RevenuePage() {
   const { from, to, saleUserId, setRange, setSaleUserId, setPreset } = useDashboardParams();
@@ -35,6 +65,7 @@ export function RevenuePage() {
   const summary = useDashboardSummary({ from, to, saleUserId });
   const revenue = useRevenueSeries({ from, to, granularity, saleUserId });
   const topCustomers = useTopCustomers({ from, to, limit: 5, saleUserId });
+  const detailLines = useRevenueLineItems({ from, to, saleUserId });
   const usersQuery = useAdminUsers({ activeOnly: true });
 
   const rangeRevenue: Kpi | undefined = summary.data?.rangeRevenue;
@@ -42,6 +73,22 @@ export function RevenuePage() {
   const cancelledCount = summary.data?.cancelledCount.value ?? 0;
   const confirmedCount = Math.max(0, Math.round(totalCount - cancelledCount));
   const avgPerQuote = confirmedCount > 0 && rangeRevenue ? rangeRevenue.value / confirmedCount : 0;
+  const detailItems = detailLines.data ?? [];
+  const hasCostColumns = detailItems.some((item) => item.unitCost !== null || item.lineCost !== null || item.lineProfit !== null);
+  const detailTotals = useMemo(() => {
+    return detailItems.reduce(
+      (acc, item) => {
+        acc.quantity += item.quantity;
+        acc.sheetCount += item.sheetCount ?? 0;
+        acc.lineTotal += item.lineTotal;
+        if (item.isFirstLineOfQuotation) acc.freight += item.freight;
+        acc.lineCost += item.lineCost ?? 0;
+        acc.lineProfit += item.lineProfit ?? 0;
+        return acc;
+      },
+      { quantity: 0, sheetCount: 0, lineTotal: 0, freight: 0, lineCost: 0, lineProfit: 0 },
+    );
+  }, [detailItems]);
 
   return (
     <div className="space-y-6">
@@ -81,6 +128,112 @@ export function RevenuePage() {
           </Button>
         </div>
       </header>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Chi tiết doanh thu</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {detailLines.isLoading ? (
+            <div className="h-80 w-full animate-pulse rounded bg-muted" />
+          ) : detailLines.isError ? (
+            <div className="text-sm text-destructive">Không tải được chi tiết doanh thu.</div>
+          ) : detailItems.length === 0 ? (
+            <div className="rounded-md border border-dashed p-6 text-center text-sm text-muted-foreground">
+              Không có dòng hàng nào trong khoảng thời gian này.
+            </div>
+          ) : (
+            <div className="max-h-[520px] overflow-auto rounded-md border">
+              <Table className="min-w-[1280px]">
+                <TableHeader className="sticky top-0 z-10">
+                  <TableRow>
+                    <TableHead>Ngày</TableHead>
+                    <TableHead>Địa chỉ giao hàng</TableHead>
+                    <TableHead>Hàng hóa / kích thước</TableHead>
+                    <TableHead className="text-right">Tỷ trọng</TableHead>
+                    <TableHead className="text-right">SL m²</TableHead>
+                    <TableHead className="text-right">SL tấm</TableHead>
+                    <TableHead className="text-right">Đơn giá</TableHead>
+                    <TableHead className="text-right">Thành tiền</TableHead>
+                    <TableHead className="text-right">Cước vận chuyển</TableHead>
+                    {hasCostColumns && (
+                      <>
+                        <TableHead className="text-right">Giá nhập</TableHead>
+                        <TableHead className="text-right">Thành tiền nhập</TableHead>
+                        <TableHead className="text-right">Chênh lệch</TableHead>
+                        <TableHead className="text-right">Chênh + cước</TableHead>
+                      </>
+                    )}
+                    <TableHead>Liên hệ</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {detailItems.map((item, idx) => {
+                    const isFirst = item.isFirstLineOfQuotation;
+                    const freight = isFirst ? item.freight : 0;
+                    const profitPlusFreight = item.lineProfit !== null ? item.lineProfit + freight : null;
+                    return (
+                      <TableRow
+                        key={`${item.quotationId}-${item.productName}-${idx}`}
+                        className={isFirst && idx > 0 ? 'border-t-2 border-border' : undefined}
+                      >
+                        <TableCell className="whitespace-nowrap">
+                          {isFirst ? formatDate(item.confirmedAt ?? item.quotationDate) : ''}
+                        </TableCell>
+                        <TableCell className="min-w-[12rem]">
+                          {isFirst ? (item.deliveryAddress ?? item.customerAddress ?? '') : ''}
+                        </TableCell>
+                        <TableCell className="min-w-[14rem]">
+                          <div className="font-medium">{item.productName}</div>
+                          <div className="text-xs text-muted-foreground">{formatProductSize(item)}</div>
+                        </TableCell>
+                        <TableCell className="text-right tabular-nums">{formatNullableNumber(item.density)}</TableCell>
+                        <TableCell className="text-right tabular-nums">{formatNullableNumber(item.quantity)}</TableCell>
+                        <TableCell className="text-right tabular-nums">{formatNullableNumber(item.sheetCount)}</TableCell>
+                        <TableCell className="text-right tabular-nums">{formatMoneyNumber(item.unitPrice)}</TableCell>
+                        <TableCell className="text-right tabular-nums">{formatMoneyNumber(item.lineTotal)}</TableCell>
+                        <TableCell className="text-right tabular-nums">{isFirst ? formatMoneyNumber(item.freight) : ''}</TableCell>
+                        {hasCostColumns && (
+                          <>
+                            <TableCell className="text-right tabular-nums">{formatMoneyNumber(item.unitCost)}</TableCell>
+                            <TableCell className="text-right tabular-nums">{formatMoneyNumber(item.lineCost)}</TableCell>
+                            <TableCell className="text-right tabular-nums">{formatMoneyNumber(item.lineProfit)}</TableCell>
+                            <TableCell className="text-right tabular-nums">{formatMoneyNumber(profitPlusFreight)}</TableCell>
+                          </>
+                        )}
+                        <TableCell className="whitespace-nowrap">
+                          {isFirst ? (item.deliveryPhone ?? item.contactPhone ?? '') : ''}
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+                <TableFooter className="sticky bottom-0 bg-muted">
+                  <TableRow>
+                    <TableCell colSpan={4}>Tổng cộng</TableCell>
+                    <TableCell className="text-right tabular-nums">{formatNullableNumber(detailTotals.quantity)}</TableCell>
+                    <TableCell className="text-right tabular-nums">{formatNullableNumber(detailTotals.sheetCount)}</TableCell>
+                    <TableCell />
+                    <TableCell className="text-right tabular-nums">{formatMoneyNumber(detailTotals.lineTotal)}</TableCell>
+                    <TableCell className="text-right tabular-nums">{formatMoneyNumber(detailTotals.freight)}</TableCell>
+                    {hasCostColumns && (
+                      <>
+                        <TableCell />
+                        <TableCell className="text-right tabular-nums">{formatMoneyNumber(detailTotals.lineCost)}</TableCell>
+                        <TableCell className="text-right tabular-nums">{formatMoneyNumber(detailTotals.lineProfit)}</TableCell>
+                        <TableCell className="text-right tabular-nums">
+                          {formatMoneyNumber(detailTotals.lineProfit + detailTotals.freight)}
+                        </TableCell>
+                      </>
+                    )}
+                    <TableCell />
+                  </TableRow>
+                </TableFooter>
+              </Table>
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       <div className="grid gap-4 md:grid-cols-3">
         <KpiCard

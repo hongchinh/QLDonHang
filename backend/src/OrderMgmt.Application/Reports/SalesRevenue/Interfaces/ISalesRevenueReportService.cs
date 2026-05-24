@@ -10,4 +10,8 @@ public interface ISalesRevenueReportService
         Guid saleUserId,
         SalesRevenueLineItemsRequest request,
         CancellationToken ct = default);
+
+    Task<List<SalesRevenueLineItemDto>> GetLineItemsAsync(
+        SalesRevenueLineItemsRequest request,
+        CancellationToken ct = default);
 }

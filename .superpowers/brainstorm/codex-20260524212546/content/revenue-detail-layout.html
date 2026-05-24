@@ -1,0 +1,82 @@
+<h2>Bang chi tiet doanh thu tren /reports/revenue</h2>
+<p class="subtitle">Chon cach chen bang chi tiet theo file Excel ban dinh kem. Bang minh hoa dung cac cot chinh: ngay, dia chi giao hang, kich thuoc, ty trong, so luong, don gia, thanh tien, cuoc xe, gia nhap, chenh lech.</p>
+
+<div class="cards">
+  <div class="card" data-choice="append-full" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div class="mockup">
+        <div class="mockup-header">A. Them bang chi tiet ben duoi phan hien co</div>
+        <div class="mockup-body">
+          <div class="placeholder" style="height:44px">KPI cards</div>
+          <div class="placeholder" style="height:72px">Revenue chart</div>
+          <div style="display:grid;grid-template-columns:2fr 1fr;gap:8px;margin:8px 0">
+            <div class="placeholder" style="height:58px">Bang doanh thu theo ngay</div>
+            <div class="placeholder" style="height:58px">Top khach hang</div>
+          </div>
+          <div style="border:1px solid #d8dee8;border-radius:8px;overflow:hidden;background:white">
+            <div style="padding:8px 10px;border-bottom:1px solid #e7ebf0;font-weight:600">Chi tiet doanh thu giong Excel</div>
+            <div style="display:grid;grid-template-columns:56px 120px 140px 76px 76px 86px 92px 92px 92px;gap:0;font-size:10px">
+              <div style="padding:6px;background:#f6f7f9;border-right:1px solid #e7ebf0">Ngay</div>
+              <div style="padding:6px;background:#f6f7f9;border-right:1px solid #e7ebf0">Dia chi</div>
+              <div style="padding:6px;background:#f6f7f9;border-right:1px solid #e7ebf0">Kich thuoc</div>
+              <div style="padding:6px;background:#f6f7f9;border-right:1px solid #e7ebf0">Ty trong</div>
+              <div style="padding:6px;background:#f6f7f9;border-right:1px solid #e7ebf0">SL</div>
+              <div style="padding:6px;background:#f6f7f9;border-right:1px solid #e7ebf0">Don gia</div>
+              <div style="padding:6px;background:#f6f7f9;border-right:1px solid #e7ebf0">Thanh tien</div>
+              <div style="padding:6px;background:#f6f7f9;border-right:1px solid #e7ebf0">Gia nhap</div>
+              <div style="padding:6px;background:#f6f7f9">Chenh lech</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>A. Them ben duoi (Recommended)</h3>
+      <p>Giu chart, KPI, bang tong hop theo ngay va top khach hang. Them bang Excel-like full width o cuoi trang de drill-down.</p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="replace-daily" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div class="mockup">
+        <div class="mockup-header">B. Thay bang theo ngay bang bang chi tiet</div>
+        <div class="mockup-body">
+          <div class="placeholder" style="height:44px">KPI cards</div>
+          <div class="placeholder" style="height:72px">Revenue chart</div>
+          <div style="display:grid;grid-template-columns:2fr 1fr;gap:8px;margin-top:8px">
+            <div style="border:1px solid #d8dee8;border-radius:8px;overflow:hidden;background:white">
+              <div style="padding:8px 10px;border-bottom:1px solid #e7ebf0;font-weight:600">Chi tiet doanh thu</div>
+              <div class="placeholder" style="height:58px;border:0;border-radius:0">Excel-like rows</div>
+            </div>
+            <div class="placeholder" style="height:90px">Top khach hang</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>B. Thay the bang theo ngay</h3>
+      <p>Trang ngan hon, nhung mat nhanh bang tong hop ngay dang co.</p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="tabs" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div class="mockup">
+        <div class="mockup-header">C. Dung tabs Tong hop / Chi tiet</div>
+        <div class="mockup-body">
+          <div class="placeholder" style="height:44px">KPI cards</div>
+          <div class="placeholder" style="height:72px">Revenue chart</div>
+          <div style="display:flex;gap:6px;margin:8px 0">
+            <button class="mock-button">Tong hop</button>
+            <button class="mock-button">Chi tiet Excel</button>
+          </div>
+          <div class="placeholder" style="height:80px">One table visible at a time</div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>C. Tab hoa bang</h3>
+      <p>Gon man hinh, nhung them mot lop thao tac truoc khi thay bang chi tiet.</p>
+    </div>
+  </div>
+</div>

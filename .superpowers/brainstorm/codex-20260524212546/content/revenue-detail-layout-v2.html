@@ -1,0 +1,71 @@
+<h2>Layout da chon: Chi tiet doanh thu truoc KPI</h2>
+<p class="subtitle">Bang chi tiet Excel-like nam ngay sau header bo loc, de nguoi dung thay danh sach giao dich truoc khi xem KPI va bieu do tong hop.</p>
+
+<div class="mockup">
+  <div class="mockup-header">/reports/revenue - proposed order</div>
+  <div class="mockup-body">
+    <div style="display:flex;justify-content:space-between;gap:12px;align-items:center;margin-bottom:10px">
+      <div>
+        <div style="font-weight:700;font-size:16px">Bao cao doanh thu</div>
+        <div style="font-size:11px;color:#6b7280">Tu 2026-03-01 den 2026-03-31</div>
+      </div>
+      <div style="display:flex;gap:6px">
+        <button class="mock-button">Tat ca sale</button>
+        <button class="mock-button">Thang nay</button>
+        <button class="mock-button">Xuat Excel</button>
+      </div>
+    </div>
+
+    <div style="border:1px solid #d8dee8;border-radius:8px;overflow:hidden;background:white;margin-bottom:12px">
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 10px;border-bottom:1px solid #e7ebf0">
+        <div style="font-weight:600">Chi tiet doanh thu</div>
+        <div style="font-size:11px;color:#6b7280">Theo dong hang, giong file Excel</div>
+      </div>
+      <div style="overflow:hidden">
+        <div style="display:grid;grid-template-columns:54px 110px 122px 66px 66px 76px 84px 84px 84px 84px;gap:0;font-size:10px;min-width:830px">
+          <div style="padding:6px;background:#f6f7f9;border-right:1px solid #e7ebf0">Ngay</div>
+          <div style="padding:6px;background:#f6f7f9;border-right:1px solid #e7ebf0">Dia chi giao</div>
+          <div style="padding:6px;background:#f6f7f9;border-right:1px solid #e7ebf0">Kich thuoc</div>
+          <div style="padding:6px;background:#f6f7f9;border-right:1px solid #e7ebf0;text-align:right">Ty trong</div>
+          <div style="padding:6px;background:#f6f7f9;border-right:1px solid #e7ebf0;text-align:right">SL tam</div>
+          <div style="padding:6px;background:#f6f7f9;border-right:1px solid #e7ebf0;text-align:right">Don gia</div>
+          <div style="padding:6px;background:#f6f7f9;border-right:1px solid #e7ebf0;text-align:right">Thanh tien</div>
+          <div style="padding:6px;background:#f6f7f9;border-right:1px solid #e7ebf0;text-align:right">Cuoc xe</div>
+          <div style="padding:6px;background:#f6f7f9;border-right:1px solid #e7ebf0;text-align:right">Gia nhap</div>
+          <div style="padding:6px;background:#f6f7f9;text-align:right">Chenh lech</div>
+          <div style="padding:6px;border-top:1px solid #eef1f5;border-right:1px solid #eef1f5">01/03</div>
+          <div style="padding:6px;border-top:1px solid #eef1f5;border-right:1px solid #eef1f5">Ta Quang Buu</div>
+          <div style="padding:6px;border-top:1px solid #eef1f5;border-right:1px solid #eef1f5">2000 x 1000 x 30</div>
+          <div style="padding:6px;border-top:1px solid #eef1f5;border-right:1px solid #eef1f5;text-align:right">10</div>
+          <div style="padding:6px;border-top:1px solid #eef1f5;border-right:1px solid #eef1f5;text-align:right">100</div>
+          <div style="padding:6px;border-top:1px solid #eef1f5;border-right:1px solid #eef1f5;text-align:right">61,560</div>
+          <div style="padding:6px;border-top:1px solid #eef1f5;border-right:1px solid #eef1f5;text-align:right">6,156,000</div>
+          <div style="padding:6px;border-top:1px solid #eef1f5;border-right:1px solid #eef1f5;text-align:right">540,000</div>
+          <div style="padding:6px;border-top:1px solid #eef1f5;border-right:1px solid #eef1f5;text-align:right">32,400</div>
+          <div style="padding:6px;border-top:1px solid #eef1f5;text-align:right">2,916,000</div>
+        </div>
+      </div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:10px">
+      <div class="placeholder" style="height:52px">Tong doanh thu</div>
+      <div class="placeholder" style="height:52px">So BG xac nhan</div>
+      <div class="placeholder" style="height:52px">Trung binh / BG</div>
+    </div>
+    <div class="placeholder" style="height:80px;margin-bottom:10px">Revenue chart</div>
+    <div style="display:grid;grid-template-columns:2fr 1fr;gap:8px">
+      <div class="placeholder" style="height:70px">Bang doanh thu theo ngay</div>
+      <div class="placeholder" style="height:70px">Top khach hang</div>
+    </div>
+  </div>
+</div>
+
+<div class="options">
+  <div class="option selected" data-choice="approved-shape" onclick="toggleSelect(this)">
+    <div class="letter">A</div>
+    <div class="content">
+      <h3>Ap dung layout nay</h3>
+      <p>Chi tiet doanh thu nam tren KPI; cac khoi tong hop hien co giu nguyen ben duoi.</p>
+    </div>
+  </div>
+</div>

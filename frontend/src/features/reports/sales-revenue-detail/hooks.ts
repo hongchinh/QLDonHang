@@ -15,3 +15,12 @@ export function useSalesRevenueDetail(
     staleTime: 5 * 60 * 1000,
   });
 }
+
+export function useRevenueLineItems(params: SalesRevenueLineItemsParams, enabled = true) {
+  return useQuery({
+    queryKey: salesRevenueDetailKeys.revenueLines(params),
+    queryFn: () => salesRevenueDetailApi.getRevenueLines(params),
+    enabled: enabled && !!params.from && !!params.to,
+    staleTime: 30_000,
+  });
+}

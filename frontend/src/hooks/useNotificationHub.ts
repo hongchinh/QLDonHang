@@ -2,7 +2,6 @@ import { useEffect } from 'react'
 import { HubConnectionBuilder } from '@microsoft/signalr'
 import { useQueryClient } from '@tanstack/react-query'
 import { useAuthStore } from '@/stores/auth-store'
-import { notificationsKeys } from '@/features/notifications/hooks'
 
 export function useNotificationHub() {
   const queryClient = useQueryClient()
@@ -19,7 +18,7 @@ export function useNotificationHub() {
       .build()
 
     connection.on('NewNotification', () => {
-      queryClient.invalidateQueries({ queryKey: notificationsKeys.unreadCount })
+      queryClient.invalidateQueries({ queryKey: ['notifications'] })
     })
 
     connection.start().catch((err) => {

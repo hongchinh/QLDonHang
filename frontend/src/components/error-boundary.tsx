@@ -7,20 +7,22 @@ interface Props {
 
 interface State {
   error: Error | null;
+  componentStack: string | null;
 }
 
 export class ErrorBoundary extends Component<Props, State> {
-  state: State = { error: null };
+  state: State = { error: null, componentStack: null };
 
-  static getDerivedStateFromError(error: Error): State {
+  static getDerivedStateFromError(error: Error): Partial<State> {
     return { error };
   }
 
   componentDidCatch(error: Error, info: ErrorInfo) {
     console.error('Unhandled UI error:', error, info);
+    this.setState({ componentStack: info.componentStack ?? null });
   }
 
-  reset = () => this.setState({ error: null });
+  reset = () => this.setState({ error: null, componentStack: null });
 
   render() {
     if (this.state.error) {
@@ -36,6 +38,14 @@ export class ErrorBoundary extends Component<Props, State> {
               Về trang chủ
             </Button>
           </div>
+          {this.state.componentStack && (
+            <details className="mt-4 max-w-2xl text-left">
+              <summary className="cursor-pointer text-xs text-muted-foreground">Chi tiết lỗi (dành cho debug)</summary>
+              <pre className="mt-2 max-h-64 overflow-auto rounded border bg-muted p-3 text-xs text-muted-foreground">
+                {this.state.componentStack}
+              </pre>
+            </details>
+          )}
         </div>
       );
     }

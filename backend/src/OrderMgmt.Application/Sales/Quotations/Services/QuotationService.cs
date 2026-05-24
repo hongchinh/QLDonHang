@@ -640,11 +640,12 @@ public class QuotationService : IQuotationService
     {
         if (!NotifiableStatuses.Contains(newStatus)) return;
 
+        var info = $"{quotation.Code} | {quotation.QuotationDate:dd/MM/yyyy} | {quotation.CustomerName} | {quotation.Total:N0} VNĐ";
         var (title, body) = newStatus switch
         {
-            QuotationStatus.Confirmed           => ("Báo giá đã xác nhận",   $"Báo giá {quotation.Code} đã được xác nhận."),
-            QuotationStatus.AccountingConfirmed => ("Kế toán đã duyệt",      $"Báo giá {quotation.Code} đã được kế toán xác nhận."),
-            QuotationStatus.Cancelled           => ("Báo giá bị hủy",         $"Báo giá {quotation.Code} đã bị hủy."),
+            QuotationStatus.Confirmed           => ("Báo giá đã xác nhận",   $"{info} — đã được xác nhận."),
+            QuotationStatus.AccountingConfirmed => ("Kế toán đã duyệt",      $"{info} — đã được kế toán xác nhận."),
+            QuotationStatus.Cancelled           => ("Báo giá bị hủy",         $"{info} — đã bị hủy."),
             _                                   => (string.Empty, string.Empty),
         };
 

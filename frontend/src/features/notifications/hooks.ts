@@ -12,7 +12,8 @@ export function useUnreadCount() {
     queryFn: () => notificationsApi.unreadCount(),
     refetchInterval: 60_000,
     refetchIntervalInBackground: false,
-    staleTime: 30_000,
+    staleTime: 0,
+    refetchOnWindowFocus: true,
   });
 }
 
