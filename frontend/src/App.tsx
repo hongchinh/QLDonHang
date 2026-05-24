@@ -29,10 +29,20 @@ import { SalesRevenuePage } from '@/pages/reports/sales-revenue-page';
 import { SalesRevenueDetailPage } from '@/pages/reports/sales-revenue-detail-page';
 import { VehicleRevenuePage } from '@/pages/reports/vehicle-revenue-page';
 import { ForbiddenPage, NotFoundPage } from '@/pages/error-pages';
+import { useRegisterSW } from 'virtual:pwa-register/react';
+import { useBeforeInstallPrompt } from '@/hooks/useBeforeInstallPrompt';
+import { InstallPrompt } from '@/components/InstallPrompt';
 
 export function App() {
+  const { canShow, install, dismiss } = useBeforeInstallPrompt();
+  const {
+    needRefresh: [needRefresh, setNeedRefresh],
+    updateServiceWorker,
+  } = useRegisterSW();
+
   return (
     <ErrorBoundary>
+      <InstallPrompt canShow={canShow} onInstall={install} onDismiss={dismiss} />
       <QueryClientProvider client={queryClient}>
         <BrowserRouter>
           <AuthInit>
@@ -228,6 +238,18 @@ export function App() {
         <Toaster />
         <ReactQueryDevtools initialIsOpen={false} />
       </QueryClientProvider>
+      {needRefresh && (
+        <div className="fixed bottom-4 right-4 z-50 flex items-center gap-3 rounded-lg bg-gray-900 px-4 py-3 text-sm text-white shadow-xl">
+          <span>Có phiên bản mới</span>
+          <button
+            onClick={() => updateServiceWorker(true)}
+            className="rounded bg-blue-500 px-3 py-1 text-xs font-semibold hover:bg-blue-400"
+          >
+            Cập nhật ngay
+          </button>
+          <button onClick={() => setNeedRefresh(false)} aria-label="Đóng" className="text-gray-400 hover:text-white">✕</button>
+        </div>
+      )}
     </ErrorBoundary>
   );
 }
