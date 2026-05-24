@@ -33,6 +33,7 @@ public interface IAppDbContext
     DbSet<QuotationSystemSettings> QuotationSystemSettings { get; }
 
     DbSet<Notification> Notifications { get; }
+    DbSet<PushSubscription> PushSubscriptions { get; }
 
     EntityEntry<TEntity> Entry<TEntity>(TEntity entity) where TEntity : class;
 

@@ -4,6 +4,7 @@ using System.Text.Json;
 using OrderMgmt.Application.Common.Interfaces;
 using OrderMgmt.Application.Common.Models;
 using OrderMgmt.Application.Common.Options;
+using OrderMgmt.Application.Notifications.Interfaces;
 using OrderMgmt.Application.Sales.Quotations.Helpers;
 using OrderMgmt.Application.Sales.Quotations.Interfaces;
 using OrderMgmt.Application.Sales.Quotations.Models;
@@ -41,6 +42,7 @@ public class QuotationService : IQuotationService
     private readonly IOptionsMonitor<FeatureOptions> _features;
     private readonly IQuotationExportPathResolver _templatePathResolver;
     private readonly IHandoverExcelRenderer _handoverRenderer;
+    private readonly INotificationService _notifications;
 
     public QuotationService(
         IAppDbContext db,
@@ -50,7 +52,8 @@ public class QuotationService : IQuotationService
         IQuotationSpreadsheetPdfConverter pdfConverter,
         IOptionsMonitor<FeatureOptions> features,
         IQuotationExportPathResolver templatePathResolver,
-        IHandoverExcelRenderer handoverRenderer)
+        IHandoverExcelRenderer handoverRenderer,
+        INotificationService notifications)
     {
         _db = db;
         _clock = clock;
@@ -60,6 +63,7 @@ public class QuotationService : IQuotationService
         _features = features;
         _templatePathResolver = templatePathResolver;
         _handoverRenderer = handoverRenderer;
+        _notifications = notifications;
     }
 
     private IQueryable<Quotation> ApplyOwnerScope(IQueryable<Quotation> query)
@@ -620,7 +624,43 @@ public class QuotationService : IQuotationService
         ApplyStatusTimestamps(quotation, next);
         AddActivity(quotation, ActivityActionForTransition(action), ActivityDescriptionForTransition(action));
         await _db.SaveChangesAsync(ct);
+        await DispatchQuotationNotificationAsync(quotation, next, ct);
         return await GetAsync(quotation.Id, ct);
+    }
+
+    private static readonly HashSet<QuotationStatus> NotifiableStatuses = new()
+    {
+        QuotationStatus.Confirmed,
+        QuotationStatus.AccountingConfirmed,
+        QuotationStatus.Cancelled,
+    };
+
+    private async Task DispatchQuotationNotificationAsync(
+        Quotation quotation, QuotationStatus newStatus, CancellationToken ct)
+    {
+        if (!NotifiableStatuses.Contains(newStatus)) return;
+
+        var (title, body) = newStatus switch
+        {
+            QuotationStatus.Confirmed           => ("Báo giá đã xác nhận",   $"Báo giá {quotation.Code} đã được xác nhận."),
+            QuotationStatus.AccountingConfirmed => ("Kế toán đã duyệt",      $"Báo giá {quotation.Code} đã được kế toán xác nhận."),
+            QuotationStatus.Cancelled           => ("Báo giá bị hủy",         $"Báo giá {quotation.Code} đã bị hủy."),
+            _                                   => (string.Empty, string.Empty),
+        };
+
+        var link = $"/quotations/{quotation.Id}";
+        const string type = "quotation_status";
+
+        var recipients = await _db.UserRoles
+            .Where(ur => ur.Role!.Code == RoleCodes.Admin && !ur.User!.IsDeleted)
+            .Select(ur => ur.UserId)
+            .ToListAsync(ct);
+
+        if (!recipients.Contains(quotation.OwnerUserId))
+            recipients.Add(quotation.OwnerUserId);
+
+        foreach (var uid in recipients.Distinct())
+            await _notifications.SendAsync(uid, type, title, body, link, ct);
     }
 
     public async Task<QuotationDto> CloneAsync(Guid id, CancellationToken ct = default)

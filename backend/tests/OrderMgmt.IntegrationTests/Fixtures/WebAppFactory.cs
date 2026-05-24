@@ -41,6 +41,9 @@ public class WebAppFactory : WebApplicationFactory<Program>, IAsyncLifetime
                 ["QuotationExport:TemplatePath"] = Path.Combine(AppContext.BaseDirectory, "templates", "template_baogia.xlsx"),
                 ["QuotationExport:LibreOfficePath"] = "soffice",
                 ["QuotationExport:ConversionTimeoutSeconds"] = "60",
+                ["Vapid:PublicKey"] = "",
+                ["Vapid:PrivateKey"] = "",
+                ["Vapid:Subject"] = "mailto:test@test.com",
             });
         });
 

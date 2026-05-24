@@ -10,10 +10,29 @@ namespace OrderMgmt.Application.Notifications.Services;
 public class NotificationService : INotificationService
 {
     private readonly IAppDbContext _db;
+    private readonly IPushSender _push;
 
-    public NotificationService(IAppDbContext db)
+    public NotificationService(IAppDbContext db, IPushSender push)
     {
         _db = db;
+        _push = push;
+    }
+
+    public async Task SendAsync(Guid userId, string type, string title, string? body, string? link, CancellationToken ct = default)
+    {
+        var notification = new Notification
+        {
+            UserId = userId,
+            Type = type,
+            Title = title,
+            Body = body,
+            Link = link,
+            CreatedAt = DateTimeOffset.UtcNow,
+        };
+        _db.Notifications.Add(notification);
+        await _db.SaveChangesAsync(ct);
+
+        await _push.SendAsync(userId, title, body ?? string.Empty, link ?? "/", ct);
     }
 
     public async Task<List<NotificationDto>> ListAsync(Guid userId, bool unreadOnly, int limit, CancellationToken ct = default)

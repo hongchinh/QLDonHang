@@ -48,6 +48,7 @@ public class AppDbContext : DbContext, IAppDbContext
     public DbSet<QuotationSystemSettings> QuotationSystemSettings => Set<QuotationSystemSettings>();
 
     public DbSet<Notification> Notifications => Set<Notification>();
+    public DbSet<PushSubscription> PushSubscriptions => Set<PushSubscription>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
