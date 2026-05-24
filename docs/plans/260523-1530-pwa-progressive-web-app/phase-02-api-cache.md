@@ -30,6 +30,9 @@ declare const self: ServiceWorkerGlobalScope
 precacheAndRoute(self.__WB_MANIFEST)
 cleanupOutdatedCaches()
 
+// Matching theo pathname — hoạt động đúng khi API ở cùng origin (proxied).
+// Nếu production deploy với API trên subdomain/domain khác, cần đổi thành
+// match theo full URL: ({ url }) => url.hostname === 'api.yourdomain.com'
 registerRoute(
   ({ url }) => url.pathname.startsWith('/api/'),
   new NetworkFirst({

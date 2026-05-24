@@ -26,6 +26,13 @@ import { renderHook, act } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { usePushNotification } from './usePushNotification'
 
+vi.mock('@/features/push/api', () => ({
+  pushApi: {
+    subscribe: vi.fn().mockResolvedValue(undefined),
+    unsubscribe: vi.fn().mockResolvedValue(undefined),
+  },
+}))
+
 // Stub browser APIs
 function stubNotificationPermission(permission: NotificationPermission) {
   Object.defineProperty(Notification, 'permission', { value: permission, configurable: true })
@@ -55,7 +62,6 @@ function stubPushManager(subscribeResult: PushSubscription | null = null) {
 
 describe('usePushNotification', () => {
   beforeEach(() => {
-    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: true }))
     Object.defineProperty(window, 'Notification', {
       value: { permission: 'default', requestPermission: vi.fn().mockResolvedValue('granted') },
       configurable: true,
@@ -150,6 +156,11 @@ export function usePushNotification(vapidPublicKey: string) {
 
   const subscribe = useCallback(async () => {
     if (!('Notification' in window) || !('serviceWorker' in navigator)) {
+      setState('unsupported')
+      return
+    }
+
+    if (!vapidPublicKey) {
       setState('unsupported')
       return
     }
@@ -393,16 +404,28 @@ grep -r "NotificationsController\|unread-count\|notification" frontend/src --inc
 import { usePushNotification } from '@/hooks/usePushNotification'
 import { PushPermissionPrompt } from '@/components/PushPermissionPrompt'
 
+const PUSH_DISMISS_KEY = 'push_prompt_dismissed_until'
+
 const vapidKey = import.meta.env.VITE_VAPID_PUBLIC_KEY
 const { state, subscribe } = usePushNotification(vapidKey)
-const [dismissed, setDismissed] = useState(false)
+
+const [dismissed, setDismissed] = useState(() => {
+  const until = localStorage.getItem(PUSH_DISMISS_KEY)
+  return until ? Date.now() < Number(until) : false
+})
+
+const handleDismiss = () => {
+  const until = Date.now() + 30 * 24 * 60 * 60 * 1000 // 30 ngày
+  localStorage.setItem(PUSH_DISMISS_KEY, String(until))
+  setDismissed(true)
+}
 
 // Trong JSX (ví dụ: phía dưới notification bell):
 {!dismissed && (
   <PushPermissionPrompt
     state={state}
     onEnable={subscribe}
-    onDismiss={() => setDismissed(true)}
+    onDismiss={handleDismiss}
   />
 )}
 ```

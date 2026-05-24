@@ -236,6 +236,7 @@ public class VapidOptions
 
 ```csharp
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using OrderMgmt.Application.Common.Interfaces;
 using OrderMgmt.Application.Notifications.Interfaces;
@@ -247,11 +248,13 @@ public class PushSenderService : IPushSender
 {
     private readonly IAppDbContext _db;
     private readonly IOptions<VapidOptions> _vapid;
+    private readonly ILogger<PushSenderService> _logger;
 
-    public PushSenderService(IAppDbContext db, IOptions<VapidOptions> vapid)
+    public PushSenderService(IAppDbContext db, IOptions<VapidOptions> vapid, ILogger<PushSenderService> logger)
     {
         _db = db;
         _vapid = vapid;
+        _logger = logger;
     }
 
     public async Task SendAsync(Guid userId, string title, string body, string url, CancellationToken ct = default)
@@ -285,9 +288,9 @@ public class PushSenderService : IPushSender
             {
                 toDelete.Add(sub);
             }
-            catch
+            catch (Exception ex)
             {
-                // Log and continue — one failed device should not block others
+                _logger.LogWarning(ex, "Failed to send push notification to endpoint {Endpoint}", sub.Endpoint);
             }
         }
 
@@ -510,6 +513,7 @@ Verify migration content: phải có `CreateTable("push_subscriptions", ...)` v�
 **Tạo file** `backend/src/OrderMgmt.WebApi/Controllers/PushSubscriptionController.cs`:
 
 ```csharp
+using System.ComponentModel.DataAnnotations;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -545,21 +549,27 @@ public class PushSubscriptionController : ApiControllerBase
 
         if (existing is not null)
         {
-            existing.P256DH = request.P256DH;
-            existing.Auth = request.Auth;
-            existing.UpdatedAt = DateTimeOffset.UtcNow;
-        }
-        else
-        {
-            _db.PushSubscriptions.Add(new PushSubscription
+            // Nếu endpoint đã thuộc về user khác (shared device), xóa rồi tạo mới
+            if (existing.UserId != CurrentUserId)
+                _db.PushSubscriptions.Remove(existing);
+            else
             {
-                UserId = CurrentUserId,
-                Endpoint = request.Endpoint,
-                P256DH = request.P256DH,
-                Auth = request.Auth,
-                CreatedAt = DateTimeOffset.UtcNow,
-            });
+                existing.P256DH = request.P256DH;
+                existing.Auth = request.Auth;
+                existing.UpdatedAt = DateTimeOffset.UtcNow;
+                await _db.SaveChangesAsync(ct);
+                return Success();
+            }
         }
+
+        _db.PushSubscriptions.Add(new PushSubscription
+        {
+            UserId = CurrentUserId,
+            Endpoint = request.Endpoint,
+            P256DH = request.P256DH,
+            Auth = request.Auth,
+            CreatedAt = DateTimeOffset.UtcNow,
+        });
 
         await _db.SaveChangesAsync(ct);
         return Success();
@@ -582,8 +592,12 @@ public class PushSubscriptionController : ApiControllerBase
         return Success();
     }
 
-    public record SubscribeRequest(string Endpoint, string P256DH, string Auth);
-    public record UnsubscribeRequest(string Endpoint);
+    public record SubscribeRequest(
+        [Required, MaxLength(2048)] string Endpoint,
+        [Required, MaxLength(512)] string P256DH,
+        [Required, MaxLength(256)] string Auth);
+
+    public record UnsubscribeRequest([Required, MaxLength(2048)] string Endpoint);
 }
 ```
 
@@ -659,11 +673,8 @@ private async Task DispatchQuotationNotificationAsync(
     if (!recipients.Contains(quotation.OwnerUserId))
         recipients.Add(quotation.OwnerUserId);
 
-    var tasks = recipients
-        .Distinct()
-        .Select(uid => _notifications.SendAsync(uid, type, title, body, link, ct));
-
-    await Task.WhenAll(tasks);
+    foreach (var uid in recipients.Distinct())
+        await _notifications.SendAsync(uid, type, title, body, link, ct);
 }
 ```
 

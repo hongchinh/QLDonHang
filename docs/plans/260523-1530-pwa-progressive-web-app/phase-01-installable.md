@@ -127,11 +127,10 @@ git commit -m "chore: split vitest.config.ts from vite.config.ts for VitePWA com
 
 ```bash
 cd frontend
-npm install --save-dev vite-plugin-pwa
-npm install workbox-core workbox-precaching workbox-routing workbox-strategies workbox-expiration
+npm install --save-dev vite-plugin-pwa workbox-core workbox-precaching workbox-routing workbox-strategies workbox-expiration
 ```
 
-2. **Verify** `package.json`: `vite-plugin-pwa` trong `devDependencies`, 5 workbox packages trong `dependencies`.
+2. **Verify** `package.json`: tất cả 6 packages trong `devDependencies` (workbox được bundle vào `sw.js` tại build time, không phải runtime dep của app).
 
 3. **Commit:**
 
@@ -208,17 +207,9 @@ self.addEventListener('message', (event) => {
 ```typescript
 /// <reference types="vite/client" />
 /// <reference types="vite-plugin-pwa/client" />
-
-declare module 'workbox-precaching' {
-  interface ManifestEntry {
-    url: string
-    revision: string | null
-  }
-  const __WB_MANIFEST: ManifestEntry[]
-}
 ```
 
-Hoặc nếu `workbox-precaching` types đã tự expose `__WB_MANIFEST`, bỏ qua phần `declare module`.
+`vite-plugin-pwa/client` đã declare `__WB_MANIFEST` — không cần thêm `declare module 'workbox-precaching'` (sẽ override types hiện có và gây conflict).
 
 ---
 
@@ -575,7 +566,7 @@ const {
       >
         Cập nhật ngay
       </button>
-      <button onClick={() => setNeedRefresh(false)} className="text-gray-400 hover:text-white">✕</button>
+      <button onClick={() => setNeedRefresh(false)} aria-label="Đóng" className="text-gray-400 hover:text-white">✕</button>
     </div>
   )}
   {/* ... rest of app */}
