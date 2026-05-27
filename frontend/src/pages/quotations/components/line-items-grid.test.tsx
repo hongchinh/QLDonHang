@@ -1,4 +1,5 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { useForm } from 'react-hook-form';
 import { LineItemsGrid } from './line-items-grid';
 import type {
@@ -94,6 +95,32 @@ describe('LineItemsGrid', () => {
     expect(screen.getByText(/Tổng thành tiền bán:\s*250\s*₫/)).toBeInTheDocument();
     expect(screen.queryByText(/Tổng thành tiền nhập:/)).not.toBeInTheDocument();
     expect(screen.queryByText(/Tổng lợi nhuận:/)).not.toBeInTheDocument();
+  });
+
+  it('formats quantity values with comma groups and dot decimals', () => {
+    renderGrid([
+      { ...baseLines[0], quantity: 2 },
+      { ...baseLines[1], quantity: 44545.45 },
+    ]);
+
+    expect(screen.getByDisplayValue('2')).toBeInTheDocument();
+    expect(screen.getByDisplayValue('44,545.45')).toBeInTheDocument();
+  });
+
+  it('keeps dot decimal text while editing quantity', async () => {
+    const user = userEvent.setup();
+    renderGrid([{ ...baseLines[0], quantity: 1 }]);
+    const quantityInput = screen.getByLabelText('Số lượng');
+
+    await user.click(quantityInput);
+    await user.clear(quantityInput);
+    await user.type(quantityInput, '44545.45');
+    expect(quantityInput).toHaveValue('44545.45');
+
+    await user.tab();
+    await waitFor(() => {
+      expect(screen.getByLabelText('Số lượng')).toHaveValue('44,545.45');
+    });
   });
 
   it('renders sales amount header and hides cost columns without cost permission', () => {

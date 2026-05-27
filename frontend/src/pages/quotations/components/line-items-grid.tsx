@@ -15,6 +15,11 @@ import './line-items-grid.css';
 
 const fmt = new Intl.NumberFormat('vi-VN');
 const vnd = new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND', maximumFractionDigits: 0 });
+const quantityIntegerFmt = new Intl.NumberFormat('en-US', { maximumFractionDigits: 0 });
+const quantityDecimalFmt = new Intl.NumberFormat('en-US', {
+  minimumFractionDigits: 2,
+  maximumFractionDigits: 2,
+});
 
 const LINE_FOCUS_FIELDS = [
   'product-code',
@@ -97,6 +102,8 @@ export const LineItemsGrid = forwardRef<LineItemsGridHandle, Props>(function Lin
   const wrapRef = useRef<HTMLDivElement>(null);
   const [activeRowIndex, setActiveRowIndex] = useState<number | null>(null);
   const [editingMoneyCellId, setEditingMoneyCellId] = useState<string | null>(null);
+  const [editingQuantityCellId, setEditingQuantityCellId] = useState<string | null>(null);
+  const [editingQuantityText, setEditingQuantityText] = useState('');
   const [clearAllOpen, setClearAllOpen] = useState(false);
   const canViewCost = useAuthStore((s) => s.hasPermission('quotations.view_cost'));
 
@@ -265,6 +272,8 @@ export const LineItemsGrid = forwardRef<LineItemsGridHandle, Props>(function Lin
               const line = rows[idx] ?? (field as unknown as QuotationLineFormValues);
               const lineLike = toLineLike(line);
               const effectiveQuantity = computeLineQuantity(lineLike);
+              const quantityCellId = getLineCellId('quantity', idx);
+              const quantityValue = line.pricingMode === 'PerUnit' ? line.quantity : effectiveQuantity;
               const lineTotal = computeLineTotal(lineLike);
               const lineCost = computeLineCost(lineLike);
               const lineProfit = lineCost != null ? lineTotal - lineCost : undefined;
@@ -374,14 +383,32 @@ export const LineItemsGrid = forwardRef<LineItemsGridHandle, Props>(function Lin
                   </td>
                   <td className="cell-number">
                     <input
-                      id={getLineCellId('quantity', idx)}
+                      id={quantityCellId}
                       className="cell-input cell-number"
-                      type="number"
-                      step="any"
+                      type="text"
+                      inputMode="decimal"
                       aria-label="Số lượng"
                       disabled={isLineFocusFieldDisabled(line, 'quantity')}
-                      value={numInput(line.pricingMode === 'PerUnit' ? line.quantity : effectiveQuantity)}
-                      onChange={(e) => setLineField(idx, 'quantity', (parseNum(e.target.value) ?? 0) as never)}
+                      value={
+                        editingQuantityCellId === quantityCellId
+                          ? editingQuantityText
+                          : formatQuantityForDisplay(quantityValue)
+                      }
+                      onFocus={() => {
+                        setEditingQuantityCellId(quantityCellId);
+                        setEditingQuantityText(formatQuantityForEditing(quantityValue));
+                      }}
+                      onBlur={(e) => {
+                        const parsed = parseQuantityInput(e.currentTarget.value);
+                        if (parsed !== undefined) {
+                          setLineField(idx, 'quantity', parsed as never);
+                        }
+                        setEditingQuantityCellId(null);
+                        setEditingQuantityText('');
+                      }}
+                      onChange={(e) => {
+                        setEditingQuantityText(e.target.value);
+                      }}
                     />
                   </td>
                   <td className="cell-number">
@@ -518,6 +545,27 @@ function parseNum(v: string): number | undefined {
   if (v === '') return undefined;
   const n = Number(v);
   return Number.isFinite(n) ? n : undefined;
+}
+
+function parseQuantityInput(text: string): number | undefined {
+  const trimmed = text.trim();
+  if (trimmed === '') return undefined;
+  if (!/^-?\d*(?:\.\d*)?$/.test(trimmed)) return undefined;
+  const n = Number(trimmed);
+  return Number.isFinite(n) ? n : undefined;
+}
+
+function formatQuantityForEditing(value: unknown): string {
+  if (value === undefined || value === null || value === '') return '';
+  const n = typeof value === 'number' ? value : Number(value);
+  return Number.isFinite(n) ? String(n) : '';
+}
+
+function formatQuantityForDisplay(value: unknown): string {
+  if (value === undefined || value === null || value === '') return '';
+  const n = typeof value === 'number' ? value : Number(value);
+  if (!Number.isFinite(n)) return '';
+  return Number.isInteger(n) ? quantityIntegerFmt.format(n) : quantityDecimalFmt.format(n);
 }
 
 function numInput(v: unknown): string | number {
