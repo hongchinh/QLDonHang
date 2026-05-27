@@ -18,6 +18,9 @@ export interface QuotationLine {
   sortOrder: number;
   productId?: string;
   productCode?: string;
+  productGroupCode?: string;
+  productGroupName?: string;
+  productGroupSortOrder?: number;
   productName: string;
   specification?: string;
   unitName: string;

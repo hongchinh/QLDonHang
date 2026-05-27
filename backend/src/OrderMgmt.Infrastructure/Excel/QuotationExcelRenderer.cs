@@ -12,10 +12,11 @@ public class QuotationExcelRenderer : IQuotationExcelRenderer
     private const int FirstSampleRow = 15;
     private const int SampleRowCount = 2;
 
-    // Offset từ summaryRow đến các dòng tạm ứng/còn lại trong template_baogia.xlsx.
-    // Nếu template thay đổi cấu trúc, cập nhật cả 2 constants này.
-    internal const int AdvancePaymentRowOffset = 1;
-    internal const int RemainingBalanceRowOffset = 2;
+    // Offsets from the subtotal row in template_baogia.xlsx.
+    internal const int TaxRowOffset = 1;
+    internal const int TotalRowOffset = 2;
+    internal const int AdvancePaymentRowOffset = 3;
+    internal const int RemainingBalanceRowOffset = 4;
 
     private readonly IOptions<QuotationExportOptions> _options;
 
@@ -106,8 +107,11 @@ public class QuotationExcelRenderer : IQuotationExcelRenderer
 
     private static void FillSummaryTotals(IXLWorksheet ws, int summaryRow, QuotationDto q)
     {
+        ws.Cell(summaryRow + TaxRowOffset, 6).SetValue((double)(q.TaxRate / 100m));
+        ws.Cell(summaryRow + TaxRowOffset, 7).SetValue((double)q.TaxAmount);
+        ws.Cell(summaryRow + TotalRowOffset, 7).SetValue((double)(q.Subtotal + q.TaxAmount));
         ws.Cell(summaryRow + AdvancePaymentRowOffset, 7).SetValue((double)q.AdvancePayment);
-        ws.Cell(summaryRow + RemainingBalanceRowOffset, 7).SetValue((double)(q.Total - q.AdvancePayment));
+        ws.Cell(summaryRow + RemainingBalanceRowOffset, 7).SetValue((double)(q.Subtotal + q.TaxAmount - q.AdvancePayment));
     }
 
     private static void FillItemRow(IXLWorksheet ws, int row, int index, QuotationLineDto line)
@@ -167,16 +171,22 @@ public class QuotationExcelRenderer : IQuotationExcelRenderer
     private static string FormatProductNames(QuotationDto q)
     {
         var names = q.Lines
-            .Where(l => !IsShippingLine(l))
-            .Select(l => l.ProductName)
-            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .Where(l => !IsShippingGroup(l))
+            .Where(l => !string.IsNullOrWhiteSpace(l.ProductGroupName))
+            .GroupBy(l => l.ProductGroupName!.Trim(), StringComparer.OrdinalIgnoreCase)
+            .OrderBy(g => g.Min(l => l.ProductGroupSortOrder ?? int.MaxValue))
+            .ThenBy(g => g.Key, StringComparer.Create(new CultureInfo("vi-VN"), ignoreCase: true))
+            .Select(g => g.Key)
             .ToList();
         return $"Hàng hóa cung cấp: {string.Join(", ", names)}";
     }
 
-    private static bool IsShippingLine(QuotationLineDto line)
+    private static bool IsShippingGroup(QuotationLineDto line)
     {
-        var name = line.ProductName ?? string.Empty;
+        if (string.Equals(line.ProductGroupCode, "VC", StringComparison.OrdinalIgnoreCase))
+            return true;
+
+        var name = line.ProductGroupName ?? string.Empty;
         return ContainsIgnoreAccent(name, "vận chuyển") || ContainsIgnoreAccent(name, "van chuyen");
     }
 

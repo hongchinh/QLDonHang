@@ -1,12 +1,17 @@
 using System.Net;
 using System.Net.Http.Json;
+using ClosedXML.Excel;
 using FluentAssertions;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using OrderMgmt.Application.Common.Models;
 using OrderMgmt.Application.Identity.Models;
 using OrderMgmt.Application.Sales.Quotations.Interfaces;
 using OrderMgmt.Application.Sales.Quotations.Models;
+using OrderMgmt.Domain.Entities.Catalog;
+using OrderMgmt.Domain.Enums;
+using OrderMgmt.Infrastructure.Persistence;
 using OrderMgmt.IntegrationTests.Fixtures;
 using Xunit;
 
@@ -45,6 +50,139 @@ public class HandoverExportTests : QuotationTestBase
         response.Content.Headers.ContentType!.MediaType.Should().Be(
             "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
         (await response.Content.ReadAsByteArrayAsync()).Should().NotBeEmpty();
+    }
+
+    [Fact]
+    public async Task HandoverWithPrice_WritesTaxRateToTaxRow()
+    {
+        var request = BuildRequest(
+            new UpsertQuotationLineRequest
+            {
+                SortOrder = 0,
+                ProductId = _productId,
+                ProductName = "Test EPS 1",
+                UnitName = "Tấm",
+                PricingMode = PricingMode.PerUnit,
+                Quantity = 1,
+                UnitPrice = 10_000,
+            },
+            new UpsertQuotationLineRequest
+            {
+                SortOrder = 1,
+                ProductId = _productId,
+                ProductName = "Test EPS 2",
+                UnitName = "Tấm",
+                PricingMode = PricingMode.PerUnit,
+                Quantity = 1,
+                UnitPrice = 20_000,
+            },
+            new UpsertQuotationLineRequest
+            {
+                SortOrder = 2,
+                ProductId = _productId,
+                ProductName = "Test EPS 3",
+                UnitName = "Tấm",
+                PricingMode = PricingMode.PerUnit,
+                Quantity = 1,
+                UnitPrice = 30_000,
+            });
+        request.TaxRate = 8;
+
+        var create = await _client.PostAsJsonAsync("/api/quotations", request);
+        var created = await create.Content.ReadFromJsonAsync<ApiResponse<QuotationDto>>(TestJson.Options);
+        var id = created!.Data!.Id;
+
+        var response = await _client.GetAsync($"/api/quotations/{id}/handover-with-price/excel");
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var bytes = await response.Content.ReadAsByteArrayAsync();
+
+        using var wb = new XLWorkbook(new MemoryStream(bytes));
+        var ws = wb.Worksheet(1);
+
+        ws.Cell("E18").GetDouble().Should().Be(0.08d);
+        ws.Cell("F18").GetDouble().Should().Be(4_800d);
+        ws.Cell("F19").GetDouble().Should().Be(64_800d);
+    }
+
+    [Fact]
+    public async Task Handover_ProductSummary_UsesCurrentProductGroupsAndExcludesShippingGroup()
+    {
+        Guid xpsProductId;
+        Guid shippingProductId;
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            var xpsGroupId = (await db.ProductGroups.FirstAsync(g => g.Code == "XPS")).Id;
+            var shippingGroupId = (await db.ProductGroups.FirstAsync(g => g.Code == "VC")).Id;
+
+            var xps = new Product
+            {
+                Code = "HH-HANDOVER-XPS",
+                Name = "Handover XPS",
+                ProductGroupId = xpsGroupId,
+                UnitId = _unitId,
+                DefaultPrice = 20_000,
+                Status = ProductStatus.Active,
+                PricingMode = PricingMode.PerUnit,
+            };
+            var shipping = new Product
+            {
+                Code = "HH-HANDOVER-SHIP",
+                Name = "Handover shipping",
+                ProductGroupId = shippingGroupId,
+                UnitId = _unitId,
+                DefaultPrice = 10_000,
+                Status = ProductStatus.Active,
+                PricingMode = PricingMode.PerUnit,
+            };
+            db.Products.AddRange(xps, shipping);
+            await db.SaveChangesAsync();
+            xpsProductId = xps.Id;
+            shippingProductId = shipping.Id;
+        }
+
+        var create = await _client.PostAsJsonAsync("/api/quotations", BuildRequest(
+            new UpsertQuotationLineRequest
+            {
+                SortOrder = 0,
+                ProductId = _productId,
+                ProductName = "Custom EPS name",
+                UnitName = "Tấm",
+                PricingMode = PricingMode.PerUnit,
+                Quantity = 1,
+                UnitPrice = 12_000,
+            },
+            new UpsertQuotationLineRequest
+            {
+                SortOrder = 1,
+                ProductId = xpsProductId,
+                ProductName = "Custom XPS name",
+                UnitName = "Tấm",
+                PricingMode = PricingMode.PerUnit,
+                Quantity = 1,
+                UnitPrice = 20_000,
+            },
+            new UpsertQuotationLineRequest
+            {
+                SortOrder = 2,
+                ProductId = shippingProductId,
+                ProductName = "Phí giao hàng",
+                UnitName = "Lần",
+                PricingMode = PricingMode.PerUnit,
+                Quantity = 1,
+                UnitPrice = 10_000,
+            }));
+        var created = await create.Content.ReadFromJsonAsync<ApiResponse<QuotationDto>>(TestJson.Options);
+        var id = created!.Data!.Id;
+
+        var response = await _client.GetAsync($"/api/quotations/{id}/handover-with-price/excel");
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var bytes = await response.Content.ReadAsByteArrayAsync();
+
+        using var wb = new XLWorkbook(new MemoryStream(bytes));
+        var summary = wb.Worksheet(1).Cell("B12").GetString();
+
+        summary.Should().Be("Hàng hóa cung cấp: Tấm xốp EPS, Tấm xốp XPS");
     }
 
     [Fact]

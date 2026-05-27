@@ -4,12 +4,16 @@ using System.Net.Http.Json;
 using ClosedXML.Excel;
 using FluentAssertions;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using OrderMgmt.Application.Common.Models;
 using OrderMgmt.Application.Identity.Models;
 using OrderMgmt.Application.Sales.Quotations.Interfaces;
 using OrderMgmt.Application.Sales.Quotations.Models;
+using OrderMgmt.Domain.Entities.Catalog;
+using OrderMgmt.Domain.Enums;
 using OrderMgmt.Infrastructure.Excel;
+using OrderMgmt.Infrastructure.Persistence;
 using OrderMgmt.IntegrationTests.Fixtures;
 using Xunit;
 
@@ -79,12 +83,99 @@ public class QuotationExportTests : QuotationTestBase
 
         // summaryRow với 1 item line = FirstSampleRow(15) + 1 = 16
         const int summaryRow = 16;
+        var taxRateCell = ws.Cell(summaryRow + QuotationExcelRenderer.TaxRowOffset, 6);
+        var taxAmountCell = ws.Cell(summaryRow + QuotationExcelRenderer.TaxRowOffset, 7);
+        var totalCell = ws.Cell(summaryRow + QuotationExcelRenderer.TotalRowOffset, 7);
         var advanceCell = ws.Cell(summaryRow + QuotationExcelRenderer.AdvancePaymentRowOffset, 7);
         var remainingCell = ws.Cell(summaryRow + QuotationExcelRenderer.RemainingBalanceRowOffset, 7);
 
+        taxRateCell.GetDouble().Should().Be(0.08d);
+        taxAmountCell.GetDouble().Should().Be(4_800d);
+        totalCell.GetDouble().Should().Be(64_800d);
         advanceCell.GetDouble().Should().Be(50_000d);
-        // Total = 5 * 12000 = 60000, AdvancePayment = 50000, Remaining = 10000
-        remainingCell.GetDouble().Should().Be(10_000d);
+        // Subtotal = 5 * 12000 = 60000, VAT = 4800, advance = 50000, remaining = 14800
+        remainingCell.GetDouble().Should().Be(14_800d);
+    }
+
+    [Fact]
+    public async Task Excel_ProductSummary_UsesCurrentProductGroupsAndExcludesShippingGroup()
+    {
+        Guid xpsProductId;
+        Guid shippingProductId;
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            var xpsGroupId = (await db.ProductGroups.FirstAsync(g => g.Code == "XPS")).Id;
+            var shippingGroupId = (await db.ProductGroups.FirstAsync(g => g.Code == "VC")).Id;
+
+            var xps = new Product
+            {
+                Code = "HH-TEST-XPS",
+                Name = "Test XPS",
+                ProductGroupId = xpsGroupId,
+                UnitId = _unitId,
+                DefaultPrice = 20_000,
+                Status = ProductStatus.Active,
+                PricingMode = PricingMode.PerUnit,
+            };
+            var shipping = new Product
+            {
+                Code = "HH-TEST-SHIP",
+                Name = "Phí giao hàng",
+                ProductGroupId = shippingGroupId,
+                UnitId = _unitId,
+                DefaultPrice = 10_000,
+                Status = ProductStatus.Active,
+                PricingMode = PricingMode.PerUnit,
+            };
+            db.Products.AddRange(xps, shipping);
+            await db.SaveChangesAsync();
+            xpsProductId = xps.Id;
+            shippingProductId = shipping.Id;
+        }
+
+        var create = await _client.PostAsJsonAsync("/api/quotations", BuildRequest(
+            new UpsertQuotationLineRequest
+            {
+                SortOrder = 0,
+                ProductId = _productId,
+                ProductName = "Custom EPS name",
+                UnitName = "Tấm",
+                PricingMode = PricingMode.PerUnit,
+                Quantity = 1,
+                UnitPrice = 12_000,
+            },
+            new UpsertQuotationLineRequest
+            {
+                SortOrder = 1,
+                ProductId = xpsProductId,
+                ProductName = "Custom XPS name",
+                UnitName = "Tấm",
+                PricingMode = PricingMode.PerUnit,
+                Quantity = 1,
+                UnitPrice = 20_000,
+            },
+            new UpsertQuotationLineRequest
+            {
+                SortOrder = 2,
+                ProductId = shippingProductId,
+                ProductName = "Phí giao hàng",
+                UnitName = "Lần",
+                PricingMode = PricingMode.PerUnit,
+                Quantity = 1,
+                UnitPrice = 10_000,
+            }));
+        var created = await create.Content.ReadFromJsonAsync<ApiResponse<QuotationDto>>(TestJson.Options);
+        var id = created!.Data!.Id;
+
+        var response = await _client.GetAsync($"/api/quotations/{id}/excel");
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var bytes = await response.Content.ReadAsByteArrayAsync();
+
+        using var wb = new XLWorkbook(new MemoryStream(bytes));
+        var summary = wb.Worksheet(1).Cell("B13").GetString();
+
+        summary.Should().Be("Hàng hóa cung cấp: Tấm xốp EPS, Tấm xốp XPS");
     }
 
     private static async Task AuthenticateClientAsync(HttpClient client)

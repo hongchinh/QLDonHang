@@ -316,6 +316,8 @@ public class QuotationService : IQuotationService
         var quotation = await _db.Quotations
             .AsNoTracking()
             .Include(q => q.Lines.OrderBy(l => l.SortOrder))
+                .ThenInclude(l => l.Product)
+                    .ThenInclude(p => p!.ProductGroup)
             .FirstOrDefaultAsync(q => q.Id == id && !q.IsDeleted, ct)
             ?? throw new NotFoundException(nameof(Quotation), id);
 
@@ -1089,6 +1091,9 @@ public class QuotationService : IQuotationService
                 SortOrder = l.SortOrder,
                 ProductId = l.ProductId,
                 ProductCode = l.ProductCode,
+                ProductGroupCode = l.Product?.ProductGroup?.Code,
+                ProductGroupName = l.Product?.ProductGroup?.Name,
+                ProductGroupSortOrder = l.Product?.ProductGroup?.SortOrder,
                 ProductName = l.ProductName,
                 Specification = l.Specification,
                 UnitName = l.UnitName,

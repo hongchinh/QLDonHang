@@ -161,10 +161,11 @@ public sealed class HandoverExcelRenderer : IHandoverExcelRenderer
             ws.Cell(summaryRow + SubtotalRowOffset, ColTotal).SetValue(0);
         }
 
-        // Tax and Total rows already have formulas in the template; leave them unless values need forcing.
-        // Advance payment and remaining balance are filled from the DTO.
+        ws.Cell(summaryRow + TaxRowOffset, ColUnitPrice).SetValue((double)(q.TaxRate / 100m));
+        ws.Cell(summaryRow + TaxRowOffset, ColTotal).SetValue((double)q.TaxAmount);
+        ws.Cell(summaryRow + TotalRowOffset, ColTotal).SetValue((double)(q.Subtotal + q.TaxAmount));
         ws.Cell(summaryRow + AdvancePaymentRowOffset, ColTotal).SetValue((double)q.AdvancePayment);
-        ws.Cell(summaryRow + RemainingRowOffset, ColTotal).SetValue((double)(q.Total - q.AdvancePayment));
+        ws.Cell(summaryRow + RemainingRowOffset, ColTotal).SetValue((double)(q.Subtotal + q.TaxAmount - q.AdvancePayment));
     }
 
     private static void FillNoPriceFooter(IXLWorksheet ws, int summaryRow, QuotationDto q, int n)
@@ -217,16 +218,22 @@ public sealed class HandoverExcelRenderer : IHandoverExcelRenderer
     private static string FormatProductNames(QuotationDto q)
     {
         var names = q.Lines
-            .Where(l => !IsShippingLine(l))
-            .Select(l => l.ProductName)
-            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .Where(l => !IsShippingGroup(l))
+            .Where(l => !string.IsNullOrWhiteSpace(l.ProductGroupName))
+            .GroupBy(l => l.ProductGroupName!.Trim(), StringComparer.OrdinalIgnoreCase)
+            .OrderBy(g => g.Min(l => l.ProductGroupSortOrder ?? int.MaxValue))
+            .ThenBy(g => g.Key, StringComparer.Create(new CultureInfo("vi-VN"), ignoreCase: true))
+            .Select(g => g.Key)
             .ToList();
         return $"Hàng hóa cung cấp: {string.Join(", ", names)}";
     }
 
-    private static bool IsShippingLine(QuotationLineDto line)
+    private static bool IsShippingGroup(QuotationLineDto line)
     {
-        var name = line.ProductName ?? string.Empty;
+        if (string.Equals(line.ProductGroupCode, "VC", StringComparison.OrdinalIgnoreCase))
+            return true;
+
+        var name = line.ProductGroupName ?? string.Empty;
         return ContainsIgnoreAccent(name, "vận chuyển") || ContainsIgnoreAccent(name, "van chuyen");
     }
 

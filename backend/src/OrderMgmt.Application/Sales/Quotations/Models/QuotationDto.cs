@@ -86,6 +86,9 @@ public class QuotationLineDto
 
     public Guid? ProductId { get; set; }
     public string? ProductCode { get; set; }
+    public string? ProductGroupCode { get; set; }
+    public string? ProductGroupName { get; set; }
+    public int? ProductGroupSortOrder { get; set; }
     public string ProductName { get; set; } = default!;
     public string? Specification { get; set; }
     public string UnitName { get; set; } = default!;

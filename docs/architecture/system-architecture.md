@@ -74,7 +74,7 @@ Quotation status flow is `Draft -> Sent -> Confirmed -> Cancelled`.
 - Transfer actions write `QuotationOwnerHistory`.
 - Nhân bản (Clone) creates a Draft copy owned by the current user; orphan-source cloning requires `quotations.clone_orphan`.
 - Confirmed quotations store confirmation metadata and feed revenue reports.
-- Export supports Excel and PDF. Excel rendering uses ClosedXML; PDF conversion uses LibreOffice. Per-user templates are stored under `templates/users`, with fallback to `QuotationExport:TemplatePath`.
+- Export supports Excel and PDF. Excel rendering uses ClosedXML; PDF conversion uses LibreOffice. Template paths in `QuotationExport` are resolved relative to `AppContext.BaseDirectory` unless configured as absolute paths. In local Debug runs this means `templates/...` points under `backend/src/OrderMgmt.WebApi/bin/Debug/net9.0/`. Per-user quotation templates are stored under `QuotationExport:UserTemplatesPath` (default `templates/users`) as `{userId}.xlsx`, with fallback to `QuotationExport:TemplatePath`. Per-user handover templates use `{userId}_handover_with_price.xlsx` or `{userId}_handover_no_price.xlsx`, with fallback to the corresponding system handover template path.
 
 ### Dashboard, Reports, Search, Branding And Notifications
 
