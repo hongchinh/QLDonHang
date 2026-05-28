@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
+import { renderHook } from '@testing-library/react';
 import type { SalesRevenueLineItemDto } from '@/features/reports/sales-revenue-detail/types';
-import { calculateRevenueTotals } from './sales-revenue-detail-page';
+import { calculateRevenueTotals, useRevenueTotals } from './sales-revenue-detail-page';
 
 describe('calculateRevenueTotals', () => {
   it('returns zero totals for empty items array', () => {
@@ -70,6 +71,18 @@ describe('calculateRevenueTotals', () => {
     ];
     const totals = calculateRevenueTotals(items);
     expect(totals.lineProfit).toBe(500);
+  });
+});
+
+describe('useRevenueTotals hook', () => {
+  it('returns totals from items using useMemo', () => {
+    const items: SalesRevenueLineItemDto[] = [
+      createMockItem({ quantity: 5, lineTotal: 500 }),
+      createMockItem({ quantity: 3, lineTotal: 300 }),
+    ];
+    const { result } = renderHook(() => useRevenueTotals(items));
+    expect(result.current.quantity).toBe(8);
+    expect(result.current.lineTotal).toBe(800);
   });
 });
 

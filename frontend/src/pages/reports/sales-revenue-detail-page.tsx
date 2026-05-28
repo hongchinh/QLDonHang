@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import { useNavigate, useParams, useSearchParams, useLocation } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
@@ -34,6 +35,10 @@ function calculateRevenueTotals(items: SalesRevenueLineItemDto[]): RevenueTotals
     lineCost: items.reduce((sum, item) => sum + (item.lineCost ?? 0), 0),
     lineProfit: items.reduce((sum, item) => sum + (item.lineProfit ?? 0), 0),
   };
+}
+
+function useRevenueTotals(items: SalesRevenueLineItemDto[]): RevenueTotals {
+  return useMemo(() => calculateRevenueTotals(items), [items]);
 }
 
 function formatDate(value: string | null | undefined): string {
@@ -184,4 +189,4 @@ export function SalesRevenueDetailPage() {
   );
 }
 
-export { calculateRevenueTotals };
+export { calculateRevenueTotals, useRevenueTotals };
