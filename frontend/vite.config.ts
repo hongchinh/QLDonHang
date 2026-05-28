@@ -1,4 +1,4 @@
-import { defineConfig } from 'vite'
+import { defineConfig, loadEnv } from 'vite'
 import react from '@vitejs/plugin-react'
 import path from 'node:path'
 import { VitePWA } from 'vite-plugin-pwa'
@@ -14,52 +14,61 @@ const vendorChunks: Record<string, string> = {
   zod: 'forms',
 }
 
-export default defineConfig({
-  plugins: [
-    react(),
-    VitePWA({
-      registerType: 'prompt',
-      strategies: 'injectManifest',
-      srcDir: 'src',
-      filename: 'sw.ts',
-      manifest: {
-        name: 'QL Đơn Hàng',
-        short_name: 'QLĐơnHàng',
-        description: 'Quản lý báo giá, khách hàng, hàng hóa',
-        display: 'standalone',
-        theme_color: '#1e40af',
-        background_color: '#ffffff',
-        start_url: '/',
-        icons: [
-          { src: '/api/settings/branding/icon/192', sizes: '192x192', type: 'image/png' },
-          { src: '/api/settings/branding/icon/512', sizes: '512x512', type: 'image/png' },
-        ],
+export default defineConfig(({ mode }) => {
+  const env = loadEnv(mode, process.cwd(), '')
+  // In dev: apiBase is empty, Vite proxy forwards /api/* to backend.
+  // In prod: apiBase = 'https://backend.railway.app/api' (absolute URL).
+  const apiBase = env.VITE_API_BASE_URL ?? env.VITE_API_BASE ?? ''
+  const iconSrc = (size: number) =>
+    apiBase ? `${apiBase}/settings/branding/icon/${size}` : `/api/settings/branding/icon/${size}`
+
+  return {
+    plugins: [
+      react(),
+      VitePWA({
+        registerType: 'prompt',
+        strategies: 'injectManifest',
+        srcDir: 'src',
+        filename: 'sw.ts',
+        manifest: {
+          name: 'QL Đơn Hàng',
+          short_name: 'QLĐơnHàng',
+          description: 'Quản lý báo giá, khách hàng, hàng hóa',
+          display: 'standalone',
+          theme_color: '#1e40af',
+          background_color: '#ffffff',
+          start_url: '/',
+          icons: [
+            { src: iconSrc(192), sizes: '192x192', type: 'image/png' },
+            { src: iconSrc(512), sizes: '512x512', type: 'image/png' },
+          ],
+        },
+        devOptions: {
+          enabled: true,
+          type: 'module',
+        },
+      }),
+    ],
+    resolve: { alias: { '@': path.resolve(__dirname, './src') } },
+    server: {
+      port: 5173,
+      proxy: {
+        '/api': { target: 'http://localhost:5050', changeOrigin: true },
+        '/hubs': { target: 'http://localhost:5050', changeOrigin: true, ws: true },
       },
-      devOptions: {
-        enabled: true,
-        type: 'module',
-      },
-    }),
-  ],
-  resolve: { alias: { '@': path.resolve(__dirname, './src') } },
-  server: {
-    port: 5173,
-    proxy: {
-      '/api': { target: 'http://localhost:5050', changeOrigin: true },
-      '/hubs': { target: 'http://localhost:5050', changeOrigin: true, ws: true },
     },
-  },
-  build: {
-    rollupOptions: {
-      output: {
-        manualChunks: (id) => {
-          if (!id.includes('node_modules')) return undefined
-          for (const [needle, chunk] of Object.entries(vendorChunks)) {
-            if (id.includes(needle)) return chunk
-          }
-          return undefined
+    build: {
+      rollupOptions: {
+        output: {
+          manualChunks: (id) => {
+            if (!id.includes('node_modules')) return undefined
+            for (const [needle, chunk] of Object.entries(vendorChunks)) {
+              if (id.includes(needle)) return chunk
+            }
+            return undefined
+          },
         },
       },
     },
-  },
+  }
 })

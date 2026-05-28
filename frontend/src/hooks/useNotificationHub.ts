@@ -10,8 +10,13 @@ export function useNotificationHub() {
   useEffect(() => {
     if (!accessToken) return
 
+    const apiBase = import.meta.env.VITE_API_BASE_URL ?? import.meta.env.VITE_API_BASE ?? ''
+    const hubUrl = apiBase
+      ? apiBase.replace(/\/api$/, '') + '/hubs/notifications'
+      : '/hubs/notifications'
+
     const connection = new HubConnectionBuilder()
-      .withUrl('/hubs/notifications', {
+      .withUrl(hubUrl, {
         accessTokenFactory: () => useAuthStore.getState().accessToken ?? '',
       })
       .withAutomaticReconnect()
