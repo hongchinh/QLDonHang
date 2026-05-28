@@ -150,8 +150,13 @@ export function SalesRevenueDetailPage() {
                 Không có dòng hàng nào trong khoảng thời gian này.
               </div>
             ) : (
-              <div className="overflow-x-auto">
-                <Table>
+              <div
+                data-testid="table-scroll-container"
+                className="overflow-y-auto"
+                style={{ maxHeight: 'calc(100vh - 400px)' }}
+              >
+                <div className="overflow-x-auto">
+                  <Table>
                   <TableHeader>
                     <TableRow>
                       <TableHead>Số BG</TableHead>
@@ -227,6 +232,7 @@ export function SalesRevenueDetailPage() {
                     ))}
                   </TableBody>
                 </Table>
+                </div>
               </div>
             )}
           </CardContent>

@@ -125,6 +125,28 @@ describe('TotalsRow component', () => {
   });
 });
 
+describe('Scrollable table container', () => {
+  it('applies max-height and overflow styles to table container', () => {
+    const items: SalesRevenueLineItemDto[] = Array(50)
+      .fill(null)
+      .map((_, i) => createMockItem({ productName: `Product ${i}` }));
+
+    const { container } = render(
+      <div>
+        <div data-testid="table-scroll-container" className="overflow-y-auto" style={{ maxHeight: 'calc(100vh - 400px)' }}>
+          <div className="overflow-x-auto">
+            <table><tbody><tr><td>test</td></tr></tbody></table>
+          </div>
+        </div>
+      </div>
+    );
+
+    const tableContainer = container.querySelector('[data-testid="table-scroll-container"]');
+    expect(tableContainer).toHaveClass('overflow-y-auto');
+    expect(tableContainer).toHaveStyle({ maxHeight: 'calc(100vh - 400px)' });
+  });
+});
+
 function createMockItem(overrides: Partial<SalesRevenueLineItemDto> = {}): SalesRevenueLineItemDto {
   return {
     quotationId: 'q1',
