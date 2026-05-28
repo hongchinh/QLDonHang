@@ -317,6 +317,27 @@ export const LineItemsGrid = forwardRef<LineItemsGridHandle, Props>(function Lin
                           e.preventDefault();
                           e.stopPropagation();
                           moveLineFocus({ field: 'name', rowIndex: idx }, e.shiftKey ? -1 : 1);
+                          return;
+                        }
+                        if (e.key === 'Enter' && !e.ctrlKey) {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          moveLineFocus({ field: 'name', rowIndex: idx }, e.shiftKey ? -1 : 1);
+                          return;
+                        }
+                        if (e.key === 'Enter' && e.ctrlKey && !e.shiftKey && !e.altKey && !e.metaKey) {
+                          const textarea = e.currentTarget;
+                          const start = textarea.selectionStart;
+                          const end = textarea.selectionEnd;
+                          const value = textarea.value;
+                          const newValue = value.substring(0, start) + '\n' + value.substring(end);
+                          setLineField(idx, 'productName', newValue as never);
+                          setTimeout(() => {
+                            textarea.selectionStart = textarea.selectionEnd = start + 1;
+                            textarea.focus();
+                          }, 0);
+                          e.preventDefault();
+                          e.stopPropagation();
                         }
                       }}
                     />
@@ -506,7 +527,7 @@ export const LineItemsGrid = forwardRef<LineItemsGridHandle, Props>(function Lin
 
       <div className="line-items-footer">
         <div className="keyboard-guide">
-          <span><span className="kbd">Enter</span> Tiếp</span>
+          <span><span className="kbd">Enter</span> Tiếp (Tên hàng: <span className="kbd">Ctrl</span>+<span className="kbd">Enter</span> để xuống dòng)</span>
           <span><span className="kbd">Shift</span>+<span className="kbd">Enter</span> Lùi</span>
           <span><span className="kbd">Ctrl</span>+<span className="kbd">S</span> Lưu</span>
           <span><span className="kbd">Insert</span> Thêm dòng</span>
