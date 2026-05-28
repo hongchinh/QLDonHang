@@ -41,6 +41,53 @@ function useRevenueTotals(items: SalesRevenueLineItemDto[]): RevenueTotals {
   return useMemo(() => calculateRevenueTotals(items), [items]);
 }
 
+interface TotalsRowProps {
+  totals: RevenueTotals;
+  hasCost: boolean;
+}
+
+function TotalsRow({ totals, hasCost }: TotalsRowProps) {
+  return (
+    <div className="overflow-x-auto border-t">
+      <table className="w-full">
+        <tbody>
+          <tr className="bg-muted font-semibold">
+            <td className="px-3 py-2 text-sm">Tổng cộng</td>
+            <td colSpan={3} />
+            <td />
+            <td />
+            <td />
+            <td className="px-3 py-2 text-right tabular-nums">
+              {moneyFmt.format(totals.quantity)}
+            </td>
+            <td />
+            <td className="px-3 py-2 text-right tabular-nums">
+              {moneyFmt.format(totals.lineTotal)}
+            </td>
+            <td className="px-3 py-2 text-right tabular-nums">
+              {moneyFmt.format(totals.freight)}
+            </td>
+            {hasCost && (
+              <>
+                <td className="px-3 py-2 text-right tabular-nums">
+                  {moneyFmt.format(totals.unitCost)}
+                </td>
+                <td className="px-3 py-2 text-right tabular-nums">
+                  {moneyFmt.format(totals.lineCost)}
+                </td>
+                <td className="px-3 py-2 text-right tabular-nums">
+                  {moneyFmt.format(totals.lineProfit)}
+                </td>
+              </>
+            )}
+            <td colSpan={2} />
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
 function formatDate(value: string | null | undefined): string {
   if (!value) return '';
   return value.slice(0, 10).split('-').reverse().join('/');
@@ -189,4 +236,4 @@ export function SalesRevenueDetailPage() {
   );
 }
 
-export { calculateRevenueTotals, useRevenueTotals };
+export { calculateRevenueTotals, useRevenueTotals, TotalsRow };

@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
+import { render, screen } from '@testing-library/react';
 import { renderHook } from '@testing-library/react';
 import type { SalesRevenueLineItemDto } from '@/features/reports/sales-revenue-detail/types';
-import { calculateRevenueTotals, useRevenueTotals } from './sales-revenue-detail-page';
+import { calculateRevenueTotals, useRevenueTotals, TotalsRow } from './sales-revenue-detail-page';
 
 describe('calculateRevenueTotals', () => {
   it('returns zero totals for empty items array', () => {
@@ -83,6 +84,44 @@ describe('useRevenueTotals hook', () => {
     const { result } = renderHook(() => useRevenueTotals(items));
     expect(result.current.quantity).toBe(8);
     expect(result.current.lineTotal).toBe(800);
+  });
+});
+
+describe('TotalsRow component', () => {
+  it('renders totals with correct money formatting', () => {
+    render(
+      <TotalsRow
+        totals={{
+          quantity: 100,
+          lineTotal: 50000,
+          freight: 5000,
+          unitCost: 20000,
+          lineCost: 20000,
+          lineProfit: 30000,
+        }}
+        hasCost={true}
+      />
+    );
+    expect(screen.getByText(/100/)).toBeInTheDocument();
+    expect(screen.getByText(/50\.000/)).toBeInTheDocument();
+  });
+
+  it('hides cost columns when hasCost is false', () => {
+    const { container } = render(
+      <TotalsRow
+        totals={{
+          quantity: 10,
+          lineTotal: 5000,
+          freight: 500,
+          unitCost: 0,
+          lineCost: 0,
+          lineProfit: 0,
+        }}
+        hasCost={false}
+      />
+    );
+    const rows = container.querySelectorAll('tr');
+    expect(rows.length).toBeGreaterThan(0);
   });
 });
 
