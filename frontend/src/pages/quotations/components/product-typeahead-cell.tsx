@@ -1,9 +1,11 @@
 import { useCallback, useEffect, useId, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
+import { LayoutList } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 import { useProductSearch } from '@/features/products/hooks';
 import type { ProductSuggestion } from '@/features/products/types';
+import { ProductCatalogDialog } from '@/features/products/components/product-catalog-dialog';
 
 interface Props {
   value: string;
@@ -36,6 +38,7 @@ export function ProductTypeaheadCell({
   nextFocusId,
 }: Props) {
   const [open, setOpen] = useState(false);
+  const [catalogOpen, setCatalogOpen] = useState(false);
   const [highlightedIndex, setHighlightedIndex] = useState(0);
   const [dropdownRect, setDropdownRect] = useState<DOMRect | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -252,6 +255,21 @@ export function ProductTypeaheadCell({
                 })}
             </tbody>
           </table>
+          {/* Catalog browser button */}
+          <div className="border-t">
+            <button
+              type="button"
+              className="flex w-full items-center gap-2 px-3 py-2 text-sm text-muted-foreground hover:bg-muted/50 hover:text-foreground transition-colors"
+              onMouseDown={(e) => {
+                e.preventDefault();
+                setOpen(false);
+                setCatalogOpen(true);
+              }}
+            >
+              <LayoutList className="h-3.5 w-3.5" aria-hidden="true" />
+              Xem danh mục đầy đủ
+            </button>
+          </div>
         </div>,
         document.body,
       )
@@ -261,6 +279,15 @@ export function ProductTypeaheadCell({
     <div ref={containerRef} className="relative">
       {trigger}
       {dropdown}
+      <ProductCatalogDialog
+        open={catalogOpen}
+        onOpenChange={setCatalogOpen}
+        initialQuery={value}
+        onSelect={(s) => {
+          commit(s);
+          setCatalogOpen(false);
+        }}
+      />
     </div>
   );
 }

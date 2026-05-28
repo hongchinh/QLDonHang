@@ -36,10 +36,10 @@ Out of scope:
 
 ## Phases
 
-- [ ] Phase 01 — ProductCatalogDetail component (S) — `phase-01-product-catalog-detail.md`
-- [ ] Phase 02 — ProductCatalogList component (M) — `phase-02-product-catalog-list.md`
-- [ ] Phase 03 — ProductCatalogDialog wrapper (S) — `phase-03-product-catalog-dialog.md`
-- [ ] Phase 04 — Tích hợp vào ProductTypeaheadCell (S) — `phase-04-typeahead-integration.md`
+- [x] Phase 01 — ProductCatalogDetail component (S) — `phase-01-product-catalog-detail.md`
+- [x] Phase 02 — ProductCatalogList component (M) — `phase-02-product-catalog-list.md`
+- [x] Phase 03 — ProductCatalogDialog wrapper (S) — `phase-03-product-catalog-dialog.md`
+- [x] Phase 04 — Tích hợp vào ProductTypeaheadCell (S) — `phase-04-typeahead-integration.md`
 
 ## Final Verification
 
