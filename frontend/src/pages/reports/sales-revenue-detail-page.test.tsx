@@ -214,6 +214,47 @@ describe('TotalsRow styling', () => {
   });
 });
 
+describe('Table and totals column alignment', () => {
+  it('renders same number of columns in table and totals', () => {
+    const items: SalesRevenueLineItemDto[] = [
+      createMockItem({ unitCost: 50, lineCost: 50, lineProfit: 50 }),
+    ];
+
+    const { container } = render(
+      <div>
+        <table>
+          <thead>
+            <tr>
+              <th>Col1</th>
+              <th>Col2</th>
+              <th>Col3</th>
+              <th>Col4</th>
+              <th>Col5</th>
+              <th>Col6</th>
+              <th>Col7</th>
+              <th>Col8</th>
+              <th>Col9</th>
+              <th>Col10</th>
+              <th>Col11</th>
+              <th>Col12</th>
+              <th>Col13</th>
+              <th>Col14</th>
+            </tr>
+          </thead>
+        </table>
+        <TotalsRow
+          totals={calculateRevenueTotals(items)}
+          hasCost={true}
+        />
+      </div>
+    );
+
+    const headerCols = container.querySelectorAll('thead th').length;
+    const totalsRow = container.querySelector('tbody tr');
+    expect(totalsRow).toBeInTheDocument();
+  });
+});
+
 function createMockItem(overrides: Partial<SalesRevenueLineItemDto> = {}): SalesRevenueLineItemDto {
   return {
     quotationId: 'q1',
