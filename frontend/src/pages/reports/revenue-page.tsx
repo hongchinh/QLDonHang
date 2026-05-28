@@ -143,8 +143,8 @@ export function RevenuePage() {
               Không có dòng hàng nào trong khoảng thời gian này.
             </div>
           ) : (
-            <div className="max-h-[520px] overflow-auto rounded-md border">
-              <Table className="min-w-[1280px]">
+            <div className="max-h-[calc(100dvh-16rem)] min-h-[300px] overflow-auto rounded-md border">
+              <Table containerClassName="overflow-visible" className="min-w-[1280px]">
                 <TableHeader className="sticky top-0 z-10">
                   <TableRow>
                     <TableHead>Ngày</TableHead>
@@ -208,7 +208,7 @@ export function RevenuePage() {
                     );
                   })}
                 </TableBody>
-                <TableFooter className="sticky bottom-0 bg-muted">
+                <TableFooter className="sticky bottom-0 z-10 bg-muted">
                   <TableRow>
                     <TableCell colSpan={4}>Tổng cộng</TableCell>
                     <TableCell className="text-right tabular-nums">{formatNullableNumber(detailTotals.quantity)}</TableCell>
