@@ -108,6 +108,7 @@ export function SalesRevenueDetailPage() {
 
   const items: SalesRevenueLineItemDto[] = query.data ?? [];
   const hasCost = items.some((i) => i.unitCost !== null);
+  const totals = useRevenueTotals(items);
 
   return (
     <Can
@@ -236,7 +237,7 @@ export function SalesRevenueDetailPage() {
               </div>
             )}
             {items.length > 0 && (
-              <TotalsRow totals={useRevenueTotals(items)} hasCost={hasCost} />
+              <TotalsRow totals={totals} hasCost={hasCost} />
             )}
           </CardContent>
         </Card>
