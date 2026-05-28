@@ -192,6 +192,28 @@ describe('Sticky table header', () => {
   });
 });
 
+describe('TotalsRow styling', () => {
+  it('renders totals with muted background and bold text', () => {
+    const { container } = render(
+      <TotalsRow
+        totals={{
+          quantity: 100,
+          lineTotal: 50000,
+          freight: 5000,
+          unitCost: 20000,
+          lineCost: 20000,
+          lineProfit: 30000,
+        }}
+        hasCost={true}
+      />
+    );
+
+    const totalsRow = container.querySelector('tr');
+    expect(totalsRow).toHaveClass('bg-muted');
+    expect(totalsRow).toHaveClass('font-semibold');
+  });
+});
+
 function createMockItem(overrides: Partial<SalesRevenueLineItemDto> = {}): SalesRevenueLineItemDto {
   return {
     quotationId: 'q1',
