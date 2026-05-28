@@ -157,7 +157,7 @@ export function SalesRevenueDetailPage() {
               >
                 <div className="overflow-x-auto">
                   <Table>
-                  <TableHeader>
+                  <TableHeader className="sticky top-0 bg-background">
                     <TableRow>
                       <TableHead>Số BG</TableHead>
                       <TableHead>Ngày BG</TableHead>
