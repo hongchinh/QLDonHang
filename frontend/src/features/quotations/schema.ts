@@ -23,13 +23,28 @@ const quotationLineSchema = z.object({
   thickness: optionalNumber({ min: 0 }),
   density: optionalNumber({ min: 0 }),
   sheetCount: optionalNumber({ min: 0 }),
-  quantity: z.coerce.number().positive('Số lượng phải > 0'),
+  quantity: z.coerce.number().nonnegative(),
   unitPrice: z.coerce.number().nonnegative(),
   lineTotal: optionalNumber({ min: 0 }),
   unitCost: optionalNumber(),
   lineCost: optionalNumber(),
   lineProfit: optionalNumber(),
   note: optionalString(1000),
+}).superRefine((line, ctx) => {
+  const L = line.length ?? 0;
+  const W = line.width ?? 0;
+  const T = line.thickness ?? 0;
+  const sheets = line.sheetCount ?? 0;
+  let effectiveQty: number;
+  switch (line.pricingMode) {
+    case 'PerSquareMeter': effectiveQty = (L * W * sheets) / 1_000_000; break;
+    case 'PerLinearMeter': effectiveQty = (L * sheets) / 1_000; break;
+    case 'PerCubicMeter': effectiveQty = (L * W * T * sheets) / 1_000_000_000; break;
+    default: effectiveQty = line.quantity;
+  }
+  if (effectiveQty <= 0) {
+    ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Số lượng phải > 0', path: ['quantity'] });
+  }
 });
 
 export const quotationSchema = z.object({

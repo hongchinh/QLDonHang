@@ -5,6 +5,7 @@ import {
   Table,
   TableBody,
   TableCell,
+  TableFooter,
   TableHead,
   TableHeader,
   TableRow,
@@ -48,43 +49,39 @@ interface TotalsRowProps {
 
 function TotalsRow({ totals, hasCost }: TotalsRowProps) {
   return (
-    <div className="overflow-x-auto border-t">
-      <table className="w-full">
-        <tbody>
-          <tr className="bg-muted font-semibold">
-            <td className="px-3 py-2 text-sm">Tổng cộng</td>
-            <td colSpan={3} />
-            <td />
-            <td />
-            <td />
-            <td className="px-3 py-2 text-right tabular-nums">
-              {moneyFmt.format(totals.quantity)}
-            </td>
-            <td />
-            <td className="px-3 py-2 text-right tabular-nums">
-              {moneyFmt.format(totals.lineTotal)}
-            </td>
-            <td className="px-3 py-2 text-right tabular-nums">
-              {moneyFmt.format(totals.freight)}
-            </td>
-            {hasCost && (
-              <>
-                <td className="px-3 py-2 text-right tabular-nums">
-                  {moneyFmt.format(totals.unitCost)}
-                </td>
-                <td className="px-3 py-2 text-right tabular-nums">
-                  {moneyFmt.format(totals.lineCost)}
-                </td>
-                <td className="px-3 py-2 text-right tabular-nums">
-                  {moneyFmt.format(totals.lineProfit)}
-                </td>
-              </>
-            )}
-            <td colSpan={2} />
-          </tr>
-        </tbody>
-      </table>
-    </div>
+    <TableFooter className="sticky bottom-0 z-10 bg-muted font-semibold">
+      <TableRow className="hover:bg-muted">
+        <TableCell className="text-sm">Tổng cộng</TableCell>
+        <TableCell colSpan={3} />
+        <TableCell />
+        <TableCell />
+        <TableCell />
+        <TableCell className="text-right tabular-nums">
+          {moneyFmt.format(totals.quantity)}
+        </TableCell>
+        <TableCell />
+        <TableCell className="text-right tabular-nums">
+          {moneyFmt.format(totals.lineTotal)}
+        </TableCell>
+        <TableCell className="text-right tabular-nums">
+          {moneyFmt.format(totals.freight)}
+        </TableCell>
+        {hasCost && (
+          <>
+            <TableCell className="text-right tabular-nums">
+              {moneyFmt.format(totals.unitCost)}
+            </TableCell>
+            <TableCell className="text-right tabular-nums">
+              {moneyFmt.format(totals.lineCost)}
+            </TableCell>
+            <TableCell className="text-right tabular-nums">
+              {moneyFmt.format(totals.lineProfit)}
+            </TableCell>
+          </>
+        )}
+        <TableCell colSpan={2} />
+      </TableRow>
+    </TableFooter>
   );
 }
 
@@ -115,7 +112,7 @@ export function SalesRevenueDetailPage() {
       permission="reports.revenue"
       fallback={<div className="p-4">Bạn không có quyền xem báo cáo này.</div>}
     >
-      <div className="space-y-4">
+      <div className="flex h-full min-h-0 flex-col gap-4">
         <div className="flex items-center gap-3">
           <Button variant="ghost" size="sm" onClick={() => navigate(-1)}>
             <ArrowLeft className="mr-1 h-4 w-4" />
@@ -137,44 +134,42 @@ export function SalesRevenueDetailPage() {
           </div>
         )}
 
-        <Card>
+        <Card className="flex flex-1 min-h-0 flex-col">
           <CardHeader>
             <CardTitle>Dòng hàng hóa</CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="flex flex-1 min-h-0 flex-col p-0">
             {query.isLoading ? (
-              <div className="text-sm text-muted-foreground">Đang tải…</div>
+              <div className="p-6 text-sm text-muted-foreground">Đang tải…</div>
             ) : query.isError ? (
-              <div className="text-sm text-destructive">Không tải được dữ liệu.</div>
+              <div className="p-6 text-sm text-destructive">Không tải được dữ liệu.</div>
             ) : items.length === 0 ? (
-              <div className="text-sm text-muted-foreground">
+              <div className="p-6 text-sm text-muted-foreground">
                 Không có dòng hàng nào trong khoảng thời gian này.
               </div>
             ) : (
               <div
                 data-testid="table-scroll-container"
-                className="overflow-y-auto"
-                style={{ maxHeight: 'calc(100vh - 400px)' }}
+                className="relative flex-1 min-h-0 overflow-hidden"
               >
-                <div className="overflow-x-auto">
-                  <Table>
-                  <TableHeader className="sticky top-0 bg-background">
+                <Table containerClassName="h-full">
+                  <TableHeader className="sticky top-0 z-10">
                     <TableRow>
                       <TableHead>Số BG</TableHead>
                       <TableHead>Ngày BG</TableHead>
-                      <TableHead>Ngày XN</TableHead>
+                      <TableHead>Ngày xác nhận</TableHead>
                       <TableHead>Khách hàng</TableHead>
                       <TableHead>Hàng hóa</TableHead>
                       <TableHead>Quy cách</TableHead>
-                      <TableHead>ĐVT</TableHead>
-                      <TableHead className="text-right">SL</TableHead>
+                      <TableHead>Đơn vị tính</TableHead>
+                      <TableHead className="text-right">Số lượng</TableHead>
                       <TableHead className="text-right">Đơn giá</TableHead>
                       <TableHead className="text-right">Số tiền</TableHead>
                       <TableHead className="text-right">Vận chuyển</TableHead>
                       {hasCost && (
                         <>
-                          <TableHead className="text-right">ĐG nhập</TableHead>
-                          <TableHead className="text-right">TT nhập</TableHead>
+                          <TableHead className="text-right">Đơn giá nhập</TableHead>
+                          <TableHead className="text-right">Thành tiền nhập</TableHead>
                           <TableHead className="text-right">Lợi nhuận</TableHead>
                         </>
                       )}
@@ -232,12 +227,9 @@ export function SalesRevenueDetailPage() {
                       </TableRow>
                     ))}
                   </TableBody>
+                  <TotalsRow totals={totals} hasCost={hasCost} />
                 </Table>
-                </div>
               </div>
-            )}
-            {items.length > 0 && (
-              <TotalsRow totals={totals} hasCost={hasCost} />
             )}
           </CardContent>
         </Card>

@@ -126,24 +126,18 @@ describe('TotalsRow component', () => {
 });
 
 describe('Scrollable table container', () => {
-  it('applies max-height and overflow styles to table container', () => {
-    const items: SalesRevenueLineItemDto[] = Array(50)
-      .fill(null)
-      .map((_, i) => createMockItem({ productName: `Product ${i}` }));
-
+  it('applies flex fill and overflow-hidden to table container', () => {
     const { container } = render(
       <div>
-        <div data-testid="table-scroll-container" className="overflow-y-auto" style={{ maxHeight: 'calc(100vh - 400px)' }}>
-          <div className="overflow-x-auto">
-            <table><tbody><tr><td>test</td></tr></tbody></table>
-          </div>
+        <div data-testid="table-scroll-container" className="relative flex-1 min-h-0 overflow-hidden">
+          <table><tbody><tr><td>test</td></tr></tbody></table>
         </div>
       </div>
     );
 
     const tableContainer = container.querySelector('[data-testid="table-scroll-container"]');
-    expect(tableContainer).toHaveClass('overflow-y-auto');
-    expect(tableContainer).toHaveStyle({ maxHeight: 'calc(100vh - 400px)' });
+    expect(tableContainer).toHaveClass('overflow-hidden');
+    expect(tableContainer).toHaveClass('flex-1');
   });
 });
 
@@ -165,35 +159,26 @@ describe('TotalsRow placement', () => {
 });
 
 describe('Sticky table header', () => {
-  it('applies sticky positioning to TableHeader', () => {
-    const items: SalesRevenueLineItemDto[] = Array(50)
-      .fill(null)
-      .map((_, i) => createMockItem({ productName: `Product ${i}` }));
-
+  it('applies sticky positioning to TableHeader without bg-background override', () => {
     const { container } = render(
-      <div
-        data-testid="table-scroll-container"
-        className="overflow-y-auto"
-        style={{ maxHeight: 'calc(100vh - 400px)' }}
-      >
-        <div className="overflow-x-auto">
-          <table>
-            <thead className="sticky top-0 bg-background">
-              <tr><th>Col1</th></tr>
-            </thead>
-          </table>
-        </div>
+      <div data-testid="table-scroll-container" className="relative flex-1 min-h-0 overflow-hidden">
+        <table>
+          <thead className="sticky top-0 z-10">
+            <tr><th>Col1</th></tr>
+          </thead>
+        </table>
       </div>
     );
 
     const tableHeader = container.querySelector('thead');
     expect(tableHeader).toHaveClass('sticky');
     expect(tableHeader).toHaveClass('top-0');
+    expect(tableHeader).not.toHaveClass('bg-background');
   });
 });
 
 describe('TotalsRow styling', () => {
-  it('renders totals with muted background and bold text', () => {
+  it('renders totals with muted background and bold text on tfoot', () => {
     const { container } = render(
       <TotalsRow
         totals={{
@@ -208,9 +193,9 @@ describe('TotalsRow styling', () => {
       />
     );
 
-    const totalsRow = container.querySelector('tr');
-    expect(totalsRow).toHaveClass('bg-muted');
-    expect(totalsRow).toHaveClass('font-semibold');
+    const tfoot = container.querySelector('tfoot');
+    expect(tfoot).toHaveClass('bg-muted');
+    expect(tfoot).toHaveClass('font-semibold');
   });
 });
 
@@ -250,7 +235,8 @@ describe('Table and totals column alignment', () => {
     );
 
     const headerCols = container.querySelectorAll('thead th').length;
-    const totalsRow = container.querySelector('tbody tr');
+    expect(headerCols).toBe(14);
+    const totalsRow = container.querySelector('tfoot tr');
     expect(totalsRow).toBeInTheDocument();
   });
 });

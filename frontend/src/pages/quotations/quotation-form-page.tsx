@@ -811,9 +811,27 @@ function QuotationFormInner({
             <CardContent className="p-0">
               <LineItemsGrid ref={lineItemsGridRef} form={form} />
               {form.formState.errors.lines && (
-                <p className="px-6 pb-4 pt-2 text-sm text-destructive">
-                  {String((form.formState.errors.lines as { message?: string }).message ?? 'Báo giá chưa hợp lệ.')}
-                </p>
+                <div className="px-6 pb-4 pt-2 text-sm text-destructive">
+                  {(() => {
+                    const rootMsg = (form.formState.errors.lines as { message?: string }).message;
+                    if (rootMsg) return <p>{rootMsg}</p>;
+                    const lineErrors = collectLineFieldErrors(form.formState.errors.lines);
+                    if (lineErrors.length === 0) return <p>Báo giá chưa hợp lệ.</p>;
+                    return (
+                      <div className="space-y-1">
+                        <p className="font-medium">Một số dòng hàng chưa hợp lệ:</p>
+                        <ul className="list-disc pl-5 space-y-0.5">
+                          {lineErrors.map(({ rowNum, problems }) => (
+                            <li key={rowNum}>
+                              <span className="font-medium">Dòng {rowNum}:</span>{' '}
+                              {problems.join(' · ')}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    );
+                  })()}
+                </div>
               )}
             </CardContent>
           </Card>
@@ -1107,6 +1125,24 @@ function toPayload(parsed: QuotationFormParsed): UpsertQuotationRequest {
       };
     }),
   };
+}
+
+function collectLineFieldErrors(
+  linesErrors: unknown,
+): Array<{ rowNum: number; problems: string[] }> {
+  if (!Array.isArray(linesErrors)) return [];
+  const result: Array<{ rowNum: number; problems: string[] }> = [];
+  for (let i = 0; i < linesErrors.length; i++) {
+    const lineErr = linesErrors[i] as Record<string, { message?: string } | undefined> | null | undefined;
+    if (!lineErr || typeof lineErr !== 'object') continue;
+    const problems: string[] = [];
+    if (lineErr.productName?.message) problems.push(`Tên hàng: ${lineErr.productName.message}`);
+    if (lineErr.unitName?.message) problems.push(`ĐVT: ${lineErr.unitName.message}`);
+    if (lineErr.quantity?.message) problems.push(`Số lượng: ${lineErr.quantity.message}`);
+    if (lineErr.unitPrice?.message) problems.push(`Đơn giá: ${lineErr.unitPrice.message}`);
+    if (problems.length > 0) result.push({ rowNum: i + 1, problems });
+  }
+  return result;
 }
 
 function actionLabel(action: QuotationAction) {
