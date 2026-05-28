@@ -64,7 +64,7 @@ function createEmptyLine(sortOrder: number): QuotationLineFormValues {
     productName: '',
     unitName: '',
     pricingMode: 'PerUnit',
-    quantity: 1,
+    quantity: 0,
     unitPrice: 0,
   } as QuotationLineFormValues;
 }
@@ -293,6 +293,7 @@ export const LineItemsGrid = forwardRef<LineItemsGridHandle, Props>(function Lin
                       value={(line.productCode ?? '') as string}
                       onChange={(v) => setLineField(idx, 'productCode', v)}
                       onSelect={(s) => {
+                        setLineField(idx, 'quantity', 0 as never);
                         setLineField(idx, 'productId', s.id);
                         setLineField(idx, 'productCode', s.code);
                         setLineField(idx, 'productName', s.name);
@@ -402,9 +403,11 @@ export const LineItemsGrid = forwardRef<LineItemsGridHandle, Props>(function Lin
                           ? editingQuantityText
                           : formatQuantityForDisplay(quantityValue)
                       }
-                      onFocus={() => {
+                      onFocus={(e) => {
+                        const el = e.currentTarget;
                         setEditingQuantityCellId(quantityCellId);
                         setEditingQuantityText(formatQuantityForEditing(quantityValue));
+                        requestAnimationFrame(() => el.select());
                       }}
                       onBlur={(e) => {
                         const parsed = parseQuantityInput(e.currentTarget.value);
@@ -427,7 +430,11 @@ export const LineItemsGrid = forwardRef<LineItemsGridHandle, Props>(function Lin
                       inputMode="decimal"
                       aria-label="Đơn giá bán"
                       value={editingMoneyCellId === getLineCellId('unit-price', idx) ? (line.unitPrice ?? '') : formatMoneyForDisplay(line.unitPrice)}
-                      onFocus={() => setEditingMoneyCellId(getLineCellId('unit-price', idx))}
+                      onFocus={(e) => {
+                        const el = e.currentTarget;
+                        setEditingMoneyCellId(getLineCellId('unit-price', idx));
+                        requestAnimationFrame(() => el.select());
+                      }}
                       onBlur={() => setEditingMoneyCellId(null)}
                       onChange={(e) => setLineField(idx, 'unitPrice', (parseMoneyInput(e.target.value) ?? 0) as never)}
                     />
@@ -444,7 +451,11 @@ export const LineItemsGrid = forwardRef<LineItemsGridHandle, Props>(function Lin
                         inputMode="decimal"
                         aria-label="Đơn giá nhập"
                         value={editingMoneyCellId === getLineCellId('unit-cost', idx) ? (line.unitCost ?? '') : formatMoneyForDisplay(line.unitCost)}
-                        onFocus={() => setEditingMoneyCellId(getLineCellId('unit-cost', idx))}
+                        onFocus={(e) => {
+                          const el = e.currentTarget;
+                          setEditingMoneyCellId(getLineCellId('unit-cost', idx));
+                          requestAnimationFrame(() => el.select());
+                        }}
                         onBlur={() => setEditingMoneyCellId(null)}
                         onChange={(e) => setLineField(idx, 'unitCost', parseMoneyInput(e.target.value) as never)}
                       />
