@@ -14,7 +14,7 @@ const quotationLineSchema = z.object({
   sortOrder: z.number().int().nonnegative(),
   productId: z.string().uuid().optional(),
   productCode: optionalString(50),
-  productName: z.string().min(1, 'Tên hàng là bắt buộc').max(255),
+  productName: z.string().min(1, 'Tên hàng là bắt buộc').max(1000),
   specification: optionalString(500),
   unitName: z.string().min(1, 'ĐVT là bắt buộc').max(100),
   pricingMode: z.enum(['PerUnit', 'PerSquareMeter', 'PerLinearMeter', 'PerCubicMeter']),

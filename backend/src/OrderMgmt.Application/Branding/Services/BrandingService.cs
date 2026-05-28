@@ -19,12 +19,14 @@ public class BrandingService : IBrandingService
     private readonly IAppDbContext _db;
     private readonly IDateTime _clock;
     private readonly ICurrentUser _currentUser;
+    private readonly IPwaIconRenderer _iconRenderer;
 
-    public BrandingService(IAppDbContext db, IDateTime clock, ICurrentUser currentUser)
+    public BrandingService(IAppDbContext db, IDateTime clock, ICurrentUser currentUser, IPwaIconRenderer iconRenderer)
     {
         _db = db;
         _clock = clock;
         _currentUser = currentUser;
+        _iconRenderer = iconRenderer;
     }
 
     public async Task<BrandingDto> GetMetaAsync(CancellationToken ct = default)
@@ -73,6 +75,22 @@ public class BrandingService : IBrandingService
 
         var etag = $"\"{row.UpdatedAt.ToUnixTimeMilliseconds()}-{variant}\"";
         return new LogoStreamResult(content, contentType, etag);
+    }
+
+    public async Task<LogoStreamResult> GetPwaIconAsync(int size, CancellationToken ct = default)
+    {
+        var branding = await _db.SystemBranding.FirstOrDefaultAsync(ct);
+        var etag = branding is null
+            ? $"\"default-{size}\""
+            : $"\"{branding.UpdatedAt.ToUnixTimeMilliseconds()}-{size}\"";
+
+        var png = await _iconRenderer.RenderAsync(
+            branding?.LogoMark,
+            branding?.LogoMarkContentType,
+            size,
+            ct);
+
+        return new LogoStreamResult(png, "image/png", etag);
     }
 
     public async Task<BrandingDto> UpdateAsync(LogoUpload? logoFull, LogoUpload? logoMark, CancellationToken ct = default)

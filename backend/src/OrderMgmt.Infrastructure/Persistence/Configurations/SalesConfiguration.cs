@@ -81,7 +81,7 @@ public class QuotationLineConfiguration : IEntityTypeConfiguration<QuotationLine
         b.HasKey(x => x.Id);
 
         b.Property(x => x.ProductCode).HasMaxLength(50);
-        b.Property(x => x.ProductName).IsRequired().HasMaxLength(255);
+        b.Property(x => x.ProductName).IsRequired().HasMaxLength(1000);
         b.Property(x => x.Specification).HasMaxLength(500);
         b.Property(x => x.UnitName).IsRequired().HasMaxLength(100);
         b.Property(x => x.Note).HasMaxLength(1000);

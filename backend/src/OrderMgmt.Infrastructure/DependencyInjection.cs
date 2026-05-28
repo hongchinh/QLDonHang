@@ -1,10 +1,12 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using OrderMgmt.Application.Branding.Interfaces;
 using OrderMgmt.Application.Common.Interfaces;
 using OrderMgmt.Application.Identity.Interfaces;
 using OrderMgmt.Application.Notifications.Interfaces;
 using OrderMgmt.Application.Sales.Quotations.Interfaces;
+using OrderMgmt.Infrastructure.Branding;
 using OrderMgmt.Infrastructure.Excel;
 using OrderMgmt.Infrastructure.Identity;
 using OrderMgmt.Infrastructure.Notifications;
@@ -41,6 +43,7 @@ public static class DependencyInjection
         services.Configure<VapidOptions>(configuration.GetSection(VapidOptions.SectionName));
         services.AddScoped<IPushSender, PushSenderService>();
 
+        services.AddSingleton<IPwaIconRenderer, SkiaSharpPwaIconRenderer>();
         services.AddSingleton<IDateTime, SystemDateTime>();
         services.AddSingleton<IPasswordHasher, BcryptPasswordHasher>();
 

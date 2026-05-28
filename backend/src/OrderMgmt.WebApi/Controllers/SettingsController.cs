@@ -44,6 +44,24 @@ public class SettingsController : ApiControllerBase
         return File(result.Content, result.ContentType);
     }
 
+    [HttpGet("branding/icon/{size:int}")]
+    [AllowAnonymous]
+    public async Task<IActionResult> GetPwaIcon(int size, CancellationToken ct)
+    {
+        if (size != 192 && size != 512)
+            return BadRequest();
+
+        var result = await _branding.GetPwaIconAsync(size, ct);
+
+        var ifNoneMatch = Request.Headers.IfNoneMatch.ToString();
+        if (!string.IsNullOrEmpty(ifNoneMatch) && ifNoneMatch == result.ETag)
+            return StatusCode(StatusCodes.Status304NotModified);
+
+        Response.Headers.ETag = result.ETag;
+        Response.Headers.CacheControl = "public, max-age=3600";
+        return File(result.Content, result.ContentType);
+    }
+
     [HttpPut("branding")]
     [HasPermission(Permissions.UserSettings.Manage)]
     [Consumes("multipart/form-data")]

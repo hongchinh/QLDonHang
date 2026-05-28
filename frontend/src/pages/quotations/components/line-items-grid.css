@@ -28,7 +28,7 @@
   border-right: 1px solid hsl(var(--border));
   border-bottom: 1px solid hsl(var(--border));
   padding: 0;
-  height: 34px;
+  min-height: 34px;
   background: hsl(var(--card));
 }
 
@@ -75,6 +75,18 @@
   background: transparent;
   outline: none;
   box-sizing: border-box;
+}
+
+.accounting-grid .cell-input-multiline {
+  height: auto;
+  min-height: 33px;
+  padding: 6px 8px;
+  resize: none;
+  field-sizing: content;
+  line-height: 1.45;
+  white-space: pre-wrap;
+  overflow: hidden;
+  vertical-align: top;
 }
 
 .accounting-grid .cell-input:focus {

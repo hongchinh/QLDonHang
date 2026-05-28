@@ -10,7 +10,7 @@ public class UpsertQuotationLineRequestValidator : AbstractValidator<UpsertQuota
 {
     public UpsertQuotationLineRequestValidator()
     {
-        RuleFor(x => x.ProductName).NotEmpty().MaximumLength(255);
+        RuleFor(x => x.ProductName).NotEmpty().MaximumLength(1000);
         RuleFor(x => x.ProductCode).MaximumLength(50);
         RuleFor(x => x.Specification).MaximumLength(500);
         RuleFor(x => x.UnitName).NotEmpty().MaximumLength(100);

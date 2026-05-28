@@ -193,6 +193,7 @@ export const LineItemsGrid = forwardRef<LineItemsGridHandle, Props>(function Lin
     const target = e.target as HTMLElement;
     const current = parseLineCellId(target.id);
     if (!current) return;
+    if (current.field === 'name') return;
     e.preventDefault();
     moveLineFocus(current, e.shiftKey ? -1 : 1);
   }
@@ -304,12 +305,19 @@ export const LineItemsGrid = forwardRef<LineItemsGridHandle, Props>(function Lin
                     />
                   </td>
                   <td>
-                    <input
+                    <textarea
                       id={getLineCellId('name', idx)}
-                      className="cell-input"
+                      className="cell-input cell-input-multiline"
                       aria-label="Tên hàng"
                       value={(line.productName ?? '') as string}
                       onChange={(e) => setLineField(idx, 'productName', e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Tab') {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          moveLineFocus({ field: 'name', rowIndex: idx }, e.shiftKey ? -1 : 1);
+                        }
+                      }}
                     />
                   </td>
                   <td>
