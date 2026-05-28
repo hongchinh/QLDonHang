@@ -1,14 +1,19 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { CustomerAutocomplete } from './customer-autocomplete';
-import type { CustomerSearchItem } from '@/features/customers/types';
+import type { CustomerSearchItem, PagedResult, CustomerListItem } from '@/features/customers/types';
 
 const searchMock = vi.fn();
+const listMock = vi.fn();
+const getMock = vi.fn();
 
 vi.mock('@/features/customers/api', () => ({
   customersApi: {
     search: (...args: unknown[]) => searchMock(...args),
+    list: (...args: unknown[]) => listMock(...args),
+    get: (...args: unknown[]) => getMock(...args),
   },
 }));
 
@@ -68,6 +73,17 @@ describe('CustomerAutocomplete', () => {
   beforeEach(() => {
     searchMock.mockReset();
     searchMock.mockResolvedValue(sample);
+    listMock.mockReset();
+    listMock.mockResolvedValue({
+      items: [],
+      page: 1,
+      pageSize: 20,
+      totalItems: 0,
+      totalPages: 1,
+      hasNextPage: false,
+      hasPreviousPage: false,
+    } as PagedResult<CustomerListItem>);
+    getMock.mockReset();
   });
 
   afterEach(() => {
@@ -187,5 +203,22 @@ describe('CustomerAutocomplete', () => {
     expect(screen.getByText('Tab')).toBeInTheDocument();
     expect(screen.getByText('Enter')).toBeInTheDocument();
     expect(screen.getByText('Esc')).toBeInTheDocument();
+  });
+
+  it('shows "Xem danh mục đầy đủ" button in dropdown when results are shown', async () => {
+    renderWithClient(<CustomerAutocomplete {...baseProps()} inputAriaLabel="cust" />);
+    const input = screen.getByRole('combobox', { name: /cust/i });
+    await typeAndWaitForResults(input, 'cong');
+    expect(screen.getByRole('button', { name: /xem danh mục đầy đủ/i })).toBeInTheDocument();
+  });
+
+  it('clicking catalog button closes dropdown', async () => {
+    const user = userEvent.setup();
+    renderWithClient(<CustomerAutocomplete {...baseProps()} inputAriaLabel="cust" />);
+    const input = screen.getByRole('combobox', { name: /cust/i });
+    await typeAndWaitForResults(input, 'cong');
+    const btn = screen.getByRole('button', { name: /xem danh mục đầy đủ/i });
+    await user.click(btn);
+    expect(input).toHaveAttribute('aria-expanded', 'false');
   });
 });

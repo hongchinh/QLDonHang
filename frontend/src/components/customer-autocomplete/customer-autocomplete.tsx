@@ -1,11 +1,12 @@
 import { useEffect, useId, useRef, useState, type KeyboardEvent } from 'react';
-import { Plus, X } from 'lucide-react';
+import { LayoutList, Plus, X } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { useDebouncedValue } from '@/lib/use-debounced-value';
 import { useCustomersSearch } from '@/features/customers/hooks';
+import { CustomerCatalogDialog } from '@/features/customers/components/customer-catalog-dialog';
 import type { CustomerSearchItem } from '@/features/customers/types';
 
 export interface CustomerAutocompleteProps {
@@ -33,6 +34,7 @@ export function CustomerAutocomplete({
 }: CustomerAutocompleteProps) {
   const [keyword, setKeyword] = useState('');
   const [isOpen, setIsOpen] = useState(false);
+  const [catalogOpen, setCatalogOpen] = useState(false);
   const [highlightedIndex, setHighlightedIndex] = useState(0);
 
   const debouncedKeyword = useDebouncedValue(keyword, 250);
@@ -199,10 +201,17 @@ export function CustomerAutocomplete({
 
       {errorMessage && <p className="text-sm text-destructive">{errorMessage}</p>}
 
+      <CustomerCatalogDialog
+        open={catalogOpen}
+        onOpenChange={setCatalogOpen}
+        initialQuery={keyword}
+        onSelect={onSelect}
+      />
+
       {showDropdown && (
         <div className="relative">
-          <div className="absolute left-0 z-50 mt-1 min-w-[min(760px,calc(100vw-80px))] max-w-[calc(100vw-40px)] max-h-80 overflow-auto rounded-md border bg-popover text-popover-foreground shadow-md">
-            <div className="flex items-center justify-between border-b bg-muted/30 px-2 py-1.5 text-xs text-muted-foreground">
+          <div className="absolute left-0 z-50 mt-1 min-w-[min(760px,calc(100vw-80px))] max-w-[calc(100vw-40px)] max-h-80 flex flex-col rounded-md border bg-popover text-popover-foreground shadow-md">
+            <div className="flex items-center justify-between border-b bg-muted/30 px-2 py-1.5 text-xs text-muted-foreground flex-shrink-0">
               <span>
                 {isLoading
                   ? 'Đang tìm kiếm...'
@@ -219,74 +228,90 @@ export function CustomerAutocomplete({
                 đóng
               </span>
             </div>
-            {/* eslint-disable-next-line jsx-a11y/no-noninteractive-element-to-interactive-role -- WAI-ARIA combobox listbox pattern */}
-            <table className="qldh-lookup-table" id={listboxId} role="listbox">
-              <thead className="qldh-lookup-table-header">
-                <tr>
-                  <th className="px-2 py-1">Mã</th>
-                  <th className="px-2 py-1">Tên</th>
-                  <th className="px-2 py-1">MST</th>
-                  <th className="px-2 py-1">Địa chỉ</th>
-                  <th className="px-2 py-1">SĐT</th>
-                  <th className="px-2 py-1">Loại</th>
-                </tr>
-              </thead>
-              <tbody>
-                {isLoading && (
+            <div className="overflow-auto flex-1">
+              {/* eslint-disable-next-line jsx-a11y/no-noninteractive-element-to-interactive-role -- WAI-ARIA combobox listbox pattern */}
+              <table className="qldh-lookup-table" id={listboxId} role="listbox">
+                <thead className="qldh-lookup-table-header">
                   <tr>
-                    <td colSpan={6} className="px-2 py-3 text-center text-muted-foreground">
-                      Đang tìm kiếm...
-                    </td>
+                    <th className="px-2 py-1">Mã</th>
+                    <th className="px-2 py-1">Tên</th>
+                    <th className="px-2 py-1">MST</th>
+                    <th className="px-2 py-1">Địa chỉ</th>
+                    <th className="px-2 py-1">SĐT</th>
+                    <th className="px-2 py-1">Loại</th>
                   </tr>
-                )}
-                {!isLoading && isError && (
-                  <tr>
-                    <td colSpan={6} className="px-2 py-3 text-center text-destructive">
-                      Không thể tải danh sách khách hàng. Vui lòng thử lại.
-                    </td>
-                  </tr>
-                )}
-                {!isLoading && !isError && results.length === 0 && (
-                  <tr>
-                    <td colSpan={6} className="px-2 py-3 text-center text-muted-foreground">
-                      Không tìm thấy khách hàng phù hợp
-                    </td>
-                  </tr>
-                )}
-                {!isLoading &&
-                  !isError &&
-                  results.map((c, i) => {
-                    const highlighted = i === highlightedIndex;
-                    return (
-                      <tr
-                        key={c.id}
-                        id={`customer-option-${c.id}`}
-                        role="option"
-                        aria-selected={highlighted}
-                        onMouseDown={(e) => {
-                          // Avoid blur before click handler runs.
-                          e.preventDefault();
-                          selectCustomer(c);
-                        }}
-                        onMouseEnter={() => setHighlightedIndex(i)}
-                        className={cn(
-                          'cursor-pointer border-t',
-                          highlighted && 'qldh-lookup-row-highlight',
-                        )}
-                      >
-                        <td className="px-2 py-1 align-top">{c.code}</td>
-                        <td className="px-2 py-1 align-top">{c.name}</td>
-                        <td className="px-2 py-1 align-top text-muted-foreground">{c.taxCode ?? ''}</td>
-                        <td className="px-2 py-1 align-top text-muted-foreground">{c.companyAddress ?? ''}</td>
-                        <td className="px-2 py-1 align-top text-muted-foreground">{c.phoneNumber ?? ''}</td>
-                        <td className="px-2 py-1 align-top">
-                          <Badge variant="secondary">Khách hàng</Badge>
-                        </td>
-                      </tr>
-                    );
-                  })}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {isLoading && (
+                    <tr>
+                      <td colSpan={6} className="px-2 py-3 text-center text-muted-foreground">
+                        Đang tìm kiếm...
+                      </td>
+                    </tr>
+                  )}
+                  {!isLoading && isError && (
+                    <tr>
+                      <td colSpan={6} className="px-2 py-3 text-center text-destructive">
+                        Không thể tải danh sách khách hàng. Vui lòng thử lại.
+                      </td>
+                    </tr>
+                  )}
+                  {!isLoading && !isError && results.length === 0 && (
+                    <tr>
+                      <td colSpan={6} className="px-2 py-3 text-center text-muted-foreground">
+                        Không tìm thấy khách hàng phù hợp
+                      </td>
+                    </tr>
+                  )}
+                  {!isLoading &&
+                    !isError &&
+                    results.map((c, i) => {
+                      const highlighted = i === highlightedIndex;
+                      return (
+                        <tr
+                          key={c.id}
+                          id={`customer-option-${c.id}`}
+                          role="option"
+                          aria-selected={highlighted}
+                          onMouseDown={(e) => {
+                            // Avoid blur before click handler runs.
+                            e.preventDefault();
+                            selectCustomer(c);
+                          }}
+                          onMouseEnter={() => setHighlightedIndex(i)}
+                          className={cn(
+                            'cursor-pointer border-t',
+                            highlighted && 'qldh-lookup-row-highlight',
+                          )}
+                        >
+                          <td className="px-2 py-1 align-top">{c.code}</td>
+                          <td className="px-2 py-1 align-top">{c.name}</td>
+                          <td className="px-2 py-1 align-top text-muted-foreground">{c.taxCode ?? ''}</td>
+                          <td className="px-2 py-1 align-top text-muted-foreground">{c.companyAddress ?? ''}</td>
+                          <td className="px-2 py-1 align-top text-muted-foreground">{c.phoneNumber ?? ''}</td>
+                          <td className="px-2 py-1 align-top">
+                            <Badge variant="secondary">Khách hàng</Badge>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                </tbody>
+              </table>
+            </div>
+            <div className="border-t flex-shrink-0">
+              <button
+                type="button"
+                className="flex w-full items-center gap-2 px-3 py-2 text-sm text-muted-foreground hover:bg-muted/50 hover:text-foreground transition-colors"
+                onMouseDown={(e) => {
+                  e.preventDefault();
+                  setIsOpen(false);
+                  setCatalogOpen(true);
+                }}
+              >
+                <LayoutList className="h-3.5 w-3.5" aria-hidden="true" />
+                Xem danh mục đầy đủ
+              </button>
+            </div>
           </div>
         </div>
       )}
