@@ -36,8 +36,12 @@ export function usePushNotification(vapidPublicKey: string) {
     setState('loading')
     try {
       const permission = await Notification.requestPermission()
-      if (permission !== 'granted') {
+      if (permission === 'denied') {
         setState('denied')
+        return
+      }
+      if (permission !== 'granted') {
+        setState('idle')
         return
       }
 
