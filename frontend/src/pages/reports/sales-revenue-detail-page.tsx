@@ -16,6 +16,26 @@ import { ArrowLeft } from 'lucide-react';
 
 const moneyFmt = new Intl.NumberFormat('vi-VN');
 
+interface RevenueTotals {
+  quantity: number;
+  lineTotal: number;
+  freight: number;
+  unitCost: number;
+  lineCost: number;
+  lineProfit: number;
+}
+
+function calculateRevenueTotals(items: SalesRevenueLineItemDto[]): RevenueTotals {
+  return {
+    quantity: items.reduce((sum, item) => sum + item.quantity, 0),
+    lineTotal: items.reduce((sum, item) => sum + item.lineTotal, 0),
+    freight: items.reduce((sum, item) => sum + item.freight, 0),
+    unitCost: items.reduce((sum, item) => sum + (item.unitCost ?? 0), 0),
+    lineCost: items.reduce((sum, item) => sum + (item.lineCost ?? 0), 0),
+    lineProfit: items.reduce((sum, item) => sum + (item.lineProfit ?? 0), 0),
+  };
+}
+
 function formatDate(value: string | null | undefined): string {
   if (!value) return '';
   return value.slice(0, 10).split('-').reverse().join('/');
@@ -163,3 +183,5 @@ export function SalesRevenueDetailPage() {
     </Can>
   );
 }
+
+export { calculateRevenueTotals };
