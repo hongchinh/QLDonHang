@@ -14,6 +14,7 @@ import { CustomerListPage } from '@/pages/customers/customer-list-page';
 import { CustomerFormPage } from '@/pages/customers/customer-form-page';
 import { ProductListPage } from '@/pages/products/product-list-page';
 import { ProductFormPage } from '@/pages/products/product-form-page';
+import { ProductGroupListPage } from '@/pages/product-groups/product-group-list-page';
 import { QuotationListPage } from '@/pages/quotations/quotation-list-page';
 import { QuotationFormPage } from '@/pages/quotations/quotation-form-page';
 import { MyQuotationSettingsPage } from '@/pages/settings/my-quotation-settings-page';
@@ -133,6 +134,16 @@ export function App() {
                     element={
                       <ProtectedRoute permission="products.update">
                         <ProductFormPage />
+                      </ProtectedRoute>
+                    }
+                  />
+                </Route>
+                <Route path="product-groups">
+                  <Route
+                    index
+                    element={
+                      <ProtectedRoute permission="products.view">
+                        <ProductGroupListPage />
                       </ProtectedRoute>
                     }
                   />

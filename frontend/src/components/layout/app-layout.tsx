@@ -4,6 +4,7 @@ import {
   LayoutDashboard,
   Users,
   Package,
+  Tag,
   FileText,
   BarChart3,
   UserCog,
@@ -37,6 +38,7 @@ const navGroups: NavGroup[] = [
     items: [
       { to: '/customers', label: 'Khách hàng', icon: Users, permission: 'customers.view' },
       { to: '/products', label: 'Hàng hóa', icon: Package, permission: 'products.view' },
+      { to: '/product-groups', label: 'Nhóm hàng hóa', icon: Tag, permission: 'products.view' },
       { to: '/quotations', label: 'Báo giá', icon: FileText, permission: 'quotations.view' },
     ],
   },

@@ -6,6 +6,8 @@ using OrderMgmt.Application.Catalog.Customers.Interfaces;
 using OrderMgmt.Application.Catalog.Customers.Services;
 using OrderMgmt.Application.Catalog.Lookups.Interfaces;
 using OrderMgmt.Application.Catalog.Lookups.Services;
+using OrderMgmt.Application.Catalog.ProductGroups.Interfaces;
+using OrderMgmt.Application.Catalog.ProductGroups.Services;
 using OrderMgmt.Application.Catalog.Products.Interfaces;
 using OrderMgmt.Application.Catalog.Products.Services;
 using OrderMgmt.Application.Identity.Admin.Interfaces;
@@ -46,6 +48,7 @@ public static class DependencyInjection
         services.AddScoped<IAuthService, AuthService>();
         services.AddScoped<ICustomerService, CustomerService>();
         services.AddScoped<IProductService, ProductService>();
+        services.AddScoped<IProductGroupService, ProductGroupService>();
         services.AddScoped<ICatalogLookupService, CatalogLookupService>();
         services.AddScoped<IQuotationService, QuotationService>();
         services.AddScoped<IQuotationSystemSettingsService, QuotationSystemSettingsService>();
