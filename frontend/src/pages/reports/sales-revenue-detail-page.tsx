@@ -235,6 +235,9 @@ export function SalesRevenueDetailPage() {
                 </div>
               </div>
             )}
+            {items.length > 0 && (
+              <TotalsRow totals={useRevenueTotals(items)} hasCost={hasCost} />
+            )}
           </CardContent>
         </Card>
       </div>

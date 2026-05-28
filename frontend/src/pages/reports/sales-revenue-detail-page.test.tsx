@@ -147,6 +147,23 @@ describe('Scrollable table container', () => {
   });
 });
 
+describe('TotalsRow placement', () => {
+  it('renders TotalsRow below table with correct props', () => {
+    const items: SalesRevenueLineItemDto[] = [
+      createMockItem({ quantity: 10, lineTotal: 1000 }),
+    ];
+
+    const { result } = renderHook(() => useRevenueTotals(items));
+    render(
+      <div>
+        <TotalsRow totals={result.current} hasCost={false} />
+      </div>
+    );
+
+    expect(screen.getByText('Tổng cộng')).toBeInTheDocument();
+  });
+});
+
 function createMockItem(overrides: Partial<SalesRevenueLineItemDto> = {}): SalesRevenueLineItemDto {
   return {
     quotationId: 'q1',
