@@ -79,9 +79,11 @@ vi.mock('@/components/auth/can', () => ({
 // LineItemsGrid uses getBoundingClientRect and complex grid navigation — jsdom has no layout.
 // TotalsPanel depends on computed line totals — stub both to isolate draft behavior.
 // Async factory required: React.forwardRef() must be called after React is initialized (TDZ guard).
-vi.mock('./components/line-items-grid', async () => {
+vi.mock('./components/line-items-grid', async (importOriginal) => {
   const { forwardRef, createElement } = await import('react');
+  const actual = await importOriginal<typeof import('./components/line-items-grid')>();
   return {
+    ...actual,
     LineItemsGrid: forwardRef((_props: unknown, _ref: unknown) =>
       createElement('div', { 'data-testid': 'line-items-grid' }),
     ),

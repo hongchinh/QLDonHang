@@ -57,7 +57,7 @@ function focusLineCellAfterRender(field: LineFocusField, rowIndex: number): void
   setTimeout(() => focusLineCell(field, rowIndex), 0);
 }
 
-function createEmptyLine(sortOrder: number): QuotationLineFormValues {
+export function createEmptyLine(sortOrder: number): QuotationLineFormValues {
   return {
     _uiKey: crypto.randomUUID(),
     sortOrder,

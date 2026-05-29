@@ -71,7 +71,7 @@ import {
   type QuotationDraftStorage,
 } from '@/features/quotations/use-quotation-draft';
 import { StatusPill } from './components/status-pill';
-import { LineItemsGrid, type LineItemsGridHandle } from './components/line-items-grid';
+import { createEmptyLine, LineItemsGrid, type LineItemsGridHandle } from './components/line-items-grid';
 import { TotalsPanel } from './components/totals-panel';
 import { computeLineQuantity } from './utils/compute-line';
 import type { HeaderLike, LineLike } from './utils/compute-line';
@@ -1083,29 +1083,31 @@ function toFormDefaults(q?: Quotation): QuotationFormValues {
     freight: (q?.freight ?? 0) as number,
     advancePayment: (q?.advancePayment ?? 0) as number,
     internalNote: q?.internalNote ?? '',
-    lines: (q?.lines ?? []).map((l, idx) => ({
-      _uiKey: l.id ?? crypto.randomUUID(),
-      id: l.id,
-      sortOrder: l.sortOrder ?? idx,
-      productId: l.productId,
-      productCode: l.productCode ?? '',
-      productName: l.productName,
-      specification: l.specification ?? '',
-      unitName: l.unitName,
-      pricingMode: l.pricingMode,
-      length: l.length ?? '',
-      width: l.width ?? '',
-      thickness: l.thickness ?? '',
-      density: l.density ?? '',
-      sheetCount: l.sheetCount ?? '',
-      quantity: l.quantity,
-      unitPrice: l.unitPrice,
-      lineTotal: l.lineTotal,
-      unitCost: l.unitCost ?? '',
-      lineCost: l.lineCost ?? '',
-      lineProfit: l.lineProfit ?? '',
-      note: l.note ?? '',
-    })) as QuotationLineFormValues[],
+    lines: q
+      ? (q.lines ?? []).map((l, idx) => ({
+          _uiKey: l.id ?? crypto.randomUUID(),
+          id: l.id,
+          sortOrder: l.sortOrder ?? idx,
+          productId: l.productId,
+          productCode: l.productCode ?? '',
+          productName: l.productName,
+          specification: l.specification ?? '',
+          unitName: l.unitName,
+          pricingMode: l.pricingMode,
+          length: l.length ?? '',
+          width: l.width ?? '',
+          thickness: l.thickness ?? '',
+          density: l.density ?? '',
+          sheetCount: l.sheetCount ?? '',
+          quantity: l.quantity,
+          unitPrice: l.unitPrice,
+          lineTotal: l.lineTotal,
+          unitCost: l.unitCost ?? '',
+          lineCost: l.lineCost ?? '',
+          lineProfit: l.lineProfit ?? '',
+          note: l.note ?? '',
+        })) as QuotationLineFormValues[]
+      : [createEmptyLine(0)],
   };
 }
 
