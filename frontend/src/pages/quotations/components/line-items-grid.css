@@ -349,3 +349,9 @@
   color: hsl(var(--muted-foreground));
   font-size: 12.5px;
 }
+
+.accounting-grid .cell-input:disabled {
+  background: #e9ecef;
+  color: hsl(var(--muted-foreground));
+  cursor: not-allowed;
+}
