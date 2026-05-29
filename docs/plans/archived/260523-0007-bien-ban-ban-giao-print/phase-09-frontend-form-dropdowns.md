@@ -94,7 +94,7 @@ Chuyển button "Excel" và "In" trong `quotation-form-page.tsx` thành `Dropdow
        const url = URL.createObjectURL(blob);
        const a = document.createElement('a');
        a.href = url;
-       a.download = `BieuBanBanGiao_${quotation.code}.xlsx`;
+       a.download = `BBBG_${quotation.code}.xlsx`;
        document.body.appendChild(a);
        a.click();
        a.remove();
@@ -110,7 +110,7 @@ Chuyển button "Excel" và "In" trong `quotation-form-page.tsx` thành `Dropdow
        const url = URL.createObjectURL(blob);
        const a = document.createElement('a');
        a.href = url;
-       a.download = `BieuBanBanGiao_${quotation.code}.xlsx`;
+       a.download = `BBBG_${quotation.code}.xlsx`;
        document.body.appendChild(a);
        a.click();
        a.remove();
@@ -258,6 +258,6 @@ Chuyển button "Excel" và "In" trong `quotation-form-page.tsx` thành `Dropdow
 ## Exit Criteria
 
 - 2 button đều là DropdownMenu với 3 option
-- 4 handler mới đúng tên file (prefix `BieuBanBanGiao_`)
+- 4 handler mới đúng tên file (prefix `BBBG_`)
 - Hành vi cũ ("Báo giá") không bị thay đổi
 - TypeScript type check xanh

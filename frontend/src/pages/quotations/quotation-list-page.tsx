@@ -112,11 +112,175 @@ async function downloadHandoverExcel(id: string, code: string, withPrice: boolea
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  a.download = `BieuBanBanGiao_${code}.xlsx`;
+  a.download = `BBBG_${code}.xlsx`;
   document.body.appendChild(a);
   a.click();
   a.remove();
   URL.revokeObjectURL(url);
+}
+
+type ExportKey =
+  | 'quotation-pdf'
+  | 'quotation-excel'
+  | 'handover-pdf-with'
+  | 'handover-pdf-no'
+  | 'handover-excel-with'
+  | 'handover-excel-no';
+
+function QuotationActionsCell({
+  q,
+  onTransition,
+  onClone,
+}: {
+  q: QuotationListItem;
+  onTransition: (action: QuotationAction) => void;
+  onClone: () => void;
+}) {
+  const [loadingExport, setLoadingExport] = useState<ExportKey | null>(null);
+  const canSend = q.status === 'Draft';
+  const canConfirm = q.status === 'Sent';
+  const canCancel = q.status !== 'Cancelled';
+  const busy = loadingExport !== null;
+
+  const runExport = (key: ExportKey, fn: () => Promise<void>) => {
+    if (busy) return;
+    setLoadingExport(key);
+    fn()
+      .catch((err) =>
+        toast({ variant: 'destructive', title: 'Lỗi xuất file', description: getErrorMessage(err) }),
+      )
+      .finally(() => setLoadingExport(null));
+  };
+
+  return (
+    <div className="flex justify-end gap-1">
+      <Can permission="quotations.update">
+        <Button asChild variant="ghost" size="icon" aria-label="Sửa">
+          <Link to={`/quotations/${q.id}`}><Pencil className="h-4 w-4 text-blue-600" /></Link>
+        </Button>
+      </Can>
+      <Can permission="quotations.accounting_confirm">
+        {q.status === 'Confirmed' && (
+          <Button
+            variant="ghost"
+            size="icon"
+            aria-label="KT xác nhận đã nhận tiền"
+            title="KT xác nhận đã nhận tiền"
+            onClick={() => onTransition('AccountingConfirm')}
+          >
+            <BadgeCheck className="h-4 w-4 text-emerald-600" />
+          </Button>
+        )}
+      </Can>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button variant="ghost" size="icon" aria-label="Thao tác khác">
+            {busy
+              ? <Loader2 className="h-4 w-4 animate-spin text-slate-400" />
+              : <MoreHorizontal className="h-4 w-4 text-slate-500" />
+            }
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end">
+          <Can permission="quotations.update">
+            <DropdownMenuItem
+              disabled={!canSend}
+              title={canSend ? undefined : 'Chỉ gửi được báo giá đang ở trạng thái Nháp'}
+              onClick={() => onTransition('Send')}
+            >
+              <Send className="mr-2 h-4 w-4 text-cyan-600" /> Gửi
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              disabled={!canConfirm}
+              title={canConfirm ? undefined : 'Chỉ xác nhận được báo giá đã gửi'}
+              onClick={() => onTransition('Confirm')}
+            >
+              <CheckCircle2 className="mr-2 h-4 w-4 text-emerald-600" /> Xác nhận
+            </DropdownMenuItem>
+          </Can>
+          <Can permission="quotations.create">
+            <DropdownMenuItem onClick={onClone}>
+              <Copy className="mr-2 h-4 w-4 text-violet-600" /> Nhân bản
+            </DropdownMenuItem>
+          </Can>
+          <Can permission="quotations.update">
+            <DropdownMenuItem
+              className="text-destructive focus:text-destructive"
+              disabled={!canCancel}
+              title={canCancel ? undefined : 'Báo giá đã hủy'}
+              onClick={() => onTransition('Cancel')}
+            >
+              <Ban className="mr-2 h-4 w-4 text-red-600" /> Hủy
+            </DropdownMenuItem>
+          </Can>
+          <Can permission="quotations.print">
+            <DropdownMenuSeparator />
+            <DropdownMenuItem
+              disabled={busy}
+              onClick={() => runExport('quotation-pdf', () => openQuotationPdf(q.id))}
+            >
+              {loadingExport === 'quotation-pdf'
+                ? <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                : <Printer className="mr-2 h-4 w-4 text-indigo-600" />
+              }
+              Báo giá
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              disabled={busy}
+              onClick={() => runExport('handover-pdf-with', () => openHandoverPdf(q.id, true))}
+            >
+              {loadingExport === 'handover-pdf-with'
+                ? <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                : <Printer className="mr-2 h-4 w-4 text-indigo-600" />
+              }
+              Biên bản bàn giao (có tiền)
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              disabled={busy}
+              onClick={() => runExport('handover-pdf-no', () => openHandoverPdf(q.id, false))}
+            >
+              {loadingExport === 'handover-pdf-no'
+                ? <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                : <Printer className="mr-2 h-4 w-4 text-indigo-600" />
+              }
+              Biên bản bàn giao (không tiền)
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem
+              disabled={busy}
+              onClick={() => runExport('quotation-excel', () => downloadQuotationExcel(q.id, q.code))}
+            >
+              {loadingExport === 'quotation-excel'
+                ? <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                : <FileSpreadsheet className="mr-2 h-4 w-4 text-emerald-700" />
+              }
+              Báo giá
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              disabled={busy}
+              onClick={() => runExport('handover-excel-with', () => downloadHandoverExcel(q.id, q.code, true))}
+            >
+              {loadingExport === 'handover-excel-with'
+                ? <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                : <FileSpreadsheet className="mr-2 h-4 w-4 text-emerald-700" />
+              }
+              Biên bản bàn giao (có tiền)
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              disabled={busy}
+              onClick={() => runExport('handover-excel-no', () => downloadHandoverExcel(q.id, q.code, false))}
+            >
+              {loadingExport === 'handover-excel-no'
+                ? <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                : <FileSpreadsheet className="mr-2 h-4 w-4 text-emerald-700" />
+              }
+              Biên bản bàn giao (không tiền)
+            </DropdownMenuItem>
+          </Can>
+        </DropdownMenuContent>
+      </DropdownMenu>
+    </div>
+  );
 }
 
 export function QuotationListPage() {
@@ -264,143 +428,22 @@ export function QuotationListPage() {
       {
         id: 'actions',
         header: '',
-        cell: ({ row }) => {
-          const q = row.original;
-          const canSend = q.status === 'Draft';
-          const canConfirm = q.status === 'Sent';
-          const canCancel = q.status !== 'Cancelled';
-          return (
-            <div className="flex justify-end gap-1">
-              <Can permission="quotations.update">
-                <Button asChild variant="ghost" size="icon" aria-label="Sửa">
-                  <Link to={`/quotations/${q.id}`}><Pencil className="h-4 w-4 text-blue-600" /></Link>
-                </Button>
-              </Can>
-              <Can permission="quotations.accounting_confirm">
-                {q.status === 'Confirmed' && (
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    aria-label="KT xác nhận đã nhận tiền"
-                    title="KT xác nhận đã nhận tiền"
-                    onClick={() => setPendingTransition({ item: q, action: 'AccountingConfirm' })}
-                  >
-                    <BadgeCheck className="h-4 w-4 text-emerald-600" />
-                  </Button>
-                )}
-              </Can>
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="icon" aria-label="Thao tác khác">
-                    <MoreHorizontal className="h-4 w-4 text-slate-500" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <Can permission="quotations.update">
-                    <DropdownMenuItem
-                      disabled={!canSend}
-                      title={canSend ? undefined : 'Chỉ gửi được báo giá đang ở trạng thái Nháp'}
-                      onClick={() => setPendingTransition({ item: q, action: 'Send' })}
-                    >
-                      <Send className="mr-2 h-4 w-4 text-cyan-600" /> Gửi
-                    </DropdownMenuItem>
-                    <DropdownMenuItem
-                      disabled={!canConfirm}
-                      title={canConfirm ? undefined : 'Chỉ xác nhận được báo giá đã gửi'}
-                      onClick={() => setPendingTransition({ item: q, action: 'Confirm' })}
-                    >
-                      <CheckCircle2 className="mr-2 h-4 w-4 text-emerald-600" /> Xác nhận
-                    </DropdownMenuItem>
-                  </Can>
-                  <Can permission="quotations.create">
-                    <DropdownMenuItem
-                      onClick={() => {
-                        clone.mutate(q.id, {
-                          onSuccess: (cloned) => {
-                            toast({ variant: 'success', title: 'Đã nhân bản báo giá', description: cloned.code });
-                            navigate(`/quotations/${cloned.id}`);
-                          },
-                          onError: (err) =>
-                            toast({ variant: 'destructive', title: 'Không thể nhân bản', description: getErrorMessage(err) }),
-                        });
-                      }}
-                    >
-                      <Copy className="mr-2 h-4 w-4 text-violet-600" /> Nhân bản
-                    </DropdownMenuItem>
-                  </Can>
-                  <Can permission="quotations.update">
-                    <DropdownMenuItem
-                      className="text-destructive focus:text-destructive"
-                      disabled={!canCancel}
-                      title={canCancel ? undefined : 'Báo giá đã hủy'}
-                      onClick={() => setPendingTransition({ item: q, action: 'Cancel' })}
-                    >
-                      <Ban className="mr-2 h-4 w-4 text-red-600" /> Hủy
-                    </DropdownMenuItem>
-                  </Can>
-                  <Can permission="quotations.print">
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem
-                      onClick={() => {
-                        openQuotationPdf(q.id).catch((err) =>
-                          toast({ variant: 'destructive', title: 'Không mở được PDF', description: getErrorMessage(err) }),
-                        );
-                      }}
-                    >
-                      <Printer className="mr-2 h-4 w-4 text-indigo-600" /> Báo giá
-                    </DropdownMenuItem>
-                    <DropdownMenuItem
-                      onClick={() => {
-                        openHandoverPdf(q.id, true).catch((err) =>
-                          toast({ variant: 'destructive', title: 'Không mở được PDF', description: getErrorMessage(err) }),
-                        );
-                      }}
-                    >
-                      <Printer className="mr-2 h-4 w-4 text-indigo-600" /> Biên bản bàn giao (có tiền)
-                    </DropdownMenuItem>
-                    <DropdownMenuItem
-                      onClick={() => {
-                        openHandoverPdf(q.id, false).catch((err) =>
-                          toast({ variant: 'destructive', title: 'Không mở được PDF', description: getErrorMessage(err) }),
-                        );
-                      }}
-                    >
-                      <Printer className="mr-2 h-4 w-4 text-indigo-600" /> Biên bản bàn giao (không tiền)
-                    </DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem
-                      onClick={() => {
-                        downloadQuotationExcel(q.id, q.code).catch((err) =>
-                          toast({ variant: 'destructive', title: 'Không tải được Excel', description: getErrorMessage(err) }),
-                        );
-                      }}
-                    >
-                      <FileSpreadsheet className="mr-2 h-4 w-4 text-emerald-700" /> Báo giá
-                    </DropdownMenuItem>
-                    <DropdownMenuItem
-                      onClick={() => {
-                        downloadHandoverExcel(q.id, q.code, true).catch((err) =>
-                          toast({ variant: 'destructive', title: 'Không tải được Excel', description: getErrorMessage(err) }),
-                        );
-                      }}
-                    >
-                      <FileSpreadsheet className="mr-2 h-4 w-4 text-emerald-700" /> Biên bản bàn giao (có tiền)
-                    </DropdownMenuItem>
-                    <DropdownMenuItem
-                      onClick={() => {
-                        downloadHandoverExcel(q.id, q.code, false).catch((err) =>
-                          toast({ variant: 'destructive', title: 'Không tải được Excel', description: getErrorMessage(err) }),
-                        );
-                      }}
-                    >
-                      <FileSpreadsheet className="mr-2 h-4 w-4 text-emerald-700" /> Biên bản bàn giao (không tiền)
-                    </DropdownMenuItem>
-                  </Can>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </div>
-          );
-        },
+        cell: ({ row }) => (
+          <QuotationActionsCell
+            q={row.original}
+            onTransition={(action) => setPendingTransition({ item: row.original, action })}
+            onClone={() => {
+              clone.mutate(row.original.id, {
+                onSuccess: (cloned) => {
+                  toast({ variant: 'success', title: 'Đã nhân bản báo giá', description: cloned.code });
+                  navigate(`/quotations/${cloned.id}`);
+                },
+                onError: (err) =>
+                  toast({ variant: 'destructive', title: 'Không thể nhân bản', description: getErrorMessage(err) }),
+              });
+            }}
+          />
+        ),
       },
     ],
     [canViewCost, hasViewAll, clone, navigate],

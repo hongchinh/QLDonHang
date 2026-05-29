@@ -17,6 +17,7 @@ import {
   Printer,
   Save,
   Send,
+  X,
 } from 'lucide-react';
 import {
   useCloneQuotation,
@@ -62,6 +63,13 @@ import { ButtonLoader } from '@/components/ui/button-loader';
 import { Can } from '@/components/auth/can';
 import { getErrorMessage } from '@/lib/api-client';
 import { toast } from '@/lib/use-toast';
+import { useAuthStore } from '@/stores/auth-store';
+import {
+  readQuotationDraft,
+  useQuotationDraft,
+  type QuotationDraftCustomer,
+  type QuotationDraftStorage,
+} from '@/features/quotations/use-quotation-draft';
 import { StatusPill } from './components/status-pill';
 import { LineItemsGrid, type LineItemsGridHandle } from './components/line-items-grid';
 import { TotalsPanel } from './components/totals-panel';
@@ -186,7 +194,7 @@ export function QuotationFormPage() {
           const url = URL.createObjectURL(blob);
           const a = document.createElement('a');
           a.href = url;
-          a.download = `BieuBanBanGiao_${quotation.code}.xlsx`;
+          a.download = `BBBG_${quotation.code}.xlsx`;
           document.body.appendChild(a);
           a.click();
           a.remove();
@@ -202,7 +210,7 @@ export function QuotationFormPage() {
           const url = URL.createObjectURL(blob);
           const a = document.createElement('a');
           a.href = url;
-          a.download = `BieuBanBanGiao_${quotation.code}.xlsx`;
+          a.download = `BBBG_${quotation.code}.xlsx`;
           document.body.appendChild(a);
           a.click();
           a.remove();
@@ -257,9 +265,18 @@ function QuotationFormInner({
 }: InnerProps) {
   const navigateInner = useNavigate();
   const clone = useCloneQuotation();
+
+  // Read draft and userId exactly once at mount via useState initializer.
+  // useAuthStore.getState() is Zustand's static getter — NOT a React hook,
+  // so calling it inside a useState initializer is valid and won't trip rules-of-hooks.
+  const [mountData] = useState<{ draft: QuotationDraftStorage | null; userId: string }>(() => {
+    const uid = useAuthStore.getState().user?.id ?? '';
+    return { draft: !isEdit ? readQuotationDraft(uid) : null, userId: uid };
+  });
+
   const form = useForm<QuotationFormValues, unknown, QuotationFormParsed>({
     resolver: zodResolver(quotationSchema) as unknown as Resolver<QuotationFormValues, unknown, QuotationFormParsed>,
-    defaultValues: toFormDefaults(initial),
+    defaultValues: (!isEdit && mountData.draft?.values) ? mountData.draft.values : toFormDefaults(initial),
   });
 
   // Narrow watches so this component only re-renders when fields used in render
@@ -279,20 +296,28 @@ function QuotationFormInner({
   const [activeTab, setActiveTab] = useState<'general' | 'history'>('general');
 
   const [selectedCustomerView, setSelectedCustomerView] = useState<{ id: string; code: string; name: string } | null>(
-    () =>
-      initialSelectedCustomer
-        ? {
-            id: initialSelectedCustomer.id,
-            code: initialSelectedCustomer.code,
-            name: initialSelectedCustomer.name,
-          }
-        : null,
+    () => {
+      if (!isEdit && mountData.draft?.selectedCustomer) return mountData.draft.selectedCustomer;
+      return initialSelectedCustomer
+        ? { id: initialSelectedCustomer.id, code: initialSelectedCustomer.code, name: initialSelectedCustomer.name }
+        : null;
+    },
   );
   const [quickAddOpen, setQuickAddOpen] = useState(false);
   const [confirmCloneOpen, setConfirmCloneOpen] = useState(false);
   const [confirmAccountingConfirmOpen, setConfirmAccountingConfirmOpen] = useState(false);
   const [pendingSubmitIntent, setPendingSubmitIntent] = useState<QuotationSubmitIntent | null>(null);
   const [pendingButtonAction, setPendingButtonAction] = useState<QuotationButtonAction | null>(null);
+
+  const { hasDraft, draftSavedAt, clearDraft } = useQuotationDraft({
+    form,
+    userId: mountData.userId,
+    isEdit,
+    getSelectedCustomer: () => selectedCustomerView as QuotationDraftCustomer | null,
+    initialHasDraft: !!mountData.draft,
+    initialSavedAt: mountData.draft ? new Date(mountData.draft.savedAt) : null,
+  });
+
   const lineItemsGridRef = useRef<LineItemsGridHandle>(null);
   const isSubmitBusy = submitting || clone.isPending || pendingSubmitIntent != null || pendingButtonAction != null;
 
@@ -343,6 +368,7 @@ function QuotationFormInner({
       async (parsed) => {
         try {
           await onSubmit(parsed, intent);
+          if (!isEdit) clearDraft();
         } finally {
           setPendingSubmitIntent(null);
         }
@@ -444,6 +470,23 @@ function QuotationFormInner({
           </Button>
           <h1 className="truncate text-xl font-bold">{isEdit ? 'Chỉnh sửa báo giá' : 'Thêm báo giá'}</h1>
           {isEdit && <StatusPill status={status} />}
+          {!isEdit && hasDraft && (
+            <div className="flex items-center gap-1 rounded-full border border-amber-300 bg-amber-50 px-2.5 py-0.5 text-xs text-amber-800">
+              <span>Nháp chưa lưu{draftSavedAt ? ` từ ${formatDraftTime(draftSavedAt)}` : ''}</span>
+              <button
+                type="button"
+                className="ml-0.5 hover:text-amber-900"
+                onClick={() => {
+                  clearDraft();
+                  form.reset(toFormDefaults(undefined));
+                  setSelectedCustomerView(null);
+                }}
+                aria-label="Xóa nháp"
+              >
+                <X className="h-3 w-3" />
+              </button>
+            </div>
+          )}
         </div>
           <div className="flex flex-wrap justify-end gap-2">
             <Button type="button" variant="outline" size="sm" asChild>
@@ -1143,6 +1186,10 @@ function collectLineFieldErrors(
     if (problems.length > 0) result.push({ rowNum: i + 1, problems });
   }
   return result;
+}
+
+function formatDraftTime(date: Date): string {
+  return date.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
 }
 
 function actionLabel(action: QuotationAction) {

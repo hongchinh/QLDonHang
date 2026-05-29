@@ -573,7 +573,7 @@ public class QuotationService : IQuotationService
         var templatePath = await _templatePathResolver.ResolveHandoverTemplatePathAsync(
             _currentUser.UserId!.Value, type, ct);
         var bytes = await _handoverRenderer.RenderAsync(dto, templatePath, withPrice, ct);
-        return (bytes, $"BieuBanBanGiao_{dto.Code}.xlsx");
+        return (bytes, $"BBBG_{dto.Code}.xlsx");
     }
 
     public async Task<(byte[] Pdf, string FileName)> RenderHandoverPdfAsync(
@@ -587,7 +587,7 @@ public class QuotationService : IQuotationService
             _currentUser.UserId!.Value, type, ct);
         var excelBytes = await _handoverRenderer.RenderAsync(dto, templatePath, withPrice, ct);
         var pdfBytes = await _pdfConverter.ConvertAsync(excelBytes, ct);
-        return (pdfBytes, $"BieuBanBanGiao_{dto.Code}.pdf");
+        return (pdfBytes, $"BBBG_{dto.Code}.pdf");
     }
 
     public async Task<QuotationDto> TransitionAsync(Guid id, QuotationAction action, CancellationToken ct = default)

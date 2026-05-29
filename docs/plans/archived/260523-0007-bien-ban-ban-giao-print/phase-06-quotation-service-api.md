@@ -68,7 +68,7 @@ Thêm 4 method render biên bản vào `IQuotationService` + `QuotationService`,
        var templatePath = await _templatePathResolver.ResolveHandoverTemplatePathAsync(
            dto.OwnerUserId, type, ct);
        var bytes = await _handoverRenderer.RenderAsync(dto, templatePath, withPrice, ct);
-       return (bytes, $"BieuBanBanGiao_{dto.Code}.xlsx");
+       return (bytes, $"BBBG_{dto.Code}.xlsx");
    }
 
    public async Task<(byte[] Pdf, string FileName)> RenderHandoverPdfAsync(
@@ -82,7 +82,7 @@ Thêm 4 method render biên bản vào `IQuotationService` + `QuotationService`,
            dto.OwnerUserId, type, ct);
        var excelBytes = await _handoverRenderer.RenderAsync(dto, templatePath, withPrice, ct);
        var pdfBytes = await _pdfConverter.ConvertAsync(excelBytes, ct);
-       return (pdfBytes, $"BieuBanBanGiao_{dto.Code}.pdf");
+       return (pdfBytes, $"BBBG_{dto.Code}.pdf");
    }
    ```
 
