@@ -87,4 +87,27 @@ public class MeQuotationSettingsController : ApiControllerBase
             "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
             result.Value.FileName);
     }
+
+    [HttpGet("default-template")]
+    public IActionResult DownloadDefaultTemplate(
+        [FromQuery] string? type,
+        [FromServices] IConfiguration configuration,
+        [FromServices] IWebHostEnvironment env)
+    {
+        var templateType = ParseTemplateType(type);
+        var relativePath = templateType switch
+        {
+            QuotationTemplateType.Quotation => configuration["QuotationExport:TemplatePath"],
+            QuotationTemplateType.HandoverWithPrice => configuration["QuotationExport:HandoverWithPriceTemplatePath"],
+            QuotationTemplateType.HandoverNoPrice => configuration["QuotationExport:HandoverNoPriceTemplatePath"],
+            _ => null,
+        };
+
+        if (relativePath is null) return NotFound();
+        var fullPath = Path.Combine(env.ContentRootPath, relativePath);
+        if (!System.IO.File.Exists(fullPath)) return NotFound();
+
+        var stream = System.IO.File.OpenRead(fullPath);
+        return File(stream, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", Path.GetFileName(fullPath));
+    }
 }
