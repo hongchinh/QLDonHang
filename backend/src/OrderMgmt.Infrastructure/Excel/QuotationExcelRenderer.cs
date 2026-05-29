@@ -56,7 +56,7 @@ public class QuotationExcelRenderer : IQuotationExcelRenderer
     private static void FillHeader(IXLWorksheet ws, QuotationDto q)
     {
         ws.Cell("A8").SetValue($"Số: {q.Code}");
-        ws.Cell("C9").SetValue($"Hà nội, ngày {q.QuotationDate.Day:D2} tháng {q.QuotationDate.Month:D2} năm {q.QuotationDate.Year}");
+        ws.Cell("A9").SetValue($"Hà nội, ngày {q.QuotationDate.Day:D2} tháng {q.QuotationDate.Month:D2} năm {q.QuotationDate.Year}");
         ws.Cell("B10").SetValue($"Đơn vị mua hàng: {q.CustomerName}");
         ws.Cell("B11").SetValue($"Địa chỉ giao hàng: {q.DeliveryAddress ?? string.Empty}");
         ws.Cell("B12").SetValue(FormatDeliveryContact(q));
@@ -96,48 +96,37 @@ public class QuotationExcelRenderer : IQuotationExcelRenderer
         if (n > 0)
         {
             ws.Cell(summaryRow, 4).FormulaA1 = $"SUM(D{FirstSampleRow}:D{FirstSampleRow + n - 1})";
-            ws.Cell(summaryRow, 7).FormulaA1 = $"SUM(G{FirstSampleRow}:G{FirstSampleRow + n - 1})";
+            ws.Cell(summaryRow, 6).FormulaA1 = $"SUM(F{FirstSampleRow}:F{FirstSampleRow + n - 1})";
         }
         else
         {
             ws.Cell(summaryRow, 4).SetValue(0);
-            ws.Cell(summaryRow, 7).SetValue(0);
+            ws.Cell(summaryRow, 6).SetValue(0);
         }
     }
 
     private static void FillSummaryTotals(IXLWorksheet ws, int summaryRow, QuotationDto q)
     {
-        ws.Cell(summaryRow + TaxRowOffset, 6).SetValue((double)(q.TaxRate / 100m));
-        ws.Cell(summaryRow + TaxRowOffset, 7).SetValue((double)q.TaxAmount);
-        ws.Cell(summaryRow + TotalRowOffset, 7).SetValue((double)(q.Subtotal + q.TaxAmount));
-        ws.Cell(summaryRow + AdvancePaymentRowOffset, 7).SetValue((double)q.AdvancePayment);
-        ws.Cell(summaryRow + RemainingBalanceRowOffset, 7).SetValue((double)(q.Subtotal + q.TaxAmount - q.AdvancePayment));
+        ws.Cell(summaryRow + TaxRowOffset, 5).SetValue((double)(q.TaxRate / 100m));
+        ws.Cell(summaryRow + TaxRowOffset, 6).SetValue((double)q.TaxAmount);
+        ws.Cell(summaryRow + TotalRowOffset, 6).SetValue((double)(q.Subtotal + q.TaxAmount));
+        ws.Cell(summaryRow + AdvancePaymentRowOffset, 6).SetValue((double)q.AdvancePayment);
+        ws.Cell(summaryRow + RemainingBalanceRowOffset, 6).SetValue((double)(q.Subtotal + q.TaxAmount - q.AdvancePayment));
     }
 
     private static void FillItemRow(IXLWorksheet ws, int row, int index, QuotationLineDto line)
     {
         ws.Cell(row, 1).SetValue(index);
-        ws.Cell(row, 2).SetValue(FormatItemDescription(line));
-
-        if (line.Density.HasValue)
-            ws.Cell(row, 3).SetValue((double)line.Density.Value);
-        else
-            ws.Cell(row, 3).Clear(XLClearOptions.Contents);
-
+        ws.Cell(row, 2).SetValue(line.ProductName);
+        ws.Cell(row, 3).SetValue(line.UnitName);
         ws.Cell(row, 4).SetValue((double)line.Quantity);
-
-        if (line.SheetCount.HasValue)
-            ws.Cell(row, 5).SetValue((double)line.SheetCount.Value);
-        else
-            ws.Cell(row, 5).Clear(XLClearOptions.Contents);
-
-        ws.Cell(row, 6).SetValue((double)line.UnitPrice);
-        ws.Cell(row, 7).SetValue((double)line.LineTotal);
+        ws.Cell(row, 5).SetValue((double)line.UnitPrice);
+        ws.Cell(row, 6).SetValue((double)line.LineTotal);
     }
 
     private static void CopyRowStyle(IXLWorksheet ws, int sourceRow, int targetRow)
     {
-        for (int col = 1; col <= 7; col++)
+        for (int col = 1; col <= 6; col++)
         {
             var src = ws.Cell(sourceRow, col);
             var dst = ws.Cell(targetRow, col);
@@ -195,10 +184,4 @@ public class QuotationExcelRenderer : IQuotationExcelRenderer
             source, value,
             CompareOptions.IgnoreNonSpace | CompareOptions.IgnoreCase) >= 0;
 
-    private static string FormatItemDescription(QuotationLineDto line)
-    {
-        if (line.Length.HasValue && line.Width.HasValue && line.Thickness.HasValue)
-            return $"KT: {line.Length}*{line.Width}*{line.Thickness}mm";
-        return string.IsNullOrWhiteSpace(line.Specification) ? line.ProductName : line.Specification!;
-    }
 }
