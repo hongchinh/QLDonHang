@@ -96,6 +96,7 @@ public sealed class HandoverExcelRenderer : IHandoverExcelRenderer
         ws.Cell("B11").SetValue(FormatDeliveryContact(q));
         ws.Cell("B12").SetValue(FormatProductNames(q));
         ws.Cell("B12").Style.Alignment.WrapText = true;
+        ws.Row(12).AdjustToContents();
     }
 
     private static void FillItemRows(IXLWorksheet ws, QuotationDto q, bool withPrice)
@@ -125,7 +126,10 @@ public sealed class HandoverExcelRenderer : IHandoverExcelRenderer
         int summaryRow = FirstSampleRow + n;
 
         for (int i = 0; i < n; i++)
+        {
             FillItemRow(ws, FirstSampleRow + i, i + 1, lines[i], withPrice);
+            ws.Row(FirstSampleRow + i).AdjustToContents();
+        }
 
         if (withPrice)
             FillWithPriceFooter(ws, summaryRow, q, n);

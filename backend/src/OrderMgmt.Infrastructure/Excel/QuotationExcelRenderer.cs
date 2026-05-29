@@ -62,6 +62,7 @@ public class QuotationExcelRenderer : IQuotationExcelRenderer
         ws.Cell("B12").SetValue(FormatDeliveryContact(q));
         ws.Cell("B13").SetValue(FormatProductNames(q));
         ws.Cell("B13").Style.Alignment.WrapText = true;
+        ws.Row(13).AdjustToContents();
     }
 
     private static void FillItemRows(IXLWorksheet ws, QuotationDto q)
@@ -91,7 +92,10 @@ public class QuotationExcelRenderer : IQuotationExcelRenderer
         int summaryRow = FirstSampleRow + n;
 
         for (int i = 0; i < n; i++)
+        {
             FillItemRow(ws, FirstSampleRow + i, i + 1, lines[i]);
+            ws.Row(FirstSampleRow + i).AdjustToContents();
+        }
 
         if (n > 0)
         {
