@@ -104,7 +104,7 @@ public sealed class HandoverExcelRenderer : IHandoverExcelRenderer
         ws.Cell("B12").SetValue(FormatProductNames(q));
         ws.Cell("B12").Style.Alignment.WrapText = true;
         ws.Row(12).AdjustToContents();
-        ws.Row(12).Height=ws.Row(12).Height * 1.5; // add extra spacing for wrapped text
+        ws.Row(12).Height=ws.Row(12).Height * 1.2; // add extra spacing for wrapped text
     }
 
     private static void FillItemRows(IXLWorksheet ws, QuotationDto q, bool withPrice)
@@ -137,7 +137,7 @@ public sealed class HandoverExcelRenderer : IHandoverExcelRenderer
         {
             FillItemRow(ws, FirstSampleRow + i, i + 1, lines[i], withPrice);
             ws.Row(FirstSampleRow + i).AdjustToContents();
-            ws.Row(FirstSampleRow + i).Height= ws.Row(FirstSampleRow + i).Height * 1.5; // add extra spacing for wrapped text
+            ws.Row(FirstSampleRow + i).Height= ws.Row(FirstSampleRow + i).Height * 1.2; // add extra spacing for wrapped text
         }
 
         if (withPrice)
