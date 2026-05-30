@@ -36,6 +36,13 @@ public class QuotationExcelRenderer : IQuotationExcelRenderer
         FillItemRows(ws, quotation);
         FillSummaryTotals(ws, FirstSampleRow + quotation.Lines.Count, quotation);
 
+        ws.PageSetup.Margins.Left   = 0.4;
+        ws.PageSetup.Margins.Right  = 0.4;
+        ws.PageSetup.Margins.Top    = 0.5;
+        ws.PageSetup.Margins.Bottom = 0.5;
+        ws.PageSetup.PagesWide = 1;
+        ws.PageSetup.PagesTall = 0;
+
         using var ms = new MemoryStream();
         workbook.SaveAs(ms);
         return Task.FromResult(ms.ToArray());
