@@ -246,10 +246,5 @@ public sealed class HandoverExcelRenderer : IHandoverExcelRenderer
             source, value,
             CompareOptions.IgnoreNonSpace | CompareOptions.IgnoreCase) >= 0;
 
-    private static string FormatItemDescription(QuotationLineDto line)
-    {
-        if (line.Length.HasValue && line.Width.HasValue && line.Thickness.HasValue)
-            return $"KT: {line.Length}*{line.Width}*{line.Thickness}mm";
-        return string.IsNullOrWhiteSpace(line.Specification) ? line.ProductName : line.Specification!;
-    }
+    private static string FormatItemDescription(QuotationLineDto line) => line.ProductName;
 }

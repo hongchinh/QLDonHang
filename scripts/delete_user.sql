@@ -2,7 +2,7 @@
 -- XÓA USER VÀ TOÀN BỘ DỮ LIỆU LIÊN QUAN (HARD DELETE)
 -- ============================================================
 -- Cách dùng:
---   1. Thay giá trị v_target bên dưới bằng email hoặc username cần xóa
+--   1. Thay giá trị v_user_id bên dưới bằng UUID của user cần xóa
 --   2. Chạy toàn bộ file trong psql hoặc pgAdmin/DBeaver
 --
 -- Script này xóa cứng (hard delete) theo thứ tự:
@@ -13,12 +13,11 @@
 
 DO $$
 DECLARE
-    v_user_id    UUID;
+    -- ⚠️  THAY GIÁ TRỊ NÀY trước khi chạy:
+    v_user_id    UUID := 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx';
+
     v_username   TEXT;
     v_email      TEXT;
-
-    -- ⚠️  THAY GIÁ TRỊ NÀY trước khi chạy:
-    v_target     TEXT := 'email_hoac_username_can_xoa';
 
     n_activities        INT;
     n_owner_history     INT;
@@ -31,14 +30,13 @@ DECLARE
     n_roles             INT;
 BEGIN
     -- ── Tìm user ──────────────────────────────────────────────
-    SELECT id, username, email
-    INTO   v_user_id, v_username, v_email
+    SELECT username, email
+    INTO   v_username, v_email
     FROM   users
-    WHERE  email = v_target OR username = v_target
-    LIMIT  1;
+    WHERE  id = v_user_id;
 
-    IF v_user_id IS NULL THEN
-        RAISE EXCEPTION 'Không tìm thấy user với email/username: "%"', v_target;
+    IF v_username IS NULL THEN
+        RAISE EXCEPTION 'Không tìm thấy user với id: "%"', v_user_id;
     END IF;
 
     RAISE NOTICE '=== XÓA USER: % (%) | ID: % ===', v_username, v_email, v_user_id;

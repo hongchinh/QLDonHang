@@ -79,10 +79,10 @@ public class AdminUserService : IAdminUserService
 
     public async Task<AdminUserDetailDto> CreateAsync(CreateUserRequest req, CancellationToken ct = default)
     {
-        if (await _db.Users.AnyAsync(u => u.Username == req.Username, ct))
+        if (await _db.Users.IgnoreQueryFilters().AnyAsync(u => u.Username == req.Username, ct))
             throw new ConflictException($"Username '{req.Username}' đã tồn tại.");
 
-        if (await _db.Users.AnyAsync(u => u.Email == req.Email, ct))
+        if (await _db.Users.IgnoreQueryFilters().AnyAsync(u => u.Email == req.Email, ct))
             throw new ConflictException($"Email '{req.Email}' đã tồn tại.");
 
         var role = await _db.Roles.FirstOrDefaultAsync(r => r.Code == req.RoleCode, ct)
