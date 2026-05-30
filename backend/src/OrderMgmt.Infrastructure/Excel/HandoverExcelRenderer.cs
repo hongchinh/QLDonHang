@@ -70,6 +70,13 @@ public sealed class HandoverExcelRenderer : IHandoverExcelRenderer
         FillHeader(ws, quotation);
         FillItemRows(ws, quotation, withPrice);
 
+        ws.PageSetup.Margins.Left   = 0.4;
+        ws.PageSetup.Margins.Right  = 0.4;
+        ws.PageSetup.Margins.Top    = 0.5;
+        ws.PageSetup.Margins.Bottom = 0.5;
+        ws.PageSetup.PagesWide = 1;
+        ws.PageSetup.PagesTall = 0;
+
         using var ms = new MemoryStream();
         workbook.SaveAs(ms);
         return Task.FromResult(ms.ToArray());
@@ -97,6 +104,7 @@ public sealed class HandoverExcelRenderer : IHandoverExcelRenderer
         ws.Cell("B12").SetValue(FormatProductNames(q));
         ws.Cell("B12").Style.Alignment.WrapText = true;
         ws.Row(12).AdjustToContents();
+        ws.Row(12).Height=ws.Row(12).Height * 1.5; // add extra spacing for wrapped text
     }
 
     private static void FillItemRows(IXLWorksheet ws, QuotationDto q, bool withPrice)
@@ -129,6 +137,7 @@ public sealed class HandoverExcelRenderer : IHandoverExcelRenderer
         {
             FillItemRow(ws, FirstSampleRow + i, i + 1, lines[i], withPrice);
             ws.Row(FirstSampleRow + i).AdjustToContents();
+            ws.Row(FirstSampleRow + i).Height= ws.Row(FirstSampleRow + i).Height * 1.5; // add extra spacing for wrapped text
         }
 
         if (withPrice)
