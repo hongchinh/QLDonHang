@@ -117,7 +117,7 @@ export function QuotationFormPage() {
             toast({ variant: 'success', title: 'Đã tạo báo giá', description: result.code });
             if (intent === 'save-print') {
               try {
-                await openQuotationPdfInNewTab(result.id);
+                await openPdfInNewTab(`BG-${result.code}`, () => quotationsApi.downloadPdf(result.id));
               } catch (err) {
                 toast({ variant: 'destructive', title: 'Không mở được PDF', description: getErrorMessage(err) });
               }
@@ -144,7 +144,10 @@ export function QuotationFormPage() {
       onPrint={async () => {
         if (!id || !isEdit) return;
         try {
-          await openQuotationPdfInNewTab(id);
+          await openPdfInNewTab(
+            quotation ? `BG-${quotation.code}` : 'Báo giá',
+            () => quotationsApi.downloadPdf(id),
+          );
         } catch (err) {
           toast({ variant: 'destructive', title: 'Không mở được PDF', description: getErrorMessage(err) });
         }
@@ -168,10 +171,10 @@ export function QuotationFormPage() {
       onPrintHandoverWithPrice={async () => {
         if (!id || !isEdit || !quotation) return;
         try {
-          const blob = await quotationsApi.downloadHandoverWithPricePdf(id);
-          const url = URL.createObjectURL(blob);
-          window.open(url, '_blank', 'noopener,noreferrer');
-          window.setTimeout(() => URL.revokeObjectURL(url), 60_000);
+          await openPdfInNewTab(
+            `BBBG-${quotation.code}`,
+            () => quotationsApi.downloadHandoverWithPricePdf(id),
+          );
         } catch (err) {
           toast({ variant: 'destructive', title: 'Không mở được PDF', description: getErrorMessage(err) });
         }
@@ -179,10 +182,10 @@ export function QuotationFormPage() {
       onPrintHandoverNoPrice={async () => {
         if (!id || !isEdit || !quotation) return;
         try {
-          const blob = await quotationsApi.downloadHandoverNoPricePdf(id);
-          const url = URL.createObjectURL(blob);
-          window.open(url, '_blank', 'noopener,noreferrer');
-          window.setTimeout(() => URL.revokeObjectURL(url), 60_000);
+          await openPdfInNewTab(
+            `BBBG-${quotation.code}`,
+            () => quotationsApi.downloadHandoverNoPricePdf(id),
+          );
         } catch (err) {
           toast({ variant: 'destructive', title: 'Không mở được PDF', description: getErrorMessage(err) });
         }
@@ -223,11 +226,38 @@ export function QuotationFormPage() {
   );
 }
 
-async function openQuotationPdfInNewTab(quotationId: string) {
-  const blob = await quotationsApi.downloadPdf(quotationId);
-  const url = URL.createObjectURL(blob);
-  window.open(url, '_blank', 'noopener,noreferrer');
-  window.setTimeout(() => URL.revokeObjectURL(url), 60_000);
+// Mở PDF trong tab mới với title đúng.
+// window.open PHẢI gọi trước await để không bị Chrome popup-blocker chặn.
+async function openPdfInNewTab(title: string, fetchBlob: () => Promise<Blob>) {
+  const newTab = window.open('about:blank', '_blank'); // đồng bộ — trước mọi await
+
+  if (newTab) {
+    newTab.document.write(
+      `<!DOCTYPE html><html><head><title>${title}</title></head>` +
+      `<body style="margin:0;background:#525659;color:#fff;display:flex;align-items:center;` +
+      `justify-content:center;height:100vh;font-family:sans-serif">Đang tải...</body></html>`
+    );
+    newTab.document.close();
+  }
+
+  const blob = await fetchBlob();
+  const pdfUrl = URL.createObjectURL(blob);
+
+  if (newTab) {
+    newTab.document.open();
+    newTab.document.write(
+      `<!DOCTYPE html><html><head><title>${title}</title></head>` +
+      `<body style="margin:0;padding:0;overflow:hidden">` +
+      `<iframe src="${pdfUrl}" style="display:block;width:100vw;height:100vh;border:none;"></iframe>` +
+      `</body></html>`
+    );
+    newTab.document.close();
+  } else {
+    // fallback nếu popup bị chặn
+    window.open(pdfUrl, '_blank', 'noopener,noreferrer');
+  }
+
+  window.setTimeout(() => URL.revokeObjectURL(pdfUrl), 60_000);
 }
 
 interface InnerProps {
