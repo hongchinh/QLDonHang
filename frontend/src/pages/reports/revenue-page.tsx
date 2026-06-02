@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   Select,
   SelectContent,
@@ -21,7 +21,7 @@ import {
   useTopCustomers,
 } from '@/features/dashboard/hooks';
 import { useDashboardParams } from '@/features/dashboard/use-dashboard-params';
-import { useAdminUsers } from '@/features/admin-users/hooks';
+import { useQuotationOwners } from '@/features/quotations/hooks';
 import { useRevenueLineItems } from '@/features/reports/sales-revenue-detail/hooks';
 import type { SalesRevenueLineItemDto } from '@/features/reports/sales-revenue-detail/types';
 import type { Granularity, Kpi } from '@/features/dashboard/types';
@@ -61,19 +61,28 @@ export function RevenuePage() {
   const { from, to, saleUserId, setRange, setSaleUserId, setPreset } = useDashboardParams();
   const [granularity, setGranularity] = useState<Granularity>('day');
   const isAdmin = useAuthStore((s) => s.hasPermission('quotations.view_all'));
+  const currentUser = useAuthStore((s) => s.user);
+
+  const didInit = useRef(false);
+  useEffect(() => {
+    if (!didInit.current && currentUser?.id && !saleUserId) {
+      didInit.current = true;
+      setSaleUserId(currentUser.id);
+    }
+  }, [currentUser?.id, saleUserId, setSaleUserId]);
 
   const summary = useDashboardSummary({ from, to, saleUserId });
   const revenue = useRevenueSeries({ from, to, granularity, saleUserId });
   const topCustomers = useTopCustomers({ from, to, limit: 5, saleUserId });
   const detailLines = useRevenueLineItems({ from, to, saleUserId });
-  const usersQuery = useAdminUsers({ activeOnly: true });
+  const ownersQuery = useQuotationOwners({ enabled: isAdmin });
 
   const rangeRevenue: Kpi | undefined = summary.data?.rangeRevenue;
   const totalCount = summary.data?.totalCount.value ?? 0;
   const cancelledCount = summary.data?.cancelledCount.value ?? 0;
   const confirmedCount = Math.max(0, Math.round(totalCount - cancelledCount));
   const avgPerQuote = confirmedCount > 0 && rangeRevenue ? rangeRevenue.value / confirmedCount : 0;
-  const detailItems = detailLines.data ?? [];
+  const detailItems = useMemo(() => detailLines.data ?? [], [detailLines.data]);
   const hasCostColumns = detailItems.some((item) => item.unitCost !== null || item.lineCost !== null || item.lineProfit !== null);
   const detailTotals = useMemo(() => {
     return detailItems.reduce(
@@ -81,12 +90,15 @@ export function RevenuePage() {
         acc.quantity += item.quantity;
         acc.sheetCount += item.sheetCount ?? 0;
         acc.lineTotal += item.lineTotal;
-        if (item.isFirstLineOfQuotation) acc.freight += item.freight;
+        if (item.isFirstLineOfQuotation) {
+          acc.freight += item.freight;
+          acc.taxAmount += item.taxAmount;
+        }
         acc.lineCost += item.lineCost ?? 0;
         acc.lineProfit += item.lineProfit ?? 0;
         return acc;
       },
-      { quantity: 0, sheetCount: 0, lineTotal: 0, freight: 0, lineCost: 0, lineProfit: 0 },
+      { quantity: 0, sheetCount: 0, lineTotal: 0, freight: 0, taxAmount: 0, lineCost: 0, lineProfit: 0 },
     );
   }, [detailItems]);
 
@@ -94,7 +106,9 @@ export function RevenuePage() {
     <div className="space-y-6">
       <header className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Báo cáo doanh thu</h1>
+          <h1 className="text-2xl font-semibold tracking-tight">
+            {!isAdmin && currentUser ? `Báo cáo doanh thu của ${currentUser.fullName}` : 'Báo cáo doanh thu'}
+          </h1>
           <p className="text-sm text-muted-foreground">
             {summary.data ? `Từ ${summary.data.from} đến ${summary.data.to}` : 'Báo giá xác nhận trong khoảng đang xem.'}
           </p>
@@ -110,9 +124,9 @@ export function RevenuePage() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value={ALL_SALES}>Tất cả sale</SelectItem>
-                {(usersQuery.data ?? []).map((u) => (
+                {(ownersQuery.data ?? []).map((u) => (
                   <SelectItem key={u.id} value={u.id}>
-                    {u.fullName}
+                    {u.isDeleted ? `${u.fullName} (đã nghỉ)` : u.fullName}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -156,6 +170,7 @@ export function RevenuePage() {
                     <TableHead className="text-right">Đơn giá</TableHead>
                     <TableHead className="text-right">Thành tiền</TableHead>
                     <TableHead className="text-right">Cước vận chuyển</TableHead>
+                    <TableHead className="text-right">VAT</TableHead>
                     {hasCostColumns && (
                       <>
                         <TableHead className="text-right">Giá nhập</TableHead>
@@ -193,6 +208,7 @@ export function RevenuePage() {
                         <TableCell className="text-right tabular-nums">{formatMoneyNumber(item.unitPrice)}</TableCell>
                         <TableCell className="text-right tabular-nums">{formatMoneyNumber(item.lineTotal)}</TableCell>
                         <TableCell className="text-right tabular-nums">{isFirst ? formatMoneyNumber(item.freight) : ''}</TableCell>
+                        <TableCell className="text-right tabular-nums">{isFirst ? formatMoneyNumber(item.taxAmount) : ''}</TableCell>
                         {hasCostColumns && (
                           <>
                             <TableCell className="text-right tabular-nums">{formatMoneyNumber(item.unitCost)}</TableCell>
@@ -216,6 +232,7 @@ export function RevenuePage() {
                     <TableCell />
                     <TableCell className="text-right tabular-nums">{formatMoneyNumber(detailTotals.lineTotal)}</TableCell>
                     <TableCell className="text-right tabular-nums">{formatMoneyNumber(detailTotals.freight)}</TableCell>
+                    <TableCell className="text-right tabular-nums">{formatMoneyNumber(detailTotals.taxAmount)}</TableCell>
                     {hasCostColumns && (
                       <>
                         <TableCell />

@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -20,8 +20,9 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Can } from '@/components/auth/can';
+import { useAuthStore } from '@/stores/auth-store';
 import { useSalesRevenue } from '@/features/reports/sales-revenue/hooks';
-import { useAdminUsers } from '@/features/admin-users/hooks';
+import { useQuotationOwners } from '@/features/quotations/hooks';
 
 const ALL_SALES = '__all__';
 
@@ -38,13 +39,23 @@ const moneyFmt = new Intl.NumberFormat('vi-VN');
 
 export function SalesRevenuePage() {
   const navigate = useNavigate();
+  const isAdmin = useAuthStore((s) => s.hasPermission('quotations.view_all'));
+  const currentUser = useAuthStore((s) => s.user);
   const [from, setFrom] = useState(startOfMonthIso());
   const [to, setTo] = useState(todayIso());
   const [saleUserId, setSaleUserId] = useState<string | undefined>(undefined);
 
+  const didInit = useRef(false);
+  useEffect(() => {
+    if (!didInit.current && currentUser?.id) {
+      didInit.current = true;
+      setSaleUserId(currentUser.id);
+    }
+  }, [currentUser?.id]);
+
   const params = useMemo(() => ({ from, to, saleUserId }), [from, to, saleUserId]);
   const query = useSalesRevenue(params, Boolean(from && to));
-  const users = useAdminUsers({ activeOnly: false });
+  const ownersQuery = useQuotationOwners({ enabled: isAdmin });
 
   return (
     <Can permission="reports.revenue" fallback={<div className="p-4">Bạn không có quyền xem báo cáo này.</div>}>
@@ -70,25 +81,27 @@ export function SalesRevenuePage() {
                 <Label htmlFor="to">Đến ngày</Label>
                 <Input id="to" type="date" value={to} onChange={(e) => setTo(e.target.value)} />
               </div>
-              <div className="min-w-[220px]">
-                <Label>Nhân viên kinh doanh</Label>
-                <Select
-                  value={saleUserId ?? ALL_SALES}
-                  onValueChange={(v) => setSaleUserId(v === ALL_SALES ? undefined : v)}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Tất cả" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value={ALL_SALES}>Tất cả</SelectItem>
-                    {(users.data ?? []).map((u) => (
-                      <SelectItem key={u.id} value={u.id}>
-                        {u.fullName}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+              {isAdmin && (
+                <div className="min-w-[220px]">
+                  <Label>Nhân viên kinh doanh</Label>
+                  <Select
+                    value={saleUserId ?? ALL_SALES}
+                    onValueChange={(v) => setSaleUserId(v === ALL_SALES ? undefined : v)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Tất cả" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value={ALL_SALES}>Tất cả</SelectItem>
+                      {(ownersQuery.data ?? []).map((u) => (
+                        <SelectItem key={u.id} value={u.id}>
+                          {u.isDeleted ? `${u.fullName} (đã nghỉ)` : u.fullName}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
             </div>
           </CardContent>
         </Card>

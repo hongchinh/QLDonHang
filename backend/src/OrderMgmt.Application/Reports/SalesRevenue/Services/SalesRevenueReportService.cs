@@ -180,6 +180,7 @@ public class SalesRevenueReportService : ISalesRevenueReportService
                     DeliveryAddress          = q.DeliveryAddress,
                     DeliveryPhone            = q.DeliveryPhone,
                     Freight                  = q.Freight,
+                    TaxAmount                = q.TaxAmount,
                     IsFirstLineOfQuotation   = i == 0,
                     ProductName              = line.ProductName,
                     Specification            = line.Specification,
