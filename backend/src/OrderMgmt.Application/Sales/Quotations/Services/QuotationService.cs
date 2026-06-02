@@ -238,6 +238,8 @@ public class QuotationService : IQuotationService
                 Subtotal = q.Subtotal,
                 Discount = q.Discount,
                 Freight = q.Freight,
+                TaxRate = q.TaxRate,
+                TaxAmount = q.TaxAmount,
                 Total = q.Total,
                 AdvancePayment = q.AdvancePayment,
                 TotalCost = canViewCost ? q.TotalCost : null,

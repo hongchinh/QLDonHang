@@ -120,6 +120,8 @@ public class QuotationListItemDto
     public decimal Subtotal { get; set; }
     public decimal Discount { get; set; }
     public decimal Freight { get; set; }
+    public decimal TaxRate { get; set; }
+    public decimal TaxAmount { get; set; }
     public decimal Total { get; set; }
     public decimal AdvancePayment { get; set; }
     public decimal? TotalCost { get; set; }

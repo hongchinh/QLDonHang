@@ -389,7 +389,21 @@ export function QuotationListPage() {
         cell: ({ row }) => moneyCell(row.original.freight),
       },
       {
-        header: () => moneyHeader('Tổng tiền'),
+        header: () => <div className="text-right">% VAT</div>,
+        accessorKey: 'taxRate',
+        cell: ({ row }) => (
+          <span className="block text-right tabular-nums">
+            {row.original.taxRate > 0 ? `${row.original.taxRate}%` : '—'}
+          </span>
+        ),
+      },
+      {
+        header: () => moneyHeader('Tiền thuế'),
+        accessorKey: 'taxAmount',
+        cell: ({ row }) => moneyCell(row.original.taxAmount > 0 ? row.original.taxAmount : null),
+      },
+      {
+        header: () => moneyHeader('Tổng cộng'),
         accessorKey: 'total',
         cell: ({ row }) => moneyCell(row.original.total),
       },

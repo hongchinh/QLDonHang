@@ -93,6 +93,8 @@ export interface QuotationListItem {
   subtotal: number;
   discount: number;
   freight: number;
+  taxRate: number;
+  taxAmount: number;
   total: number;
   advancePayment: number;
   totalCost?: number | null;
