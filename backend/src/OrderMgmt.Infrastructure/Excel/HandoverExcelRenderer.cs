@@ -150,6 +150,7 @@ public sealed class HandoverExcelRenderer : IHandoverExcelRenderer
     {
         ws.Cell(row, ColStt).SetValue(index);
         ws.Cell(row, ColName).SetValue(FormatItemDescription(line));
+        ws.Cell(row, ColName).Style.Alignment.WrapText = true;
         ws.Cell(row, ColUnit).SetValue(line.UnitName);
         ws.Cell(row, ColQty).SetValue((double)line.Quantity);
 
@@ -215,6 +216,7 @@ public sealed class HandoverExcelRenderer : IHandoverExcelRenderer
             dst.Style.Border.RightBorderColor = src.Style.Border.RightBorderColor;
             dst.Style.Alignment.Horizontal = src.Style.Alignment.Horizontal;
             dst.Style.Alignment.Vertical = src.Style.Alignment.Vertical;
+            dst.Style.Alignment.WrapText = src.Style.Alignment.WrapText;
             dst.Style.NumberFormat.Format = src.Style.NumberFormat.Format;
         }
         ws.Row(targetRow).Height = ws.Row(sourceRow).Height;

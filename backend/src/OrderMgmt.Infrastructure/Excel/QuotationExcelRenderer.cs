@@ -131,6 +131,7 @@ public class QuotationExcelRenderer : IQuotationExcelRenderer
     {
         ws.Cell(row, 1).SetValue(index);
         ws.Cell(row, 2).SetValue(line.ProductName);
+        ws.Cell(row, 2).Style.Alignment.WrapText = true;
         ws.Cell(row, 3).SetValue(line.UnitName);
         ws.Cell(row, 4).SetValue((double)line.Quantity);
         ws.Cell(row, 5).SetValue((double)line.UnitPrice);
@@ -157,6 +158,7 @@ public class QuotationExcelRenderer : IQuotationExcelRenderer
             dst.Style.Border.RightBorderColor = src.Style.Border.RightBorderColor;
             dst.Style.Alignment.Horizontal = src.Style.Alignment.Horizontal;
             dst.Style.Alignment.Vertical = src.Style.Alignment.Vertical;
+            dst.Style.Alignment.WrapText = src.Style.Alignment.WrapText;
             dst.Style.NumberFormat.Format = src.Style.NumberFormat.Format;
         }
         ws.Row(targetRow).Height = ws.Row(sourceRow).Height;
