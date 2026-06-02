@@ -1,12 +1,15 @@
 using System.Globalization;
 using ClosedXML.Excel;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using OrderMgmt.Application.Sales.Quotations.Interfaces;
 using OrderMgmt.Application.Sales.Quotations.Models;
 
 namespace OrderMgmt.Infrastructure.Excel;
 
-public class QuotationExcelRenderer : IQuotationExcelRenderer
+public class QuotationExcelRenderer(
+    IOptions<QuotationExportOptions> options,
+    ILogger<QuotationExcelRenderer> logger) : IQuotationExcelRenderer
 {
     // Template has 2 sample item rows: 15 and 16.
     private const int FirstSampleRow = 15;
@@ -18,11 +21,6 @@ public class QuotationExcelRenderer : IQuotationExcelRenderer
     internal const int AdvancePaymentRowOffset = 3;
     internal const int RemainingBalanceRowOffset = 4;
 
-    private readonly IOptions<QuotationExportOptions> _options;
-
-    public QuotationExcelRenderer(IOptions<QuotationExportOptions> options)
-        => _options = options;
-
     public Task<byte[]> RenderAsync(QuotationDto quotation, CancellationToken ct = default)
         => RenderAsync(quotation, ResolveDefaultTemplatePath(), ct);
 
@@ -32,8 +30,8 @@ public class QuotationExcelRenderer : IQuotationExcelRenderer
         using var workbook = new XLWorkbook(resolved);
         var ws = workbook.Worksheet(1);
 
-        FillHeader(ws, quotation);
-        FillItemRows(ws, quotation);
+        FillHeader(ws, quotation, logger);
+        FillItemRows(ws, quotation, logger);
         FillSummaryTotals(ws, FirstSampleRow + quotation.Lines.Count, quotation);
 
         ws.PageSetup.Margins.Left   = 0.4;
@@ -48,7 +46,7 @@ public class QuotationExcelRenderer : IQuotationExcelRenderer
         return Task.FromResult(ms.ToArray());
     }
 
-    private string ResolveDefaultTemplatePath() => ResolveAbsolutePath(_options.Value.TemplatePath);
+    private string ResolveDefaultTemplatePath() => ResolveAbsolutePath(options.Value.TemplatePath);
 
     private static string ResolveAbsolutePath(string path)
     {
@@ -60,7 +58,7 @@ public class QuotationExcelRenderer : IQuotationExcelRenderer
         return p;
     }
 
-    private static void FillHeader(IXLWorksheet ws, QuotationDto q)
+    private static void FillHeader(IXLWorksheet ws, QuotationDto q, ILogger logger)
     {
         ws.Cell("A8").SetValue($"Số: {q.Code}");
         ws.Cell("A9").SetValue($"Hà nội, ngày {q.QuotationDate.Day:D2} tháng {q.QuotationDate.Month:D2} năm {q.QuotationDate.Year}");
@@ -69,11 +67,10 @@ public class QuotationExcelRenderer : IQuotationExcelRenderer
         ws.Cell("B12").SetValue(FormatDeliveryContact(q));
         ws.Cell("B13").SetValue(FormatProductNames(q));
         ws.Cell("B13").Style.Alignment.WrapText = true;
-        ws.Row(13).AdjustToContents();
-        ws.Row(13).Height = ws.Row(13).Height * 1.2; // Add some extra vertical padding for readability
+        SetWrappedRowHeight(ws, 13, 2, logger);
     }
 
-    private static void FillItemRows(IXLWorksheet ws, QuotationDto q)
+    private static void FillItemRows(IXLWorksheet ws, QuotationDto q, ILogger logger)
     {
         var lines = q.Lines.OrderBy(l => l.SortOrder).ToList();
         int n = lines.Count;
@@ -102,8 +99,7 @@ public class QuotationExcelRenderer : IQuotationExcelRenderer
         for (int i = 0; i < n; i++)
         {
             FillItemRow(ws, FirstSampleRow + i, i + 1, lines[i]);
-            ws.Row(FirstSampleRow + i).AdjustToContents();
-            ws.Row(FirstSampleRow + i).Height=ws.Row(FirstSampleRow + i).Height * 1.2; // Add some extra vertical padding for readability
+            SetWrappedRowHeight(ws, FirstSampleRow + i, 2, logger);
         }
 
         if (n > 0)
@@ -162,6 +158,30 @@ public class QuotationExcelRenderer : IQuotationExcelRenderer
             dst.Style.NumberFormat.Format = src.Style.NumberFormat.Format;
         }
         ws.Row(targetRow).Height = ws.Row(sourceRow).Height;
+    }
+
+    private static void SetWrappedRowHeight(IXLWorksheet ws, int row, int nameCol, ILogger logger)
+    {
+        var cell = ws.Cell(row, nameCol);
+        var text = cell.Value.ToString() ?? string.Empty;
+        var fontSize = cell.Style.Font.FontSize > 0 ? cell.Style.Font.FontSize : 11.0;
+
+        var merge = ws.MergedRanges.FirstOrDefault(r => r.Contains(cell));
+        var widthChars = merge != null
+            ? Enumerable.Range(merge.FirstColumn().ColumnNumber(), merge.ColumnCount())
+                        .Sum(c => ws.Column(c).Width)
+            : ws.Column(nameCol).Width;
+
+        var charsPerLine = Math.Max(1, widthChars * 0.80);
+        var lines = string.IsNullOrEmpty(text) ? 1 : (int)Math.Ceiling(text.Length / charsPerLine);
+        // Cell top+bottom padding counted once; additional lines add only inter-line spacing.
+        var height = fontSize * 1.875 + (lines - 1) * fontSize * 1.3;
+
+        logger.LogDebug(
+            "SetWrappedRowHeight row={Row} merged={Merged} widthChars={Width:F1} charsPerLine={CharsPerLine:F1} textLen={TextLen} lines={Lines} fontSize={FontSize} height={Height:F1} text={Text}",
+            row, merge != null, widthChars, charsPerLine, text.Length, lines, fontSize, height, text);
+
+        ws.Row(row).Height = height;
     }
 
     private static string FormatDeliveryContact(QuotationDto q)

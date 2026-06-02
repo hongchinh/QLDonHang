@@ -1,5 +1,6 @@
 using System.Globalization;
 using ClosedXML.Excel;
+using Microsoft.Extensions.Logging;
 using OrderMgmt.Application.Sales.Quotations.Interfaces;
 using OrderMgmt.Application.Sales.Quotations.Models;
 
@@ -32,8 +33,9 @@ namespace OrderMgmt.Infrastructure.Excel;
 /// No-price footer:
 ///   summaryRow : Tổng cộng → col D (quantity total only)
 /// </summary>
-public sealed class HandoverExcelRenderer : IHandoverExcelRenderer
+public sealed class HandoverExcelRenderer(ILogger<HandoverExcelRenderer> logger) : IHandoverExcelRenderer
 {
+
     // Both templates have the same header and item-row layout.
     private const int FirstSampleRow = 14;
     private const int SampleRowCount = 2;
@@ -67,8 +69,8 @@ public sealed class HandoverExcelRenderer : IHandoverExcelRenderer
         using var workbook = new XLWorkbook(resolved);
         var ws = workbook.Worksheet(1);
 
-        FillHeader(ws, quotation);
-        FillItemRows(ws, quotation, withPrice);
+        FillHeader(ws, quotation, logger);
+        FillItemRows(ws, quotation, withPrice, logger);
 
         ws.PageSetup.Margins.Left   = 0.4;
         ws.PageSetup.Margins.Right  = 0.4;
@@ -92,7 +94,7 @@ public sealed class HandoverExcelRenderer : IHandoverExcelRenderer
         return p;
     }
 
-    private static void FillHeader(IXLWorksheet ws, QuotationDto q)
+    private static void FillHeader(IXLWorksheet ws, QuotationDto q, ILogger logger)
     {
         var date = q.DeliveryDate ?? q.QuotationDate;
         ws.Cell("B6").SetValue(
@@ -103,11 +105,10 @@ public sealed class HandoverExcelRenderer : IHandoverExcelRenderer
         ws.Cell("B11").SetValue(FormatDeliveryContact(q));
         ws.Cell("B12").SetValue(FormatProductNames(q));
         ws.Cell("B12").Style.Alignment.WrapText = true;
-        ws.Row(12).AdjustToContents();
-        ws.Row(12).Height=ws.Row(12).Height * 1.2; // add extra spacing for wrapped text
+        SetWrappedRowHeight(ws, 12, 2, logger);
     }
 
-    private static void FillItemRows(IXLWorksheet ws, QuotationDto q, bool withPrice)
+    private static void FillItemRows(IXLWorksheet ws, QuotationDto q, bool withPrice, ILogger logger)
     {
         var lines = q.Lines.OrderBy(l => l.SortOrder).ToList();
         int n = lines.Count;
@@ -136,8 +137,7 @@ public sealed class HandoverExcelRenderer : IHandoverExcelRenderer
         for (int i = 0; i < n; i++)
         {
             FillItemRow(ws, FirstSampleRow + i, i + 1, lines[i], withPrice);
-            ws.Row(FirstSampleRow + i).AdjustToContents();
-            ws.Row(FirstSampleRow + i).Height= ws.Row(FirstSampleRow + i).Height * 1.2; // add extra spacing for wrapped text
+            SetWrappedRowHeight(ws, FirstSampleRow + i, ColName, logger);
         }
 
         if (withPrice)
@@ -220,6 +220,30 @@ public sealed class HandoverExcelRenderer : IHandoverExcelRenderer
             dst.Style.NumberFormat.Format = src.Style.NumberFormat.Format;
         }
         ws.Row(targetRow).Height = ws.Row(sourceRow).Height;
+    }
+
+    private static void SetWrappedRowHeight(IXLWorksheet ws, int row, int nameCol, ILogger logger)
+    {
+        var cell = ws.Cell(row, nameCol);
+        var text = cell.Value.ToString() ?? string.Empty;
+        var fontSize = cell.Style.Font.FontSize > 0 ? cell.Style.Font.FontSize : 11.0;
+
+        var merge = ws.MergedRanges.FirstOrDefault(r => r.Contains(cell));
+        var widthChars = merge != null
+            ? Enumerable.Range(merge.FirstColumn().ColumnNumber(), merge.ColumnCount())
+                        .Sum(c => ws.Column(c).Width)
+            : ws.Column(nameCol).Width;
+
+        var charsPerLine = Math.Max(1, widthChars * 0.80);
+        var lines = string.IsNullOrEmpty(text) ? 1 : (int)Math.Ceiling(text.Length / charsPerLine);
+        // Cell top+bottom padding counted once; additional lines add only inter-line spacing.
+        var height = fontSize * 1.875 + (lines - 1) * fontSize * 1.3;
+
+        logger.LogDebug(
+            "SetWrappedRowHeight row={Row} merged={Merged} widthChars={Width:F1} charsPerLine={CharsPerLine:F1} textLen={TextLen} lines={Lines} fontSize={FontSize} height={Height:F1} text={Text}",
+            row, merge != null, widthChars, charsPerLine, text.Length, lines, fontSize, height, text);
+
+        ws.Row(row).Height = height;
     }
 
     private static string FormatDeliveryContact(QuotationDto q)
