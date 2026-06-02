@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import {
   flexRender,
@@ -296,6 +296,15 @@ export function QuotationListPage() {
   const debouncedSearch = useDebouncedValue(search, 300);
   const hasViewAll = useAuthStore((s) => s.hasPermission('quotations.view_all'));
   const canViewCost = useAuthStore((s) => s.hasPermission('quotations.view_cost'));
+  const currentUser = useAuthStore((s) => s.user);
+  const isAdmin = useAuthStore((s) => s.isInRole('ADMIN'));
+
+  const ownerInitialized = useRef(false);
+  useEffect(() => {
+    if (ownerInitialized.current || !hasViewAll || isAdmin || !currentUser?.id || ownerIdsParam) return;
+    ownerInitialized.current = true;
+    setOwnerIdsParam(currentUser.id);
+  }, [hasViewAll, isAdmin, currentUser?.id, ownerIdsParam, setOwnerIdsParam]);
 
   const pageSize = (PAGE_SIZE_OPTIONS as readonly number[]).includes(sizeParam)
     ? sizeParam
