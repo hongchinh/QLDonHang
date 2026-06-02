@@ -48,6 +48,7 @@ public class SalesRevenueLineItemDto
     public string? DeliveryPhone { get; set; }
     public decimal Freight { get; set; }
     public decimal TaxAmount { get; set; }
+    public decimal Total { get; set; }
     public bool IsFirstLineOfQuotation { get; set; }
 
     public string ProductName { get; set; } = default!;

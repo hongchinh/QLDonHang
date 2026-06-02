@@ -93,12 +93,13 @@ export function RevenuePage() {
         if (item.isFirstLineOfQuotation) {
           acc.freight += item.freight;
           acc.taxAmount += item.taxAmount;
+          acc.total += item.total;
         }
         acc.lineCost += item.lineCost ?? 0;
         acc.lineProfit += item.lineProfit ?? 0;
         return acc;
       },
-      { quantity: 0, sheetCount: 0, lineTotal: 0, freight: 0, taxAmount: 0, lineCost: 0, lineProfit: 0 },
+      { quantity: 0, sheetCount: 0, lineTotal: 0, freight: 0, taxAmount: 0, total: 0, lineCost: 0, lineProfit: 0 },
     );
   }, [detailItems]);
 
@@ -171,6 +172,7 @@ export function RevenuePage() {
                     <TableHead className="text-right">Thành tiền</TableHead>
                     <TableHead className="text-right">Cước vận chuyển</TableHead>
                     <TableHead className="text-right">VAT</TableHead>
+                    <TableHead className="text-right">Tổng cộng</TableHead>
                     {hasCostColumns && (
                       <>
                         <TableHead className="text-right">Giá nhập</TableHead>
@@ -209,6 +211,7 @@ export function RevenuePage() {
                         <TableCell className="text-right tabular-nums">{formatMoneyNumber(item.lineTotal)}</TableCell>
                         <TableCell className="text-right tabular-nums">{isFirst ? formatMoneyNumber(item.freight) : ''}</TableCell>
                         <TableCell className="text-right tabular-nums">{isFirst ? formatMoneyNumber(item.taxAmount) : ''}</TableCell>
+                        <TableCell className="text-right tabular-nums font-medium">{isFirst ? formatMoneyNumber(item.total) : ''}</TableCell>
                         {hasCostColumns && (
                           <>
                             <TableCell className="text-right tabular-nums">{formatMoneyNumber(item.unitCost)}</TableCell>
@@ -233,6 +236,7 @@ export function RevenuePage() {
                     <TableCell className="text-right tabular-nums">{formatMoneyNumber(detailTotals.lineTotal)}</TableCell>
                     <TableCell className="text-right tabular-nums">{formatMoneyNumber(detailTotals.freight)}</TableCell>
                     <TableCell className="text-right tabular-nums">{formatMoneyNumber(detailTotals.taxAmount)}</TableCell>
+                    <TableCell className="text-right tabular-nums font-semibold">{formatMoneyNumber(detailTotals.total)}</TableCell>
                     {hasCostColumns && (
                       <>
                         <TableCell />

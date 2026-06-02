@@ -11,6 +11,7 @@ export interface SalesRevenueLineItemDto {
   deliveryPhone: string | null;
   freight: number;
   taxAmount: number;
+  total: number;
   isFirstLineOfQuotation: boolean;
   productName: string;
   specification: string | null;
