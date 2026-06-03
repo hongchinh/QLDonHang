@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import {
   Select,
   SelectContent,
@@ -25,7 +26,7 @@ import { useQuotationOwners } from '@/features/quotations/hooks';
 import { useRevenueLineItems } from '@/features/reports/sales-revenue-detail/hooks';
 import type { SalesRevenueLineItemDto } from '@/features/reports/sales-revenue-detail/types';
 import type { Granularity, Kpi } from '@/features/dashboard/types';
-import { formatNumber, formatVnd } from '@/features/dashboard/format';
+import { formatDateYmd, formatNumber, formatVnd } from '@/features/dashboard/format';
 
 const ALL_SALES = '__all__';
 const moneyNumber = new Intl.NumberFormat('vi-VN', { maximumFractionDigits: 0 });
@@ -62,6 +63,16 @@ export function RevenuePage() {
   const [granularity, setGranularity] = useState<Granularity>('day');
   const isAdmin = useAuthStore((s) => s.hasPermission('quotations.view_all'));
   const currentUser = useAuthStore((s) => s.user);
+  const [searchParams] = useSearchParams();
+
+  const didInitDate = useRef(false);
+  useEffect(() => {
+    if (!didInitDate.current && !searchParams.has('from')) {
+      didInitDate.current = true;
+      const today = formatDateYmd(new Date());
+      setRange(today, today);
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const didInit = useRef(false);
   useEffect(() => {
