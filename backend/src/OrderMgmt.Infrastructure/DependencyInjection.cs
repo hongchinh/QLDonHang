@@ -5,6 +5,7 @@ using OrderMgmt.Application.Branding.Interfaces;
 using OrderMgmt.Application.Common.Interfaces;
 using OrderMgmt.Application.Identity.Interfaces;
 using OrderMgmt.Application.Notifications.Interfaces;
+using OrderMgmt.Application.Reports.SalesRevenue.Interfaces;
 using OrderMgmt.Application.Sales.Quotations.Interfaces;
 using OrderMgmt.Infrastructure.Branding;
 using OrderMgmt.Infrastructure.Excel;
@@ -58,6 +59,7 @@ public static class DependencyInjection
         services.Configure<QuotationExportOptions>(configuration.GetSection(QuotationExportOptions.SectionName));
         services.AddScoped<IQuotationExcelRenderer, QuotationExcelRenderer>();
         services.AddScoped<IHandoverExcelRenderer, HandoverExcelRenderer>();
+        services.AddScoped<IRevenueReportExcelRenderer, RevenueReportExcelRenderer>();
         services.AddScoped<IQuotationSpreadsheetPdfConverter, LibreOfficeSpreadsheetPdfConverter>();
         services.AddScoped<IQuotationExportPathResolver, QuotationExportPathResolver>();
 

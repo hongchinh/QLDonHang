@@ -17,19 +17,22 @@ public class ReportsController : ApiControllerBase
     private readonly IValidator<SalesRevenueReportRequest> _salesRevenueValidator;
     private readonly IValidator<VehicleRevenueReportRequest> _vehicleRevenueValidator;
     private readonly IValidator<SalesRevenueLineItemsRequest> _salesRevenueLineItemsValidator;
+    private readonly IRevenueReportExcelRenderer _revenueExcelRenderer;
 
     public ReportsController(
         ISalesRevenueReportService salesRevenue,
         IVehicleRevenueReportService vehicleRevenue,
         IValidator<SalesRevenueReportRequest> salesRevenueValidator,
         IValidator<VehicleRevenueReportRequest> vehicleRevenueValidator,
-        IValidator<SalesRevenueLineItemsRequest> salesRevenueLineItemsValidator)
+        IValidator<SalesRevenueLineItemsRequest> salesRevenueLineItemsValidator,
+        IRevenueReportExcelRenderer revenueExcelRenderer)
     {
         _salesRevenue = salesRevenue;
         _vehicleRevenue = vehicleRevenue;
         _salesRevenueValidator = salesRevenueValidator;
         _vehicleRevenueValidator = vehicleRevenueValidator;
         _salesRevenueLineItemsValidator = salesRevenueLineItemsValidator;
+        _revenueExcelRenderer = revenueExcelRenderer;
     }
 
     [HttpGet("sales-revenue")]
@@ -60,6 +63,18 @@ public class ReportsController : ApiControllerBase
     {
         await _salesRevenueLineItemsValidator.ValidateAndThrowAsync(request, ct);
         return Success(await _salesRevenue.GetLineItemsAsync(request, ct));
+    }
+
+    [HttpGet("revenue-lines/excel")]
+    [HasPermission(Permissions.Reports.Revenue)]
+    public async Task<IActionResult> RevenueLineItemsExcel(
+        [FromQuery] SalesRevenueLineItemsRequest request,
+        CancellationToken ct)
+    {
+        await _salesRevenueLineItemsValidator.ValidateAndThrowAsync(request, ct);
+        var items = await _salesRevenue.GetLineItemsAsync(request, ct);
+        var (bytes, fileName) = _revenueExcelRenderer.Render(items, request.From, request.To);
+        return File(bytes, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", fileName);
     }
 
     [HttpGet("vehicle-revenue")]

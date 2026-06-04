@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { Loader2 } from 'lucide-react';
 import { useSearchParams } from 'react-router-dom';
 import {
   Select,
@@ -23,6 +24,7 @@ import {
 } from '@/features/dashboard/hooks';
 import { useDashboardParams } from '@/features/dashboard/use-dashboard-params';
 import { useQuotationOwners } from '@/features/quotations/hooks';
+import { salesRevenueDetailApi } from '@/features/reports/sales-revenue-detail/api';
 import { useRevenueLineItems } from '@/features/reports/sales-revenue-detail/hooks';
 import type { SalesRevenueLineItemDto } from '@/features/reports/sales-revenue-detail/types';
 import type { Granularity, Kpi } from '@/features/dashboard/types';
@@ -61,6 +63,7 @@ function formatProductSize(item: SalesRevenueLineItemDto): string {
 export function RevenuePage() {
   const { from, to, saleUserId, setRange, setSaleUserId, setPreset } = useDashboardParams();
   const [granularity, setGranularity] = useState<Granularity>('day');
+  const [isExporting, setIsExporting] = useState(false);
   const isAdmin = useAuthStore((s) => s.hasPermission('quotations.view_all'));
   const currentUser = useAuthStore((s) => s.user);
   const [searchParams] = useSearchParams();
@@ -81,6 +84,18 @@ export function RevenuePage() {
       setSaleUserId(currentUser.id);
     }
   }, [currentUser?.id, saleUserId, setSaleUserId]);
+
+  async function handleExportExcel() {
+    if (!from || !to) return;
+    setIsExporting(true);
+    try {
+      await salesRevenueDetailApi.downloadRevenueExcel({ from, to, saleUserId });
+    } catch {
+      toast({ title: 'Lỗi', description: 'Không thể xuất Excel. Vui lòng thử lại.', variant: 'destructive' });
+    } finally {
+      setIsExporting(false);
+    }
+  }
 
   const summary = useDashboardSummary({ from, to, saleUserId });
   const revenue = useRevenueSeries({ from, to, granularity, saleUserId });
@@ -148,8 +163,10 @@ export function RevenuePage() {
           <Button
             variant="outline"
             size="sm"
-            onClick={() => toast({ title: 'Sắp ra mắt', description: 'Xuất Excel đang được phát triển.' })}
+            onClick={handleExportExcel}
+            disabled={isExporting || !from || !to}
           >
+            {isExporting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             Xuất Excel
           </Button>
         </div>

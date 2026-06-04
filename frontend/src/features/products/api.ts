@@ -23,4 +23,5 @@ export const productsApi = {
 export const lookupsApi = {
   productGroups: () => apiGet<LookupItem[]>('/lookups/product-groups'),
   units: () => apiGet<LookupItem[]>('/lookups/units'),
+  getOrCreateUnit: (name: string) => apiPost<LookupItem>('/lookups/units', { name }),
 };

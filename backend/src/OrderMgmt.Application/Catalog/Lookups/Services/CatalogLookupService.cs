@@ -33,4 +33,26 @@ public class CatalogLookupService : ICatalogLookupService
             .Select(u => new LookupItemDto { Id = u.Id, Code = u.Code, Name = u.Name })
             .ToListAsync(ct);
     }
+
+    public async Task<LookupItemDto> GetOrCreateUnitAsync(string name, CancellationToken ct = default)
+    {
+        var trimmed = name.Trim();
+        var existing = await _db.Units
+            .Where(u => !u.IsDeleted && u.Name.ToLower() == trimmed.ToLower())
+            .FirstOrDefaultAsync(ct);
+
+        if (existing != null)
+            return new LookupItemDto { Id = existing.Id, Code = existing.Code, Name = existing.Name };
+
+        var unit = new Domain.Entities.Catalog.Unit
+        {
+            Code = trimmed.Length <= 50 ? trimmed : trimmed[..50],
+            Name = trimmed,
+            IsActive = true,
+        };
+        _db.Units.Add(unit);
+        await _db.SaveChangesAsync(ct);
+
+        return new LookupItemDto { Id = unit.Id, Code = unit.Code, Name = unit.Name };
+    }
 }

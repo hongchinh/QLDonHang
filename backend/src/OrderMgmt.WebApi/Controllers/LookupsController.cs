@@ -30,4 +30,13 @@ public class LookupsController : ApiControllerBase
         var result = await _lookups.ListUnitsAsync(ct);
         return Success(result);
     }
+
+    [HttpPost("units")]
+    public async Task<ActionResult<ApiResponse<LookupItemDto>>> GetOrCreateUnit(
+        [FromBody] GetOrCreateUnitRequest request,
+        CancellationToken ct)
+    {
+        var result = await _lookups.GetOrCreateUnitAsync(request.Name, ct);
+        return Success(result);
+    }
 }

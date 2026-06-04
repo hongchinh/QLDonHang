@@ -6,4 +6,5 @@ public interface ICatalogLookupService
 {
     Task<IReadOnlyList<LookupItemDto>> ListProductGroupsAsync(CancellationToken ct = default);
     Task<IReadOnlyList<LookupItemDto>> ListUnitsAsync(CancellationToken ct = default);
+    Task<LookupItemDto> GetOrCreateUnitAsync(string name, CancellationToken ct = default);
 }

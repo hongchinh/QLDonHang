@@ -5,7 +5,7 @@ export const productSchema = z.object({
   code: optionalString(50),
   name: z.string().min(1, 'Tên hàng hóa là bắt buộc').max(255),
   productGroupId: z.string().min(1, 'Chọn nhóm hàng hóa').uuid('Nhóm hàng hóa không hợp lệ'),
-  unitId: z.string().min(1, 'Chọn đơn vị tính').uuid('Đơn vị tính không hợp lệ'),
+  unitId: z.string().min(1, 'Nhập đơn vị tính'),
   specification: optionalString(500),
   length: optionalNumber({ min: 0 }),
   width: optionalNumber({ min: 0 }),

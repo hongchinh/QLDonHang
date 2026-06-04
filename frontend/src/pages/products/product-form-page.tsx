@@ -1,7 +1,9 @@
+import { useEffect, useState } from 'react';
 import { Controller, useForm, type Resolver, type UseFormReturn } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
+import { useQueryClient } from '@tanstack/react-query';
 import {
   useCreateProduct,
   useProduct,
@@ -9,6 +11,8 @@ import {
   useUnits,
   useUpdateProduct,
 } from '@/features/products/hooks';
+import { lookupsApi } from '@/features/products/api';
+import { lookupKeys } from '@/features/products/keys';
 import {
   productSchema,
   type ProductFormParsed,
@@ -16,6 +20,7 @@ import {
 } from '@/features/products/schema';
 import type {
   CreateProductRequest,
+  LookupItem,
   Product,
   UpdateProductRequest,
 } from '@/features/products/types';
@@ -35,6 +40,8 @@ import { getErrorMessage } from '@/lib/api-client';
 import { toast } from '@/lib/use-toast';
 import { cn } from '@/lib/utils';
 
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 const statuses = [
   { value: 'Active', label: 'Đang bán' },
   { value: 'Inactive', label: 'Ngừng bán' },
@@ -51,6 +58,7 @@ export function ProductFormPage() {
   const { id } = useParams<{ id: string }>();
   const isEdit = !!id && id !== 'new';
   const navigate = useNavigate();
+  const qc = useQueryClient();
 
   const { data: product, isLoading } = useProduct(isEdit ? id : undefined);
   const groups = useProductGroups();
@@ -76,11 +84,20 @@ export function ProductFormPage() {
       hasSubmitError={create.isError || update.isError}
       onSubmit={async (parsed) => {
         try {
+          // Resolve unitId: if it's not a UUID the user typed a new name → get-or-create
+          let unitId = parsed.unitId;
+          if (!UUID_RE.test(unitId)) {
+            const unit = await lookupsApi.getOrCreateUnit(unitId);
+            unitId = String(unit.id);
+            qc.invalidateQueries({ queryKey: lookupKeys.units() });
+          }
+          const resolved = { ...parsed, unitId };
+
           if (isEdit && id) {
-            await update.mutateAsync({ id, data: toUpdatePayload(parsed) });
+            await update.mutateAsync({ id, data: toUpdatePayload(resolved) });
             toast({ variant: 'success', title: 'Đã cập nhật hàng hóa' });
           } else {
-            await create.mutateAsync(toCreatePayload(parsed));
+            await create.mutateAsync(toCreatePayload(resolved));
             toast({ variant: 'success', title: 'Đã tạo hàng hóa' });
           }
           navigate('/products');
@@ -145,13 +162,22 @@ function ProductFormInner({
               options={groups}
               form={form}
             />
-            <LookupField
-              label="Đơn vị tính *"
-              name="unitId"
-              placeholder="Chọn đơn vị"
-              options={units}
-              form={form}
-            />
+
+            <div className="space-y-2">
+              <Label htmlFor="unitId">Đơn vị tính *</Label>
+              <Controller
+                control={form.control}
+                name="unitId"
+                render={({ field, fieldState }) => (
+                  <UnitCombobox
+                    units={units}
+                    value={field.value}
+                    onChange={field.onChange}
+                    error={fieldState.error}
+                  />
+                )}
+              />
+            </div>
 
             <Field label="Quy cách / mô tả" name="specification" form={form} className="md:col-span-2" />
 
@@ -304,7 +330,7 @@ function toUpdatePayload(parsed: ProductFormParsed): UpdateProductRequest {
 
 type TextFieldName = 'code' | 'name' | 'specification' | 'note';
 type NumberFieldName = 'length' | 'width' | 'thickness' | 'density' | 'defaultPrice' | 'costPrice' | 'defaultTaxRate';
-type LookupFieldName = 'productGroupId' | 'unitId';
+type LookupFieldName = 'productGroupId';
 
 interface FieldProps {
   label: string;
@@ -362,6 +388,78 @@ function LookupField({ label, name, placeholder, options, form }: LookupFieldPro
           </Select>
         )}
       />
+      {error && <p className="text-sm text-destructive">{String(error.message)}</p>}
+    </div>
+  );
+}
+
+interface UnitComboboxProps {
+  units: LookupItem[];
+  value: string;
+  onChange: (value: string) => void;
+  error?: { message?: string };
+}
+
+function UnitCombobox({ units, value, onChange, error }: UnitComboboxProps) {
+  const nameOf = (val: string) => units.find((u) => u.id === val)?.name ?? val;
+
+  const [input, setInput] = useState(() => nameOf(value));
+  const [open, setOpen] = useState(false);
+
+  useEffect(() => {
+    setInput(nameOf(value));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [value, units]);
+
+  const filtered = input.trim()
+    ? units.filter((u) => u.name.toLowerCase().includes(input.toLowerCase()))
+    : units;
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value;
+    setInput(val);
+    const match = units.find((u) => u.name.toLowerCase() === val.toLowerCase());
+    onChange(match ? match.id : val);
+    setOpen(true);
+  };
+
+  const handleSelect = (unit: LookupItem) => {
+    setInput(unit.name);
+    onChange(unit.id);
+    setOpen(false);
+  };
+
+  return (
+    <div className="relative">
+      <Input
+        id="unitId"
+        value={input}
+        onChange={handleInputChange}
+        onFocus={() => setOpen(true)}
+        onBlur={() => setTimeout(() => setOpen(false), 150)}
+        placeholder="Nhập hoặc chọn đơn vị tính"
+        autoComplete="off"
+      />
+      {open && (
+        <div className="absolute z-50 w-full rounded-md border bg-popover shadow-md mt-1 max-h-56 overflow-auto">
+          {filtered.length > 0 ? (
+            filtered.map((u) => (
+              <button
+                key={u.id}
+                type="button"
+                className="w-full text-left px-3 py-2 text-sm hover:bg-accent"
+                onMouseDown={() => handleSelect(u)}
+              >
+                {u.name}
+              </button>
+            ))
+          ) : input.trim() ? (
+            <div className="px-3 py-2 text-sm text-muted-foreground">
+              Sẽ thêm mới: <strong>{input.trim()}</strong>
+            </div>
+          ) : null}
+        </div>
+      )}
       {error && <p className="text-sm text-destructive">{String(error.message)}</p>}
     </div>
   );
