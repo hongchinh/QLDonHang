@@ -29,6 +29,7 @@ function HandoverTemplateCard({ type, title, description, settings }: HandoverTe
   const inputRef = useRef<HTMLInputElement>(null);
   const [downloading, setDownloading] = useState(false);
   const [downloadingDefault, setDownloadingDefault] = useState(false);
+  const [downloadingEffective, setDownloadingEffective] = useState(false);
 
   const isWithPrice = type === 'handover-with-price';
   const templateFileName = isWithPrice
@@ -108,6 +109,25 @@ function HandoverTemplateCard({ type, title, description, settings }: HandoverTe
     }
   };
 
+  const handleDownloadEffective = async () => {
+    setDownloadingEffective(true);
+    try {
+      const blob = await meSettingsApi.downloadEffectiveTemplate(type);
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = templateOriginalName ?? templateFileName ?? (type === 'handover-with-price' ? 'templete_bbbg.xlsx' : 'templete_bbbg_sl.xlsx');
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      toast({ title: 'Tải về thất bại', description: getErrorMessage(err), variant: 'destructive' });
+    } finally {
+      setDownloadingEffective(false);
+    }
+  };
+
   return (
     <Card>
       <CardHeader>
@@ -141,7 +161,10 @@ function HandoverTemplateCard({ type, title, description, settings }: HandoverTe
             <Button onClick={handlePick}>Tải lên template riêng</Button>
           </>
         )}
-        <div className="pt-1">
+        <div className="flex gap-2 pt-1">
+          <Button variant="outline" size="sm" onClick={handleDownloadEffective} disabled={downloadingEffective}>
+            Tải template hiện tại
+          </Button>
           <Button variant="ghost" size="sm" onClick={handleDownloadDefault} disabled={downloadingDefault}>
             Tải template mặc định
           </Button>
@@ -168,6 +191,7 @@ function QuotationSettingsTabContent() {
   const inputRef = useRef<HTMLInputElement>(null);
   const [downloading, setDownloading] = useState(false);
   const [downloadingDefault, setDownloadingDefault] = useState(false);
+  const [downloadingEffective, setDownloadingEffective] = useState(false);
 
   const handlePick = () => inputRef.current?.click();
 
@@ -234,6 +258,25 @@ function QuotationSettingsTabContent() {
     }
   };
 
+  const handleDownloadEffective = async () => {
+    setDownloadingEffective(true);
+    try {
+      const blob = await meSettingsApi.downloadEffectiveTemplate('quotation');
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = settings?.templateOriginalName ?? settings?.templateFileName ?? 'template_baogia.xlsx';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      toast({ title: 'Tải về thất bại', description: getErrorMessage(err), variant: 'destructive' });
+    } finally {
+      setDownloadingEffective(false);
+    }
+  };
+
   if (isLoading) return <div>Đang tải…</div>;
 
   const hasTemplate = !!settings?.templateFileName;
@@ -275,7 +318,10 @@ function QuotationSettingsTabContent() {
               <Button onClick={handlePick}>Tải lên template riêng</Button>
             </>
           )}
-          <div className="pt-1">
+          <div className="flex gap-2 pt-1">
+            <Button variant="outline" size="sm" onClick={handleDownloadEffective} disabled={downloadingEffective}>
+              Tải template hiện tại
+            </Button>
             <Button variant="ghost" size="sm" onClick={handleDownloadDefault} disabled={downloadingDefault}>
               Tải template mặc định
             </Button>

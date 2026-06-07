@@ -190,7 +190,9 @@ export function RevenuePage() {
               <Table containerClassName="overflow-visible" className="min-w-[1280px]">
                 <TableHeader className="sticky top-0 z-10">
                   <TableRow>
-                    <TableHead>Ngày</TableHead>
+                    <TableHead>Ngày lập BG</TableHead>
+                    <TableHead>Số BG</TableHead>
+                    <TableHead>Ngày tính DT</TableHead>
                     <TableHead>Tên đơn vị</TableHead>
                     <TableHead>Địa chỉ giao hàng</TableHead>
                     <TableHead>Hàng hóa / kích thước</TableHead>
@@ -224,7 +226,13 @@ export function RevenuePage() {
                         className={`even:bg-muted/50${isFirst && idx > 0 ? ' border-t-2 border-border' : ''}`}
                       >
                         <TableCell className="whitespace-nowrap">
-                          {isFirst ? formatDate(item.revenueDate ?? item.quotationDate) : ''}
+                          {isFirst ? formatDate(item.quotationDate) : ''}
+                        </TableCell>
+                        <TableCell className="whitespace-nowrap">
+                          {isFirst ? item.quotationCode : ''}
+                        </TableCell>
+                        <TableCell className="whitespace-nowrap">
+                          {isFirst ? formatDate(item.revenueDate) : ''}
                         </TableCell>
                         <TableCell className="min-w-[10rem]">
                           {isFirst ? item.customerName : ''}
@@ -261,7 +269,7 @@ export function RevenuePage() {
                 </TableBody>
                 <TableFooter className="sticky bottom-0 z-10 bg-muted">
                   <TableRow>
-                    <TableCell colSpan={5}>Tổng cộng</TableCell>
+                    <TableCell colSpan={7}>Tổng cộng</TableCell>
                     <TableCell className="text-right tabular-nums">{formatNullableNumber(detailTotals.quantity)}</TableCell>
                     <TableCell className="text-right tabular-nums">{formatNullableNumber(detailTotals.sheetCount)}</TableCell>
                     <TableCell />

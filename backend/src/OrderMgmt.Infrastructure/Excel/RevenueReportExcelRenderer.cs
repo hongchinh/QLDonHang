@@ -8,7 +8,7 @@ public class RevenueReportExcelRenderer : IRevenueReportExcelRenderer
 {
     private static readonly string[] Headers =
     [
-        "Ngày", "Mã BG", "Tên đơn vị", "Địa chỉ giao hàng", "Hàng hóa", "Kích thước",
+        "Ngày lập BG", "Mã BG", "Ngày tính DT", "Tên đơn vị", "Địa chỉ giao hàng", "Hàng hóa", "Kích thước",
         "Tỷ trọng", "SL m²", "SL tấm", "Đơn giá", "Thành tiền",
         "Cước vận chuyển", "VAT", "Tổng cộng",
         "Giá nhập", "Thành tiền nhập", "Chênh lệch", "Chênh + cước",
@@ -59,83 +59,83 @@ public class RevenueReportExcelRenderer : IRevenueReportExcelRenderer
     {
         bool isFirst = item.IsFirstLineOfQuotation;
 
-        // Col 1: Ngày (only on first line of quotation)
+        // Col 1: Ngày lập BG (only on first line of quotation)
         if (isFirst)
-        {
-            var d = item.RevenueDate ?? (item.ConfirmedAt.HasValue ? (DateTime?)item.ConfirmedAt.Value : null);
-            if (d.HasValue)
-                ws.Cell(row, 1).SetValue(d.Value.ToString("dd/MM"));
-        }
+            ws.Cell(row, 1).SetValue(item.QuotationDate.ToString("dd/MM"));
 
         // Col 2: Mã BG (only on first line)
         if (isFirst)
             ws.Cell(row, 2).SetValue(item.QuotationCode);
 
-        // Col 3: Tên đơn vị (only on first line)
+        // Col 3: Ngày tính DT (only on first line)
+        if (isFirst && item.RevenueDate.HasValue)
+            ws.Cell(row, 3).SetValue(item.RevenueDate.Value.ToString("dd/MM"));
+
+        // Col 4: Tên đơn vị (only on first line)
         if (isFirst)
-            ws.Cell(row, 3).SetValue(item.CustomerName);
+            ws.Cell(row, 4).SetValue(item.CustomerName);
 
-        // Col 4: Địa chỉ giao hàng (only on first line)
+        // Col 5: Địa chỉ giao hàng (only on first line)
         if (isFirst)
-            ws.Cell(row, 4).SetValue(item.DeliveryAddress ?? item.CustomerAddress ?? string.Empty);
+            ws.Cell(row, 5).SetValue(item.DeliveryAddress ?? item.CustomerAddress ?? string.Empty);
 
-        // Col 5: Hàng hóa
-        ws.Cell(row, 5).SetValue(item.ProductName);
+        // Col 6: Hàng hóa
+        ws.Cell(row, 6).SetValue(item.ProductName);
 
-        // Col 6: Kích thước
-        ws.Cell(row, 6).SetValue(FormatSize(item));
+        // Col 7: Kích thước
+        ws.Cell(row, 7).SetValue(FormatSize(item));
 
-        // Col 7: Tỷ trọng
+        // Col 8: Tỷ trọng
         if (item.Density.HasValue)
-            SetDecimalCell(ws.Cell(row, 7), (double)item.Density.Value);
+            SetDecimalCell(ws.Cell(row, 8), (double)item.Density.Value);
 
-        // Col 8: SL m²
-        SetDecimalCell(ws.Cell(row, 8), (double)item.Quantity);
+        // Col 9: SL m²
+        SetDecimalCell(ws.Cell(row, 9), (double)item.Quantity);
 
-        // Col 9: SL tấm
+        // Col 10: SL tấm
         if (item.SheetCount.HasValue)
-            SetDecimalCell(ws.Cell(row, 9), (double)item.SheetCount.Value);
+            SetDecimalCell(ws.Cell(row, 10), (double)item.SheetCount.Value);
 
-        // Col 10: Đơn giá
-        SetMoneyCell(ws.Cell(row, 10), (double)item.UnitPrice);
+        // Col 11: Đơn giá
+        SetMoneyCell(ws.Cell(row, 11), (double)item.UnitPrice);
 
-        // Col 11: Thành tiền
-        SetMoneyCell(ws.Cell(row, 11), (double)item.LineTotal);
+        // Col 12: Thành tiền
+        SetMoneyCell(ws.Cell(row, 12), (double)item.LineTotal);
 
         if (isFirst)
         {
-            // Col 12: Cước vận chuyển
-            SetMoneyCell(ws.Cell(row, 12), (double)item.Freight);
+            // Col 13: Cước vận chuyển
+            SetMoneyCell(ws.Cell(row, 13), (double)item.Freight);
 
-            // Col 13: VAT
-            SetMoneyCell(ws.Cell(row, 13), (double)item.TaxAmount);
+            // Col 14: VAT
+            SetMoneyCell(ws.Cell(row, 14), (double)item.TaxAmount);
 
-            // Col 14: Tổng cộng
-            SetMoneyCell(ws.Cell(row, 14), (double)item.Total);
+            // Col 15: Tổng cộng
+            SetMoneyCell(ws.Cell(row, 15), (double)item.Total);
         }
 
-        // Col 15: Giá nhập
+        // Col 16: Giá nhập
         if (item.UnitCost.HasValue)
-            SetMoneyCell(ws.Cell(row, 15), (double)item.UnitCost.Value);
+            SetMoneyCell(ws.Cell(row, 16), (double)item.UnitCost.Value);
 
-        // Col 16: Thành tiền nhập
+        // Col 17: Thành tiền nhập
         if (item.LineCost.HasValue)
-            SetMoneyCell(ws.Cell(row, 16), (double)item.LineCost.Value);
+            SetMoneyCell(ws.Cell(row, 17), (double)item.LineCost.Value);
 
-        // Col 17: Chênh lệch
+        // Col 18: Chênh lệch
         if (item.LineProfit.HasValue)
-            SetMoneyCell(ws.Cell(row, 17), (double)item.LineProfit.Value);
+            SetMoneyCell(ws.Cell(row, 18), (double)item.LineProfit.Value);
 
-        // Col 18: Chênh + cước (lineProfit + freight, only meaningful on first line where freight is non-zero)
+        // Col 19: Chênh + cước (lineProfit + freight, only meaningful on first line where freight is non-zero)
         if (item.LineProfit.HasValue)
         {
             var freight = isFirst ? (double)item.Freight : 0.0;
-            SetMoneyCell(ws.Cell(row, 18), (double)item.LineProfit.Value + freight);
+            SetMoneyCell(ws.Cell(row, 19), (double)item.LineProfit.Value + freight);
         }
 
-        // Col 19: Liên hệ (only on first line)
+        // Col 20: Liên hệ (only on first line)
         if (isFirst)
-            ws.Cell(row, 19).SetValue(item.DeliveryPhone ?? item.ContactPhone ?? string.Empty);
+            ws.Cell(row, 20).SetValue(item.DeliveryPhone ?? item.ContactPhone ?? string.Empty);
 
         var rowRange = ws.Range(row, 1, row, Headers.Length);
         rowRange.Style.Border.OutsideBorder = XLBorderStyleValues.Thin;
@@ -147,37 +147,37 @@ public class RevenueReportExcelRenderer : IRevenueReportExcelRenderer
         ws.Cell(row, 1).SetValue("Tổng cộng");
         ws.Cell(row, 1).Style.Font.Bold = true;
 
-        ws.Cell(row, 8).SetValue((double)items.Sum(i => i.Quantity));
-        ws.Cell(row, 8).Style.Font.Bold = true;
-        ApplyDecimalFormat(ws.Cell(row, 8));
+        ws.Cell(row, 9).SetValue((double)items.Sum(i => i.Quantity));
+        ws.Cell(row, 9).Style.Font.Bold = true;
+        ApplyDecimalFormat(ws.Cell(row, 9));
 
         var sheetTotal = items.Sum(i => i.SheetCount ?? 0);
         if (sheetTotal != 0)
         {
-            ws.Cell(row, 9).SetValue((double)sheetTotal);
-            ws.Cell(row, 9).Style.Font.Bold = true;
-            ApplyDecimalFormat(ws.Cell(row, 9));
+            ws.Cell(row, 10).SetValue((double)sheetTotal);
+            ws.Cell(row, 10).Style.Font.Bold = true;
+            ApplyDecimalFormat(ws.Cell(row, 10));
         }
 
-        SetBoldMoneyCell(ws.Cell(row, 11), (double)items.Sum(i => i.LineTotal));
+        SetBoldMoneyCell(ws.Cell(row, 12), (double)items.Sum(i => i.LineTotal));
 
         var firstLines = items.Where(i => i.IsFirstLineOfQuotation).ToList();
-        SetBoldMoneyCell(ws.Cell(row, 12), (double)firstLines.Sum(i => i.Freight));
-        SetBoldMoneyCell(ws.Cell(row, 13), (double)firstLines.Sum(i => i.TaxAmount));
-        SetBoldMoneyCell(ws.Cell(row, 14), (double)firstLines.Sum(i => i.Total));
+        SetBoldMoneyCell(ws.Cell(row, 13), (double)firstLines.Sum(i => i.Freight));
+        SetBoldMoneyCell(ws.Cell(row, 14), (double)firstLines.Sum(i => i.TaxAmount));
+        SetBoldMoneyCell(ws.Cell(row, 15), (double)firstLines.Sum(i => i.Total));
 
         if (items.Any(i => i.LineCost.HasValue))
-            SetBoldMoneyCell(ws.Cell(row, 16), (double)items.Sum(i => i.LineCost ?? 0));
+            SetBoldMoneyCell(ws.Cell(row, 17), (double)items.Sum(i => i.LineCost ?? 0));
 
         if (items.Any(i => i.LineProfit.HasValue))
         {
-            SetBoldMoneyCell(ws.Cell(row, 17), (double)items.Sum(i => i.LineProfit ?? 0));
+            SetBoldMoneyCell(ws.Cell(row, 18), (double)items.Sum(i => i.LineProfit ?? 0));
 
             // Chênh + cước: sum of (lineProfit + freight) per first-line item
             var profitPlusFreight = items
                 .Where(i => i.LineProfit.HasValue)
                 .Sum(i => i.LineProfit!.Value + (i.IsFirstLineOfQuotation ? i.Freight : 0));
-            SetBoldMoneyCell(ws.Cell(row, 18), (double)profitPlusFreight);
+            SetBoldMoneyCell(ws.Cell(row, 19), (double)profitPlusFreight);
         }
 
         var footerRange = ws.Range(row, 1, row, Headers.Length);

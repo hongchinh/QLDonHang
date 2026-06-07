@@ -613,7 +613,7 @@ export function QuotationListPage() {
                   </TableRow>
                 ) : (
                   table.getRowModel().rows.map((row) => (
-                    <TableRow key={row.id}>
+                    <TableRow key={row.id} className="even:bg-muted/50">
                       {row.getVisibleCells().map((c) => (
                         <TableCell key={c.id}>{flexRender(c.column.columnDef.cell, c.getContext())}</TableCell>
                       ))}

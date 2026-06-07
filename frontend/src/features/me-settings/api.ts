@@ -54,6 +54,13 @@ export const meSettingsApi = {
     return res.data as Blob;
   },
 
+  downloadEffectiveTemplate: async (type: 'quotation' | HandoverTemplateType): Promise<Blob> => {
+    const res = await api.get(`/me/quotation-settings/effective-template?type=${type}`, {
+      responseType: 'blob',
+    });
+    return res.data as Blob;
+  },
+
   downloadDefaultTemplate: async (type: 'quotation' | HandoverTemplateType): Promise<Blob> => {
     const res = await api.get(`/me/quotation-settings/default-template?type=${type}`, {
       responseType: 'blob',

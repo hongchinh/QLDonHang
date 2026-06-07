@@ -88,6 +88,46 @@ public class MeQuotationSettingsController : ApiControllerBase
             result.Value.FileName);
     }
 
+    [HttpGet("effective-template")]
+    public async Task<IActionResult> DownloadEffectiveTemplate(
+        [FromQuery] string? type,
+        [FromServices] IConfiguration configuration,
+        [FromServices] IWebHostEnvironment env,
+        CancellationToken ct)
+    {
+        var templateType = ParseTemplateType(type);
+
+        (Stream Stream, string FileName)? result;
+        if (templateType == QuotationTemplateType.Quotation)
+            result = await _service.GetCurrentUserTemplateStreamAsync(ct);
+        else
+            result = await _service.GetCurrentUserHandoverTemplateStreamAsync(templateType, ct);
+
+        if (result is not null)
+            return File(
+                result.Value.Stream,
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                result.Value.FileName);
+
+        var relativePath = templateType switch
+        {
+            QuotationTemplateType.Quotation => configuration["QuotationExport:TemplatePath"],
+            QuotationTemplateType.HandoverWithPrice => configuration["QuotationExport:HandoverWithPriceTemplatePath"],
+            QuotationTemplateType.HandoverNoPrice => configuration["QuotationExport:HandoverNoPriceTemplatePath"],
+            _ => null,
+        };
+
+        if (relativePath is null) return NotFound();
+        var fullPath = Path.Combine(env.ContentRootPath, relativePath);
+        if (!System.IO.File.Exists(fullPath)) return NotFound();
+
+        var stream = System.IO.File.OpenRead(fullPath);
+        return File(
+            stream,
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            Path.GetFileName(fullPath));
+    }
+
     [HttpGet("default-template")]
     public IActionResult DownloadDefaultTemplate(
         [FromQuery] string? type,
