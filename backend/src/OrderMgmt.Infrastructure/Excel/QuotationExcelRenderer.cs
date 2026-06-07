@@ -173,7 +173,12 @@ public class QuotationExcelRenderer(
             : ws.Column(nameCol).Width;
 
         var charsPerLine = Math.Max(1, widthChars * 0.80);
-        var lines = string.IsNullOrEmpty(text) ? 1 : (int)Math.Ceiling(text.Length / charsPerLine);
+        // Split on newlines so embedded \n in product names count as real line breaks.
+        var segments = string.IsNullOrEmpty(text)
+            ? [""]
+            : text.Split('\n');
+        var lines = segments.Sum(seg =>
+            string.IsNullOrEmpty(seg) ? 1 : (int)Math.Ceiling(seg.TrimEnd('\r').Length / charsPerLine));
         // Cell top+bottom padding counted once; additional lines add only inter-line spacing.
         var height = fontSize * 1.875 + (lines - 1) * fontSize * 1.3;
 
