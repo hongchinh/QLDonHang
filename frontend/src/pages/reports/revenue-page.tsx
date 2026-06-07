@@ -187,7 +187,10 @@ export function RevenuePage() {
             </div>
           ) : (
             <div className="max-h-[calc(100dvh-16rem)] min-h-[300px] overflow-auto rounded-md border">
-              <Table containerClassName="overflow-visible" className="min-w-[1280px]">
+              <Table
+                containerClassName="overflow-visible"
+                className="min-w-[1280px] [&_td:not(:last-child)]:border-r [&_td:not(:last-child)]:border-border/40 [&_th:not(:last-child)]:border-r [&_th:not(:last-child)]:border-white/20"
+              >
                 <TableHeader className="sticky top-0 z-10">
                   <TableRow>
                     <TableHead>Ngày lập BG</TableHead>
