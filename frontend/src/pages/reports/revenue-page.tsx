@@ -191,6 +191,7 @@ export function RevenuePage() {
                 <TableHeader className="sticky top-0 z-10">
                   <TableRow>
                     <TableHead>Ngày</TableHead>
+                    <TableHead>Tên đơn vị</TableHead>
                     <TableHead>Địa chỉ giao hàng</TableHead>
                     <TableHead>Hàng hóa / kích thước</TableHead>
                     <TableHead className="text-right">Tỷ trọng</TableHead>
@@ -220,10 +221,13 @@ export function RevenuePage() {
                     return (
                       <TableRow
                         key={`${item.quotationId}-${item.productName}-${idx}`}
-                        className={isFirst && idx > 0 ? 'border-t-2 border-border' : undefined}
+                        className={`even:bg-muted/50${isFirst && idx > 0 ? ' border-t-2 border-border' : ''}`}
                       >
                         <TableCell className="whitespace-nowrap">
                           {isFirst ? formatDate(item.revenueDate ?? item.quotationDate) : ''}
+                        </TableCell>
+                        <TableCell className="min-w-[10rem]">
+                          {isFirst ? item.customerName : ''}
                         </TableCell>
                         <TableCell className="min-w-[12rem]">
                           {isFirst ? (item.deliveryAddress ?? item.customerAddress ?? '') : ''}
@@ -257,7 +261,7 @@ export function RevenuePage() {
                 </TableBody>
                 <TableFooter className="sticky bottom-0 z-10 bg-muted">
                   <TableRow>
-                    <TableCell colSpan={4}>Tổng cộng</TableCell>
+                    <TableCell colSpan={5}>Tổng cộng</TableCell>
                     <TableCell className="text-right tabular-nums">{formatNullableNumber(detailTotals.quantity)}</TableCell>
                     <TableCell className="text-right tabular-nums">{formatNullableNumber(detailTotals.sheetCount)}</TableCell>
                     <TableCell />
