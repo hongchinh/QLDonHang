@@ -36,6 +36,8 @@ RUN apt-get update \
         libreoffice-core \
         fonts-dejavu \
         fonts-liberation \
+        fonts-noto \
+        fonts-noto-cjk \
  && rm -rf /var/lib/apt/lists/*
 
 COPY --from=build /app/publish ./
