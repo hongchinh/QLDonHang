@@ -30,6 +30,7 @@ FROM mcr.microsoft.com/dotnet/aspnet:9.0 AS runtime
 WORKDIR /app
 
 # LibreOffice (headless) is required by QuotationExport PDF rendering.
+# Place .ttf / .otf files in backend/fonts/ then rebuild to include them.
 RUN apt-get update \
  && apt-get install -y --no-install-recommends \
         libreoffice-calc \
@@ -37,6 +38,9 @@ RUN apt-get update \
         fonts-dejavu \
         fonts-liberation \
  && rm -rf /var/lib/apt/lists/*
+
+COPY fonts/ /usr/share/fonts/truetype/project/
+RUN fc-cache -fv
 
 COPY --from=build /app/publish ./
 
