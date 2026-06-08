@@ -30,13 +30,18 @@ FROM mcr.microsoft.com/dotnet/aspnet:9.0 AS runtime
 WORKDIR /app
 
 # LibreOffice (headless) is required by QuotationExport PDF rendering.
-# Place .ttf / .otf files in backend/fonts/ then rebuild to include them.
-RUN apt-get update \
- && apt-get install -y --no-install-recommends \
+# ttf-mscorefonts-installer lives in the 'contrib' component and requires EULA acceptance.
+RUN sed -i 's/^Components: main$/Components: main contrib/' /etc/apt/sources.list.d/debian.sources \
+ && echo "ttf-mscorefonts-installer msttcorefonts/accepted-mscorefonts-eula select true" | debconf-set-selections \
+ && apt-get update \
+ && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
         libreoffice-calc \
         libreoffice-core \
         fonts-dejavu \
         fonts-liberation \
+        fonts-noto \
+        fonts-noto-cjk \
+        ttf-mscorefonts-installer \
  && rm -rf /var/lib/apt/lists/*
 
 COPY fonts/ /usr/share/fonts/truetype/project/
