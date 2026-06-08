@@ -36,6 +36,9 @@ RUN apt-get update \
         libreoffice-core \
         fonts-dejavu \
         fonts-liberation \
+        fonts-noto \
+        fonts-noto-cjk \
+        ttf-mscorefonts-installer \
  && rm -rf /var/lib/apt/lists/*
 
 COPY --from=build /app/publish ./
