@@ -18,14 +18,14 @@ const quotationLineSchema = z.object({
   specification: optionalString(500),
   unitName: z.string().min(1, 'ĐVT là bắt buộc').max(100),
   pricingMode: z.enum(['PerUnit', 'PerSquareMeter', 'PerLinearMeter', 'PerCubicMeter']),
-  length: optionalNumber({ min: 0 }),
-  width: optionalNumber({ min: 0 }),
-  thickness: optionalNumber({ min: 0 }),
-  density: optionalNumber({ min: 0 }),
-  sheetCount: optionalNumber({ min: 0 }),
-  quantity: z.coerce.number().nonnegative(),
-  unitPrice: z.coerce.number().nonnegative(),
-  lineTotal: optionalNumber({ min: 0 }),
+  length: optionalNumber(),
+  width: optionalNumber(),
+  thickness: optionalNumber(),
+  density: optionalNumber(),
+  sheetCount: optionalNumber(),
+  quantity: z.coerce.number(),
+  unitPrice: z.coerce.number(),
+  lineTotal: optionalNumber(),
   unitCost: optionalNumber(),
   lineCost: optionalNumber(),
   lineProfit: optionalNumber(),
@@ -42,8 +42,8 @@ const quotationLineSchema = z.object({
     case 'PerCubicMeter': effectiveQty = (L * W * T * sheets) / 1_000_000_000; break;
     default: effectiveQty = line.quantity;
   }
-  if (effectiveQty <= 0) {
-    ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Số lượng phải > 0', path: ['quantity'] });
+  if (effectiveQty === 0) {
+    ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Số lượng không được bằng 0', path: ['quantity'] });
   }
 });
 

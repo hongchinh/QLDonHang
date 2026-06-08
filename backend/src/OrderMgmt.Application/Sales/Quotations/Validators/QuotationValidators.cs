@@ -15,34 +15,28 @@ public class UpsertQuotationLineRequestValidator : AbstractValidator<UpsertQuota
         RuleFor(x => x.Specification).MaximumLength(500);
         RuleFor(x => x.UnitName).NotEmpty().MaximumLength(100);
         RuleFor(x => x.PricingMode).IsInEnum();
-        RuleFor(x => x.Quantity).GreaterThan(0);
-        RuleFor(x => x.UnitPrice).GreaterThanOrEqualTo(0);
-        RuleFor(x => x.Length).GreaterThanOrEqualTo(0).When(x => x.Length.HasValue);
-        RuleFor(x => x.Width).GreaterThanOrEqualTo(0).When(x => x.Width.HasValue);
-        RuleFor(x => x.Thickness).GreaterThanOrEqualTo(0).When(x => x.Thickness.HasValue);
-        RuleFor(x => x.Density).GreaterThanOrEqualTo(0).When(x => x.Density.HasValue);
-        RuleFor(x => x.SheetCount).GreaterThanOrEqualTo(0).When(x => x.SheetCount.HasValue);
+        RuleFor(x => x.Quantity).NotEqual(0).WithMessage("'Quantity' phải khác 0.");
         RuleFor(x => x.Note).MaximumLength(1000);
 
         When(x => x.PricingMode == PricingMode.PerLinearMeter, () =>
         {
-            RuleFor(x => x.Length).NotNull().GreaterThan(0);
-            RuleFor(x => x.SheetCount).NotNull().GreaterThan(0);
+            RuleFor(x => x.Length).NotNull().NotEqual(0m).WithMessage("'Length' phải khác 0.");
+            RuleFor(x => x.SheetCount).NotNull().NotEqual(0m).WithMessage("'SheetCount' phải khác 0.");
         });
 
         When(x => x.PricingMode == PricingMode.PerSquareMeter, () =>
         {
-            RuleFor(x => x.Length).NotNull().GreaterThan(0);
-            RuleFor(x => x.Width).NotNull().GreaterThan(0);
-            RuleFor(x => x.SheetCount).NotNull().GreaterThan(0);
+            RuleFor(x => x.Length).NotNull().NotEqual(0m).WithMessage("'Length' phải khác 0.");
+            RuleFor(x => x.Width).NotNull().NotEqual(0m).WithMessage("'Width' phải khác 0.");
+            RuleFor(x => x.SheetCount).NotNull().NotEqual(0m).WithMessage("'SheetCount' phải khác 0.");
         });
 
         When(x => x.PricingMode == PricingMode.PerCubicMeter, () =>
         {
-            RuleFor(x => x.Length).NotNull().GreaterThan(0);
-            RuleFor(x => x.Width).NotNull().GreaterThan(0);
-            RuleFor(x => x.Thickness).NotNull().GreaterThan(0);
-            RuleFor(x => x.SheetCount).NotNull().GreaterThan(0);
+            RuleFor(x => x.Length).NotNull().NotEqual(0m).WithMessage("'Length' phải khác 0.");
+            RuleFor(x => x.Width).NotNull().NotEqual(0m).WithMessage("'Width' phải khác 0.");
+            RuleFor(x => x.Thickness).NotNull().NotEqual(0m).WithMessage("'Thickness' phải khác 0.");
+            RuleFor(x => x.SheetCount).NotNull().NotEqual(0m).WithMessage("'SheetCount' phải khác 0.");
         });
     }
 }
