@@ -17,6 +17,5 @@ public class VehicleRevenueReportRequestValidator : AbstractValidator<VehicleRev
             .Must(x => !x.From.HasValue || !x.To.HasValue || x.To.Value.DayNumber - x.From.Value.DayNumber <= 366)
             .WithMessage("Khoảng thời gian tối đa 366 ngày.");
         RuleFor(x => x.Months).InclusiveBetween(1, 24);
-        RuleFor(x => x.TopVehicles).InclusiveBetween(1, 10);
     }
 }

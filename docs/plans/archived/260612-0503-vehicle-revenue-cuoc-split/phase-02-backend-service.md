@@ -1,3 +1,32 @@
+# Phase 02 — Backend Service rewrite
+
+**Status:** [ ] pending
+**Complexity:** M
+
+## Objective
+
+Rewrite `VehicleRevenueReportService` để query ở cấp `QuotationLine`, filter `ProductCode.ToLower() == "cuoc"`, và tổng hợp theo dấu của `LineTotal`. Làm cho tất cả integration tests từ Phase 01 pass.
+
+## Files
+
+- `backend/src/OrderMgmt.Application/Reports/VehicleRevenue/Services/VehicleRevenueReportService.cs`
+
+## Tasks
+
+### Task 1 — Chạy tests để xác nhận chúng đang FAIL
+
+```bash
+dotnet test backend/tests/OrderMgmt.IntegrationTests \
+  --filter "FullyQualifiedName~VehicleRevenueReportTests" \
+  --no-build
+```
+Expected: FAIL (service trả dữ liệu sai hoặc exception do DTO cũ).
+
+### Task 2 — Rewrite `VehicleRevenueReportService.cs`
+
+Thay toàn bộ nội dung thành:
+
+```csharp
 using Microsoft.EntityFrameworkCore;
 using OrderMgmt.Application.Common.Interfaces;
 using OrderMgmt.Application.Reports.Common;
@@ -156,3 +185,54 @@ public class VehicleRevenueReportService : IVehicleRevenueReportService
         };
     }
 }
+```
+
+**Điểm quan trọng:**
+- `(decimal?)x.LineTotal ?? 0m` trong `Sum` — tránh `null` khi không có dòng thỏa điều kiện trong group.
+- `chartLookup.TryGetValue(...)` trả về default tuple `(0, 0, 0m, 0m)` nếu tháng không có data — `agg.CompanyTotal` và `agg.ExternalTotal` đều `= 0m`.
+- Constant `CuocCode = "cuoc"` để tránh magic string lặp lại.
+
+### Task 3 — Build Application layer
+
+```bash
+dotnet build backend/src/OrderMgmt.Application
+```
+Expected: BUILD SUCCEEDED.
+
+### Task 4 — Build WebApi layer
+
+```bash
+dotnet build backend/src/OrderMgmt.WebApi
+```
+Expected: BUILD SUCCEEDED. (Controller không thay đổi vì endpoint URL và service interface giữ nguyên.)
+
+### Task 5 — Run integration tests
+
+```bash
+dotnet test backend/tests/OrderMgmt.IntegrationTests \
+  --filter "FullyQualifiedName~VehicleRevenueReportTests"
+```
+Expected: tất cả 9 test PASS.
+
+Nếu có test fail vì SQL translation (EF Core không dịch được expression), xem lỗi cụ thể và điều chỉnh query bằng cách:
+- Nếu `.ToLower()` không translate: dùng `EF.Functions.ILike(l.ProductCode, CuocCode)` thay thế
+- Nếu `Sum(x => (decimal?)x.LineTotal)` không translate: dùng `.Sum(x => x.LineTotal > 0 ? x.LineTotal : 0m)`
+
+### Task 6 — Commit
+
+```bash
+git add backend/src/OrderMgmt.Application/Reports/VehicleRevenue/Services/VehicleRevenueReportService.cs
+git commit -m "feat(vehicle-revenue): rewrite service to split revenue by cuoc ProductCode sign"
+```
+
+## Verification
+
+```bash
+dotnet test backend/tests/OrderMgmt.IntegrationTests \
+  --filter "FullyQualifiedName~VehicleRevenueReportTests"
+```
+
+## Exit Criteria
+
+- 9/9 integration tests trong `VehicleRevenueReportTests` pass
+- `dotnet build backend/src/OrderMgmt.WebApi` không có warning/error mới

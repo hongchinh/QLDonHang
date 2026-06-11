@@ -1,3 +1,104 @@
+# Phase 01 — Backend DTO + Validator + Integration Tests rewrite
+
+**Status:** [ ] pending
+**Complexity:** M
+
+## Objective
+
+Cập nhật DTOs, bỏ rule validator `TopVehicles`, và rewrite integration tests để phản ánh contract mới. Sau phase này:
+- Code compile được
+- Integration tests compile và chạy được (sẽ FAIL vì service chưa thay đổi)
+- Rõ ràng expectation cho Phase 02
+
+## Files
+
+- `backend/src/OrderMgmt.Application/Reports/VehicleRevenue/Models/VehicleRevenueReportDtos.cs`
+- `backend/src/OrderMgmt.Application/Reports/VehicleRevenue/Validators/VehicleRevenueReportRequestValidator.cs`
+- `backend/tests/OrderMgmt.IntegrationTests/Reports/VehicleRevenueReportTests.cs`
+
+## Tasks
+
+### Task 1 — Rewrite `VehicleRevenueReportDtos.cs`
+
+Thay toàn bộ nội dung file thành:
+
+```csharp
+namespace OrderMgmt.Application.Reports.VehicleRevenue.Models;
+
+public class VehicleRevenueReportRequest
+{
+    public DateOnly? From { get; set; }
+    public DateOnly? To { get; set; }
+    public int Months { get; set; } = 6;
+    // TopVehicles đã bỏ — không còn giới hạn N xe trên chart
+}
+
+public class VehicleRevenueReportItem
+{
+    public string VehicleNumber { get; set; } = default!;
+    public decimal CompanyVehicleRevenue { get; set; }   // tổng LineTotal > 0 của dòng "cuoc"
+    public decimal ExternalVehicleRevenue { get; set; }  // tổng LineTotal < 0 của dòng "cuoc" (âm)
+}
+
+public class VehicleRevenueMonthlyPoint
+{
+    public string Month { get; set; } = default!;        // "yyyy-MM"
+    public decimal CompanyTotal { get; set; }
+    public decimal ExternalTotal { get; set; }           // âm
+}
+
+public class VehicleRevenueReportDto
+{
+    public DateOnly From { get; set; }
+    public DateOnly To { get; set; }
+    public int Months { get; set; }
+    public List<VehicleRevenueReportItem> Items { get; set; } = new();
+    public List<VehicleRevenueMonthlyPoint> MonthlySeries { get; set; } = new();
+    public decimal GrandTotalCompany { get; set; }
+    public decimal GrandTotalExternal { get; set; }      // âm
+}
+```
+
+**Lưu ý thay đổi:**
+- `VehicleRevenueReportRequest`: xóa `TopVehicles`
+- `VehicleRevenueReportItem`: xóa `QuotationCount`, `TotalRevenueGross`, `TotalRevenueNet`; thêm `CompanyVehicleRevenue`, `ExternalVehicleRevenue`
+- `VehicleRevenueMonthlyPoint`: xóa `Values` (list per-vehicle); thêm `CompanyTotal`, `ExternalTotal`
+- `VehicleRevenueReportDto`: xóa `TopVehicles`, `ChartVehicles`, `TotalQuotationCount`, `GrandTotalGross`, `GrandTotalNet`; thêm `GrandTotalCompany`, `GrandTotalExternal`
+- Xóa hoàn toàn class `VehicleRevenueMonthlyValue` (không còn dùng)
+
+### Task 2 — Cập nhật Validator
+
+Trong `VehicleRevenueReportRequestValidator.cs`, xóa **chỉ dòng này**:
+```csharp
+RuleFor(x => x.TopVehicles).InclusiveBetween(1, 10);
+```
+Giữ nguyên tất cả các rule khác.
+
+### Task 3 — Stub service để Application layer compile
+
+`VehicleRevenueReportService.cs` vẫn còn reference 6 property đã xóa (`TopVehicles`, `QuotationCount`, `TotalRevenueGross`, `TotalRevenueNet`, `ChartVehicles`, `VehicleRevenueMonthlyValue`) — build **chắc chắn FAIL** nếu không stub.
+
+**Bắt buộc**: comment out toàn bộ body của `GetAsync` trong `VehicleRevenueReportService.cs` và thay bằng:
+```csharp
+public async Task<VehicleRevenueReportDto> GetAsync(VehicleRevenueReportRequest request, CancellationToken ct = default)
+{
+    // TODO Phase 02: rewrite
+    await Task.CompletedTask;
+    return new VehicleRevenueReportDto();
+}
+```
+
+Sau đó build:
+```bash
+dotnet build backend/src/OrderMgmt.Application
+```
+Expected: BUILD SUCCEEDED.
+
+### Task 4 — Rewrite Integration Tests
+
+Thay toàn bộ nội dung `VehicleRevenueReportTests.cs` thành:
+
+```csharp
 using System.Net;
 using System.Net.Http.Json;
 using FluentAssertions;
@@ -189,3 +290,34 @@ public class VehicleRevenueReportTests : QuotationTestBase
         return body!.Data!;
     }
 }
+```
+
+### Task 5 — Verify tests compile (not pass)
+
+```bash
+dotnet build backend/tests/OrderMgmt.IntegrationTests
+```
+Expected: BUILD SUCCEEDED. Tests sẽ FAIL khi chạy vì service chưa được cập nhật — đó là trạng thái mong muốn của phase này.
+
+### Task 6 — Commit
+
+```bash
+git add backend/src/OrderMgmt.Application/Reports/VehicleRevenue/Models/VehicleRevenueReportDtos.cs
+git add backend/src/OrderMgmt.Application/Reports/VehicleRevenue/Validators/VehicleRevenueReportRequestValidator.cs
+git add backend/tests/OrderMgmt.IntegrationTests/Reports/VehicleRevenueReportTests.cs
+git commit -m "refactor(vehicle-revenue): update DTOs and tests for cuoc-based split"
+```
+
+## Verification
+
+```bash
+dotnet build backend/src/OrderMgmt.Application
+dotnet build backend/tests/OrderMgmt.IntegrationTests
+```
+
+## Exit Criteria
+
+- `VehicleRevenueReportDtos.cs` không còn `TopVehicles`, `ChartVehicles`, `QuotationCount`, `TotalRevenueGross`, `TotalRevenueNet`, `VehicleRevenueMonthlyValue`
+- Validator không còn rule `TopVehicles`
+- Test file compile sạch với DTO mới
+- Service có thể vẫn fail tạm thời — chấp nhận được đến Phase 02

@@ -1,36 +1,27 @@
 export interface VehicleRevenueReportItem {
   vehicleNumber: string;
-  quotationCount: number;
-  totalRevenueGross: number;
-  totalRevenueNet: number;
-}
-
-export interface VehicleRevenueMonthlyValue {
-  vehicleNumber: string;
-  totalRevenueGross: number;
+  companyVehicleRevenue: number;
+  externalVehicleRevenue: number;  // âm
 }
 
 export interface VehicleRevenueMonthlyPoint {
-  month: string;
-  values: VehicleRevenueMonthlyValue[];
+  month: string;           // "yyyy-MM"
+  companyTotal: number;
+  externalTotal: number;   // âm
 }
 
 export interface VehicleRevenueReport {
   from: string;
   to: string;
   months: number;
-  topVehicles: number;
   items: VehicleRevenueReportItem[];
-  chartVehicles: string[];
   monthlySeries: VehicleRevenueMonthlyPoint[];
-  totalQuotationCount: number;
-  grandTotalGross: number;
-  grandTotalNet: number;
+  grandTotalCompany: number;
+  grandTotalExternal: number;  // âm
 }
 
 export interface VehicleRevenueReportParams {
   from: string;
   to: string;
   months?: number;
-  topVehicles?: number;
 }

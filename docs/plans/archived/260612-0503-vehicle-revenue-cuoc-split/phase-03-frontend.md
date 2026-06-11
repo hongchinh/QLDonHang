@@ -1,3 +1,76 @@
+# Phase 03 — Frontend types + page
+
+**Status:** [ ] pending
+**Complexity:** S
+
+## Objective
+
+Cập nhật TypeScript interfaces và rewrite component `vehicle-revenue-page.tsx` để:
+- Bảng hiển thị 3 cột: Số xe | Xe công ty | Xe ngoài, tô màu dòng theo loại chủ đạo
+- Chart dùng 2 `<Line>` cố định thay vì N series động
+
+## Files
+
+- `frontend/src/features/reports/vehicle-revenue/types.ts`
+- `frontend/src/pages/reports/vehicle-revenue-page.tsx`
+
+> **Lưu ý hook file**: `hooks.ts` build query string từ `VehicleRevenueReportParams`. Sau khi xóa `topVehicles` khỏi interface, param đó sẽ không còn được gửi lên API — đây là đúng. Nếu TypeScript báo lỗi trong `hooks.ts` ở Task 1, xóa dòng `topVehicles` trong hook và thêm file đó vào commit của Task 5.
+
+## Tasks
+
+### Task 1 — Chạy type-check để xác nhận lỗi hiện tại
+
+```bash
+cd frontend && npm run type-check 2>&1 | grep vehicle
+```
+Expected: TypeScript errors liên quan đến `VehicleRevenueReport` do DTO không khớp.
+
+### Task 2 — Rewrite `types.ts`
+
+Thay toàn bộ nội dung:
+
+```typescript
+export interface VehicleRevenueReportItem {
+  vehicleNumber: string;
+  companyVehicleRevenue: number;
+  externalVehicleRevenue: number;  // âm
+}
+
+export interface VehicleRevenueMonthlyPoint {
+  month: string;           // "yyyy-MM"
+  companyTotal: number;
+  externalTotal: number;   // âm
+}
+
+export interface VehicleRevenueReport {
+  from: string;
+  to: string;
+  months: number;
+  items: VehicleRevenueReportItem[];
+  monthlySeries: VehicleRevenueMonthlyPoint[];
+  grandTotalCompany: number;
+  grandTotalExternal: number;  // âm
+}
+
+export interface VehicleRevenueReportParams {
+  from: string;
+  to: string;
+  months?: number;
+}
+```
+
+**Thay đổi so với trước:**
+- `VehicleRevenueReportItem`: xóa `quotationCount`, `totalRevenueGross`, `totalRevenueNet`; thêm `companyVehicleRevenue`, `externalVehicleRevenue`
+- `VehicleRevenueMonthlyPoint`: xóa `values`; thêm `companyTotal`, `externalTotal`
+- `VehicleRevenueReport`: xóa `topVehicles`, `chartVehicles`, `totalQuotationCount`, `grandTotalGross`, `grandTotalNet`; thêm `grandTotalCompany`, `grandTotalExternal`
+- `VehicleRevenueReportParams`: xóa `topVehicles`
+- Xóa hoàn toàn `VehicleRevenueMonthlyValue`
+
+### Task 3 — Rewrite `vehicle-revenue-page.tsx`
+
+Thay toàn bộ nội dung:
+
+```tsx
 import { useMemo, useState } from 'react';
 import {
   CartesianGrid,
@@ -224,3 +297,33 @@ function VehicleRevenueChart({
     </div>
   );
 }
+```
+
+### Task 4 — Verify TypeScript compiles
+
+```bash
+cd frontend && npm run type-check
+```
+Expected: 0 errors liên quan đến vehicle-revenue.
+
+### Task 5 — Commit
+
+```bash
+git add frontend/src/features/reports/vehicle-revenue/types.ts
+git add frontend/src/pages/reports/vehicle-revenue-page.tsx
+git commit -m "feat(vehicle-revenue): update frontend for 2-type company/external display"
+```
+
+## Verification
+
+```bash
+cd frontend && npm run type-check
+```
+
+## Exit Criteria
+
+- `npm run type-check` không có TypeScript error
+- `VehicleRevenueMonthlyValue` không còn tồn tại trong codebase frontend
+- `topVehicles` không còn được dùng trong `VehicleRevenueReportParams`
+- Bảng có đúng 3 cột: Số xe | Xe công ty | Xe ngoài
+- Chart có đúng 2 `<Line>` với `dataKey="companyTotal"` và `dataKey="externalTotal"`
