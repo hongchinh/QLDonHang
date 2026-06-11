@@ -107,7 +107,9 @@ export function VehicleRevenuePage() {
                 <TableHeader>
                   <TableRow>
                     <TableHead>Số xe</TableHead>
+                    <TableHead className="text-right">Số đơn CT</TableHead>
                     <TableHead className="text-right">Xe công ty</TableHead>
+                    <TableHead className="text-right">Số đơn ngoài</TableHead>
                     <TableHead className="text-right">Xe ngoài</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -124,7 +126,13 @@ export function VehicleRevenuePage() {
                       <TableRow key={it.vehicleNumber} className={rowClass}>
                         <TableCell>{it.vehicleNumber}</TableCell>
                         <TableCell className="text-right tabular-nums">
+                          {it.companyQuotationCount !== 0 ? it.companyQuotationCount : '—'}
+                        </TableCell>
+                        <TableCell className="text-right tabular-nums">
                           {it.companyVehicleRevenue !== 0 ? formatVnd(it.companyVehicleRevenue) : '—'}
+                        </TableCell>
+                        <TableCell className="text-right tabular-nums">
+                          {it.externalQuotationCount !== 0 ? it.externalQuotationCount : '—'}
                         </TableCell>
                         <TableCell className="text-right tabular-nums text-rose-600">
                           {it.externalVehicleRevenue !== 0 ? formatVnd(it.externalVehicleRevenue) : '—'}
@@ -136,7 +144,9 @@ export function VehicleRevenuePage() {
                 <TableFooter>
                   <TableRow>
                     <TableCell>Tổng cộng</TableCell>
+                    <TableCell className="text-right tabular-nums">{query.data.items.reduce((s, it) => s + it.companyQuotationCount, 0)}</TableCell>
                     <TableCell className="text-right tabular-nums">{formatVnd(query.data.grandTotalCompany)}</TableCell>
+                    <TableCell className="text-right tabular-nums">{query.data.items.reduce((s, it) => s + it.externalQuotationCount, 0)}</TableCell>
                     <TableCell className="text-right tabular-nums text-rose-600">{formatVnd(query.data.grandTotalExternal)}</TableCell>
                   </TableRow>
                 </TableFooter>

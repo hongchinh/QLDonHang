@@ -1,5 +1,7 @@
 export interface VehicleRevenueReportItem {
   vehicleNumber: string;
+  companyQuotationCount: number;
+  externalQuotationCount: number;
   companyVehicleRevenue: number;
   externalVehicleRevenue: number;  // âm
 }

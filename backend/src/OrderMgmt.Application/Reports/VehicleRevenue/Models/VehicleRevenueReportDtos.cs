@@ -11,6 +11,8 @@ public class VehicleRevenueReportRequest
 public class VehicleRevenueReportItem
 {
     public string VehicleNumber { get; set; } = default!;
+    public int CompanyQuotationCount { get; set; }
+    public int ExternalQuotationCount { get; set; }
     public decimal CompanyVehicleRevenue { get; set; }   // tổng LineTotal > 0 của dòng "cuoc"
     public decimal ExternalVehicleRevenue { get; set; }  // tổng LineTotal < 0 của dòng "cuoc" (âm)
 }

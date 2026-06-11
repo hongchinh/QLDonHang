@@ -28,7 +28,7 @@ public class VehicleRevenueReportService : IVehicleRevenueReportService
         var scope = _db.Quotations.AsNoTracking();
 
         // ── Summary table ─────────────────────────────────────────────────────
-        var summaryRows = await RevenueFilterHelper.ApplyRevenueFilter(scope, dateMode, from, to)
+        var rawLines = await RevenueFilterHelper.ApplyRevenueFilter(scope, dateMode, from, to)
             .SelectMany(q => q.Lines
                 .Where(l => l.ProductCode != null && l.ProductCode.ToLower() == CuocCode)
                 .Select(l => new
@@ -37,17 +37,24 @@ public class VehicleRevenueReportService : IVehicleRevenueReportService
                         ? DefaultVehicleNumber
                         : q.TransportVehicleNumber.Trim(),
                     l.LineTotal,
+                    QuotationId = q.Id,
                 }))
+            .ToListAsync(ct);
+
+        // Aggregation in-memory: Distinct().Count() theo từng nhóm dương/âm không translate được trong EF Core GroupBy
+        var summaryRows = rawLines
             .GroupBy(x => x.VehicleNumber)
             .Select(g => new VehicleRevenueReportItem
             {
                 VehicleNumber = g.Key,
-                CompanyVehicleRevenue = g.Where(x => x.LineTotal > 0).Sum(x => (decimal?)x.LineTotal) ?? 0m,
-                ExternalVehicleRevenue = g.Where(x => x.LineTotal < 0).Sum(x => (decimal?)x.LineTotal) ?? 0m,
+                CompanyQuotationCount = g.Where(x => x.LineTotal > 0).Select(x => x.QuotationId).Distinct().Count(),
+                ExternalQuotationCount = g.Where(x => x.LineTotal < 0).Select(x => x.QuotationId).Distinct().Count(),
+                CompanyVehicleRevenue = g.Where(x => x.LineTotal > 0).Sum(x => x.LineTotal),
+                ExternalVehicleRevenue = g.Where(x => x.LineTotal < 0).Sum(x => x.LineTotal),
             })
             .OrderByDescending(x => x.CompanyVehicleRevenue)
             .ThenBy(x => x.VehicleNumber)
-            .ToListAsync(ct);
+            .ToList();
 
         // ── Monthly chart series ──────────────────────────────────────────────
         // Chart range khác summary range: chart tính ngược `Months` tháng từ tháng chứa `to`,
